@@ -1,3 +1,37 @@
-import Link from "next/link";
-import { ArrowRight, LockKeyhole, UserRound } from "lucide-react";
-export default function Page(){return <div className="container-wide simple-page account-page"><div className="breadcrumbs"><Link href="/">Ana Sayfa</Link> › Hesabım</div><div className="account-panel"><div className="account-welcome"><span className="section-eyebrow">ÖZ KIRTASİYE</span><h1>Birlikte daha<br/>renkli alışverişler<span className="orange-dot">.</span></h1><p>Üyelik, sipariş geçmişi ve adres yönetimini sonraki geliştirme aşamasında aktif edeceğiz.</p><div className="account-decoration">✏️ 📒 🎨</div></div><div className="account-form"><UserRound size={30}/><h2>Hesabım</h2><p>Bu ekran şu anda tasarım ön izlemesidir. Gerçek kullanıcı girişi henüz aktif değil.</p><div className="account-placeholder"><LockKeyhole size={18}/> Güvenli üyelik altyapısı daha sonra bağlanacak.</div><Link href="/urunler" className="button button-primary">Alışverişe devam et <ArrowRight size={18}/></Link></div></div></div>}
+import Link from 'next/link';
+import { ArrowRight, LockKeyhole, UserRound } from 'lucide-react';
+export default function Page() {
+  return (
+    <div className="container-wide simple-page account-page">
+      <div className="breadcrumbs">
+        <Link href="/">Ana Sayfa</Link> › Hesabım
+      </div>
+      <div className="account-panel">
+        <div className="account-welcome">
+          <span className="section-eyebrow">ÖZ KIRTASİYE</span>
+          <h1>
+            Birlikte daha
+            <br />
+            renkli alışverişler<span className="orange-dot">.</span>
+          </h1>
+          <p>
+            Üyelik, sipariş geçmişi ve adres yönetimini sonraki geliştirme aşamasında aktif
+            edeceğiz.
+          </p>
+          <div className="account-decoration">✏️ 📒 🎨</div>
+        </div>
+        <div className="account-form">
+          <UserRound size={30} />
+          <h2>Hesabım</h2>
+          <p>Bu ekran şu anda tasarım ön izlemesidir. Gerçek kullanıcı girişi henüz aktif değil.</p>
+          <div className="account-placeholder">
+            <LockKeyhole size={18} /> Güvenli üyelik altyapısı daha sonra bağlanacak.
+          </div>
+          <Link href="/urunler" className="button button-primary">
+            Alışverişe devam et <ArrowRight size={18} />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,4 +1,4 @@
-export type CategoryId = "defter" | "kalem" | "boya" | "oyuncak" | "canta" | "ofis";
+export type CategoryId = 'defter' | 'kalem' | 'boya' | 'oyuncak' | 'canta' | 'ofis';
 
 export type Category = {
   id: CategoryId;
