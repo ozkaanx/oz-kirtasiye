@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, Package } from 'lucide-react';
 import { getLiveProductBySlug } from '@/lib/real-catalog';
 import { formatPrice } from '@/lib/format';
+import { LivePurchaseButton } from '@/components/product/live-purchase-button';
+import { LiveFavoriteButton } from '@/components/product/live-favorite-button';
 
 export const dynamic = 'force-dynamic';
 export async function generateMetadata({
@@ -51,11 +53,11 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             </strong>
           </p>
           <p className="real-no-checkout">
-            Online ödeme ve sipariş henüz aktif değil. Bu ürün şu anda yalnızca görüntülenebilir.
+            Online ödeme henüz aktif değil. Ürünü sepete ekleyerek mağazaya sipariş talebi
+            gönderebilirsiniz.
           </p>
-          <Link className="button button-primary" href="/iletisim">
-            Mağazaya ulaş
-          </Link>
+          <LivePurchaseButton productId={product.id} stock={product.stock_quantity} detail />
+          <LiveFavoriteButton productId={product.id} />
         </div>
       </section>
     </main>

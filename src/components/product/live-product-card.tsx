@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { Package } from 'lucide-react';
 import type { LiveProduct } from '@/lib/real-catalog';
 import { formatPrice } from '@/lib/format';
+import { LivePurchaseButton } from '@/components/product/live-purchase-button';
+import { LiveFavoriteButton } from '@/components/product/live-favorite-button';
 
 export function LiveProductCard({ product }: { product: LiveProduct }) {
   return (
@@ -38,9 +40,13 @@ export function LiveProductCard({ product }: { product: LiveProduct }) {
               {product.stock_quantity > 0 ? `${product.stock_quantity} adet stokta` : 'Stokta yok'}
             </small>
           </div>
-          <Link href={`/magaza/urun/${product.slug}`} className="live-view-link">
-            İncele →
-          </Link>
+          <div className="live-card-actions">
+            <LiveFavoriteButton productId={product.id} />
+            <Link href={`/magaza/urun/${product.slug}`} className="live-view-link">
+              İncele →
+            </Link>
+            <LivePurchaseButton productId={product.id} stock={product.stock_quantity} />
+          </div>
         </div>
       </div>
     </article>
