@@ -7,6 +7,8 @@ import { ArrowRight, ArrowUpRight, Headphones, MapPin, PackageCheck, ShieldCheck
 import { categories, products } from "@/data/catalog";
 import { ProductCard } from "@/components/product/product-card";
 import type { CategoryId } from "@/types/shop";
+import type { LiveProduct } from "@/lib/real-catalog";
+import { LiveProductCard } from "@/components/product/live-product-card";
 
 const campaignCards = [
   { eyebrow: "YENİ SEZON", title: "Okula dönüş\nfırsatları", description: "Yeni döneme rengârenk başla.", href: "/urunler?category=canta", image: "/illustrations/bag.svg", tone: "campaign-sky" },
@@ -14,7 +16,7 @@ const campaignCards = [
   { eyebrow: "İLHAM AL", title: "Renklerini\nözgür bırak", description: "Sanat ve hobi ürünlerini keşfet.", href: "/urunler?category=boya", image: "/illustrations/paints.svg", tone: "campaign-mint" },
 ];
 
-export function HomeStorefront() {
+export function HomeStorefront({ liveProducts = [] }: { liveProducts?: LiveProduct[] }) {
   const [activeCategory, setActiveCategory] = useState<CategoryId | "all">("all");
   const visibleProducts = useMemo(() => activeCategory === "all" ? products.slice(0, 8) : products.filter(p => p.category === activeCategory), [activeCategory]);
 
@@ -43,6 +45,12 @@ export function HomeStorefront() {
     </section>
 
     <section className="container-wide campaigns-grid" aria-label="Öne çıkan kategoriler">{campaignCards.map(c => <Link href={c.href} key={c.eyebrow} className={`campaign-card ${c.tone}`}><div><span className="campaign-eyebrow">{c.eyebrow}</span><h3>{c.title}</h3><p>{c.description}</p><span className="campaign-cta">Keşfet <ArrowRight size={16}/></span></div><Image src={c.image} width={210} height={210} alt=""/></Link>)}</section>
+
+    {liveProducts.length > 0 && <section className="container-wide products-section real-products-section" id="gercek-urunler">
+      <div className="section-heading"><div><span className="section-eyebrow">ÖZ KIRTASİYE KOLEKSİYONU</span><h2>Mağazamızdaki ürünler<span className="orange-dot">.</span></h2><p>Fiyat ve stok bilgileri mağaza veritabanından gelir.</p></div></div>
+      <p className="real-products-notice">Online sipariş ve ödeme henüz etkin değil. Ürünleri şu anda inceleyebilirsin.</p>
+      <div className="products-grid">{liveProducts.slice(0,8).map(p=><LiveProductCard key={p.id} product={p}/>)}</div>
+    </section>}
 
     <section className="container-wide products-section" id="urunler">
       <div className="section-heading"><div><span className="section-eyebrow">SENİN İÇİN SEÇTİK</span><h2>Çok sevilen ürünler<span className="orange-dot">.</span></h2><p>Renkli dünyamızdan öne çıkanlar. <span className="demo-note">Ürün ve fiyatlar örnektir.</span></p></div><Link href="/urunler" className="text-link">Tüm ürünler <ArrowRight size={17}/></Link></div>

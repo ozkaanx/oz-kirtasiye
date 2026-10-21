@@ -5,9 +5,11 @@ import { ArrowLeft, ChevronRight, SlidersHorizontal, Search, X } from "lucide-re
 import { categories, products } from "@/data/catalog";
 import { ProductCard } from "@/components/product/product-card";
 import type { CategoryId } from "@/types/shop";
+import type { LiveProduct } from "@/lib/real-catalog";
+import { LiveProductCard } from "@/components/product/live-product-card";
 
-type Props = {initialCategory:string; initialSearch:string};
-export function CatalogView({initialCategory,initialSearch}:Props) {
+type Props = {initialCategory:string; initialSearch:string; liveProducts?:LiveProduct[]};
+export function CatalogView({initialCategory,initialSearch,liveProducts=[]}:Props) {
   const [category,setCategory]=useState<CategoryId|"all">(categories.some(c=>c.id===initialCategory)?initialCategory as CategoryId:"all");
   const [query,setQuery]=useState(initialSearch);
   const [sort,setSort]=useState("featured");
@@ -25,6 +27,10 @@ export function CatalogView({initialCategory,initialSearch}:Props) {
   return <div className="container-wide catalog-page">
     <div className="breadcrumbs"><Link href="/">Ana Sayfa</Link><ChevronRight size={14}/> Ürünler {currentCat&&<><ChevronRight size={14}/>{currentCat.label}</>}</div>
     <div className="catalog-title-row"><div><span className="section-eyebrow">ÖZ KIRTASİYE KOLEKSİYONU</span><h1>{currentCat?.label ?? (query?"Arama sonuçları":"Tüm ürünler")}<span className="orange-dot">.</span></h1><p>Aradığın ürünleri kolayca keşfet. <b>{filtered.length} örnek ürün</b> listeleniyor.</p></div></div>
+    {liveProducts.length > 0 && <section className="real-catalog-list" style={{marginBottom:35}}>
+      <div className="section-heading"><div><h2>Mağazamızdaki gerçek ürünler</h2><p>Veritabanından gelen ürünler. Online ödeme henüz açık değil.</p></div></div>
+      <div className="products-grid">{liveProducts.filter(p=>!query.trim() || p.name.toLocaleLowerCase("tr-TR").includes(query.trim().toLocaleLowerCase("tr-TR"))).map(p=><LiveProductCard product={p} key={p.id}/>)}</div>
+    </section>}
     <div className="catalog-toolbar"><button className="mobile-filter-button" onClick={()=>setMobileFilters(true)}><SlidersHorizontal size={17}/> Filtrele</button><span className="results-count">{filtered.length} ürün</span><label>Sırala: <select value={sort} onChange={e=>setSort(e.target.value)}><option value="featured">Önerilenler</option><option value="price-asc">Fiyat: Artan</option><option value="price-desc">Fiyat: Azalan</option><option value="name">Ada göre</option></select></label></div>
     <div className="catalog-layout"><aside className={`catalog-sidebar ${mobileFilters?"show-filter":""}`}><div className="filter-head"><h2>Filtreler</h2><button className="mobile-close" aria-label="Filtreleri kapat" onClick={()=>setMobileFilters(false)}><X size={22}/></button></div>
       <div className="filter-group"><h3>Kategoriler</h3><div className="filter-categories"><button className={category==="all"?"selected":""} onClick={()=>setCategory("all")}>Tüm kategoriler</button>{categories.map(c=><button key={c.id} className={category===c.id?"selected":""} onClick={()=>setCategory(c.id)}>{c.label}</button>)}</div></div>

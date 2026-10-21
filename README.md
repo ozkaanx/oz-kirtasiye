@@ -1,25 +1,83 @@
-# Öz Kırtasiye — E-Ticaret Sitesi (İlk Geliştirme Paketi)
+# Öz Kırtasiye — Next.js + Supabase
 
-Bu proje, **Öz Kırtasiye için onaylanan sade, beyaz–siyah–turuncu tasarım dilinin** Next.js App Router ve React ile hazırlanan ilk sürümüdür.
+Öz Kırtasiye için hazırlanan sade, beyaz–siyah–turuncu tasarım korunarak gerçek ürün ve barkodsuz manuel stok yönetimi Supabase'e bağlandı.
 
-> **DURUM: DEMO / GELİŞTİRME.** Bu sürüm gerçek müşteri kabul etmek veya ödeme almak için uygun değildir. Ürün adları, fiyatlar, görseller ve stoklar örnektir. Online sipariş, ödeme, veritabanı ve kullanıcı doğrulaması henüz bağlı değildir.
+> **GELİŞTİRME SÜRÜMÜ:** Sipariş, online ödeme ve sepetin gerçek satış bağlantısı henüz yoktur. Önceki örnek katalog, sepet ve favoriler demo olarak durur. Gerçek ürünler ayrı vitrinde **inceleme amaçlı** gösterilir; satın alma aktif değildir.
 
-## Gereksinimler
+## Yerel kurulum (Node.js 22 önerilir)
 
-- Node.js **20.9+** (Node.js 22 önerilir)
-- npm
-
-## Kurulum (Windows PowerShell veya Terminal)
+1. Dosyaları mevcut GitHub repo klasörünüzle birleştirin.
+2. `.env.example` dosyasını `.env.local` olarak kopyalayın.
+3. Supabase panelinde **Project Settings → API Keys** bölümünden `sb_publishable_...` anahtarını `.env.local` içerisine girin. `.env.local` dosyasını GitHub'a göndermeyin.
+4. Terminalde:
 
 ```bash
-cd oz-kirtasiye
 npm install
 npm run dev
 ```
 
-Tarayıcı: http://localhost:3000
+Tarayıcı: `http://localhost:3000`.
 
-İsteğe bağlı:
+### Yönetici hesabı oluşturma (bir kez)
+
+Yönetici girişine herkesi otomatik kabul etmiyoruz. Önce Supabase Dashboard → **Authentication → Users → Add user** bölümünden kullanacağınız e-posta ve şifre ile bir kullanıcı oluşturun. E-postanın doğrulanmış olduğundan emin olun.
+
+Sonra Dashboard → **SQL Editor** içinde **yalnızca kendi e-postanızı** yazarak şu sorguyu çalıştırın:
+
+```sql
+insert into public.store_admins (user_id, role)
+select id, 'owner' from auth.users where email = 'KENDI_EPOSTANIZI_YAZIN'
+on conflict (user_id) do update set role = excluded.role;
+```
+
+`INSERT 0 0` görürseniz e-posta adresine ait Auth kullanıcısı bulunamadı demektir. Yeni kullanıcı kayıt olunca yetki otomatik verilmez; her yeni yöneticiyi yetkili olarak ayrıca atamalısınız.
+
+Yönetici girişi: `http://localhost:3000/admin/giris`  
+Ürün ve stok ekranı: `http://localhost:3000/admin/urunler`
+
+### İlk gerçek ürün
+
+1. Yönetici olarak giriş yapın.
+2. Önce **Kategori ekle** alanından bir kategori oluşturun.
+3. **Yeni ürün ekle** ile ad, fiyat, açıklama, fotoğraf ve stok sayısı girin.
+4. **Sitede yayınla** seçeneğini işaretleyin ve kaydedin.
+5. Ana sayfayı yenileyin. **Mağazamızdaki ürünler** bölümünde Supabase'den gelen gerçek ürün görünür.
+6. Ürünün **Stok** düğmesine basarak ekleme veya azaltma yapın; işlem **Stok hareketleri** bölümüne kaydedilir.
+
+## Veri güvenliği
+
+- `store_admins`, `categories`, `products`, `product_images` ve `stock_movements` tablolarında RLS açık.
+- Yalnızca yönetici kullanıcıların ürün ve stok kayıtlarını değiştirme yetkisi var.
+- Stok güncelleme `adjust_product_stock` isimli sunucu tarafı PostgreSQL fonksiyonuyla tek atomik işlem olarak çalışır ve hareket kaydı oluşturur.
+- Fotoğraflar `product-images` public Storage bucket'ına yalnızca yöneticiler tarafından yüklenebilir. Görseller herkese açık URL ile yayımlanır; gizli dosyaları buraya yüklemeyin.
+- `service_role`, `sb_secret_...` veya veritabanı şifresini projeye **eklemeyin**. Public/repo içinde yalnızca `.env.example` şablonu bulunur.
+- Yönetim ekranlarının sunucu tarafı erişim kontrolü vardır. RLS, yalnızca arayüze güvenmeden veritabanı düzeyinde de erişimi kısıtlar.
+
+## Supabase projesi
+
+- Proje: `oz-kirtasiye`
+- Ref: `dvkndlaamlwxikhszpqd`
+- Bölge: `eu-central-1`
+- Migration geçmişi Supabase projesinde oluşturuldu:
+  - `20261021192915_initial_catalog_manual_inventory`
+  - `20261021192947_restrict_automatic_rls_helper_execution`
+  - `20261021193540_atomic_stock_adjustments_and_product_storage`
+
+Sonraki aşamada Supabase CLI üzerinden migration dosyalarını repoya çekip sürüm kontrolüne dahil etmek uygun olacak. Bu pakette migration SQL dosyaları yeniden uygulanmak üzere yer almıyor; aynı şemayı tekrar oluşturmaya çalışmayın.
+
+## Ekranlar
+
+| Adres | Durum |
+|---|---|
+| `/` | Onaylı ana sayfa + gerçek ürün vitrini (varsa) + demo katalog |
+| `/urunler` | Gerçek ürünler ve mevcut demo katalog |
+| `/magaza/urun/[slug]` | Gerçek ürün detay sayfası, satın alma kapalı |
+| `/admin/giris` | Supabase Auth girişi |
+| `/admin/urunler` | Yetkili ürün/kategori/fotoğraf/stok yönetimi |
+| `/admin/stok` | Yeni yönetim paneline yönlendirir |
+| `/sepet`, `/favoriler`, eski `/urun/[slug]` | Demo; gerçek sipariş oluşturmaz |
+
+## Kod kontrolü
 
 ```bash
 npm run typecheck
@@ -27,78 +85,17 @@ npm run lint
 npm run build
 ```
 
-## Hazır ekranlar
+Bu paketin oluşturulduğu ortamda npm kayıt sistemine erişilemediği için `npm install` ve tam Next.js derlemesi çalıştırılamadı. TypeScript/TSX dosyalarının söz dizimi kontrol edildi. Yukarıdaki komutlarla bilgisayarınızda doğrulayın.
 
-| Adres | Amaç | Durum |
-| --- | --- | --- |
-| `/` | Ana sayfa, banner, kategori kartları, ürün vitrinleri | Arayüz ve örnek veriler |
-| `/urunler` | Ürün listeleme, kategori/fiyat filtreleri, sıralama, arama | Tarayıcıda çalışır |
-| `/urun/pastel-kursun-kalem-seti` | Örnek ürün detay sayfası | Tarayıcıda çalışır |
-| `/sepet` | Sepet, adet artırma/azaltma, silme | localStorage ile demo |
-| `/favoriler` | Favorilerim | localStorage ile demo |
-| `/hesabim` | Hesap ekranı | Bilgilendirme / tasarım |
-| `/hakkimizda` | Hakkımızda | Bilgilendirme |
-| `/iletisim` | İletişim | Bilgilendirme |
-| `/admin/stok` | **Barkodsuz manuel stok yönetimi** | **Yalnızca localStorage demosu** |
+## GitHub
 
-### Manuel stok yönetimi
+Dosyaları mevcut `ozkaanx/oz-kirtasiye` klasörünüzle birleştirdikten sonra:
 
-`/admin/stok` adresinde bir ürünü seçip stok artırabilir/azaltabilir ve işlem açıklaması girebilirsiniz. Değişiklikler yalnızca kullanılan tarayıcıda saklanır. **Bu, gerçek mağaza stoğunu değiştirmez, internet mağazasına bağlanmaz, cihazlar arasında ortak çalışmaz.** Canlı yayına çıkmadan önce giriş yetkilendirmesi, PostgreSQL veritabanı, sunucu işlemleri, stok rezervasyonu ve hareket kayıtları kurulmalıdır.
-
-**Barkod ve POS/kasa sistemi kapsam dışıdır.** Fiziksel mağaza satışı sonrası stok miktarı yönetim panelinden manuel değiştirilecek; gerçek online siparişlerin stok azaltması ise backend tamamlandığında otomatik ve güvenli biçimde yapılacaktır.
-
-## Kod yapısı
-
-```text
-src/
-  app/
-    (store)/              # Müşteriye açık e-ticaret sayfaları
-      page.tsx            # Ana sayfa
-      urunler/            # Listeleme ve arama
-      urun/[slug]/        # Ürün detay
-      sepet/              # Sepet
-      favoriler/          # Favoriler
-      hesabim/            # Hesap ön izlemesi
-      hakkimizda/
-      iletisim/
-    admin/stok/           # Manuel stok yönetimi arayüz demosu
-    globals.css          # Öz Kırtasiye tasarım sistemi
-    layout.tsx           # Uygulama kök layout'u
-  components/
-    admin/               # Manuel stok etkileşimleri
-    cart/                # Sepet sayfası ve çekmecesi
-    catalog/             # Ürün listeleme
-    home/                # Ana sayfa bileşenleri
-    layout/              # Header, footer, marka
-    product/             # Ürün kartı ve detay
-  context/shop-context.tsx  # Yerel demo sepet/favori durumu
-  data/catalog.ts        # DEMO ürün/kategori kataloğu
-  lib/format.ts
-  types/shop.ts
-public/illustrations/      # Yerel SVG örnek ürün görselleri
+```bash
+git checkout -b feature/supabase-products
+git add .
+git commit -m "feat: integrate Supabase product and inventory management"
+git push -u origin feature/supabase-products
 ```
 
-## Değiştirmek için
-
-- Renkler ve responsive stiller: `src/app/globals.css`
-- Demo ürünler, örnek fiyatlar: `src/data/catalog.ts`
-- Ana sayfa: `src/components/home/home-storefront.tsx`
-- Menü ve arama: `src/components/layout/header.tsx`
-- Demo stok paneli: `src/components/admin/inventory-demo.tsx`
-
-## Bir sonraki geliştirme sırası
-
-1. Veritabanı modeli (ürün, kategori, varyant, stok hareketleri, sipariş, müşteri).
-2. Sunucu tarafı admin oturumu ve yetkilendirme.
-3. Gerçek ürün/medya yükleme ve manuel stok API'si.
-4. Sipariş ve stok rezervasyonu (eşzamanlı satış güvenliği).
-5. iyzico / PayTR ile güvenli ödeme; yasal sayfalar ve operasyonel süreçler.
-6. Testler, gerçek cihazlarla kontrol, yayın ortamı ve SEO ayarları.
-
-### Tasarım varlıkları hakkında
-
-Bu başlangıç paketindeki ürün görselleri özel hazırlanmış **temsili SVG çizimleridir**; gerçek ürün fotoğrafları yüklenince değiştirilecektir.
-
-### Test notu
-
-Dosyaların TS/TSX sözdizimi ve yerel modül bağlantıları kontrol edildi. Bu oluşturma ortamında npm paket kayıt sistemine ağ erişimi olmadığı için bağımlılıkların kurulumu ve `next build` komutu çalıştırılamadı. Projeyi kendi makinenizde `npm install` ardından `npm run build` ile doğrulamanız gerekir.
+Projeyi GitHub'a yazma yetkisi olmadığı için bu paketteki değişiklikler **otomatik push edilmedi**.
