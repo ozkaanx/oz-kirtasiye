@@ -1,5 +1,9 @@
-import Link from "next/link";
+import Link from 'next/link';
 
 export function Logo() {
-  return <Link href="/" className="brand" aria-label="Öz Kırtasiye ana sayfa">öz kırtasiye<span>.</span></Link>;
+  return (
+    <Link href="/" className="brand" aria-label="Öz Kırtasiye ana sayfa">
+      öz kırtasiye<span>.</span>
+    </Link>
+  );
 }

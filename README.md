@@ -67,15 +67,15 @@ Sonraki aşamada Supabase CLI üzerinden migration dosyalarını repoya çekip s
 
 ## Ekranlar
 
-| Adres | Durum |
-|---|---|
-| `/` | Onaylı ana sayfa + gerçek ürün vitrini (varsa) + demo katalog |
-| `/urunler` | Gerçek ürünler ve mevcut demo katalog |
-| `/magaza/urun/[slug]` | Gerçek ürün detay sayfası, satın alma kapalı |
-| `/admin/giris` | Supabase Auth girişi |
-| `/admin/urunler` | Yetkili ürün/kategori/fotoğraf/stok yönetimi |
-| `/admin/stok` | Yeni yönetim paneline yönlendirir |
-| `/sepet`, `/favoriler`, eski `/urun/[slug]` | Demo; gerçek sipariş oluşturmaz |
+| Adres                                       | Durum                                                         |
+| ------------------------------------------- | ------------------------------------------------------------- |
+| `/`                                         | Onaylı ana sayfa + gerçek ürün vitrini (varsa) + demo katalog |
+| `/urunler`                                  | Gerçek ürünler ve mevcut demo katalog                         |
+| `/magaza/urun/[slug]`                       | Gerçek ürün detay sayfası, satın alma kapalı                  |
+| `/admin/giris`                              | Supabase Auth girişi                                          |
+| `/admin/urunler`                            | Yetkili ürün/kategori/fotoğraf/stok yönetimi                  |
+| `/admin/stok`                               | Yeni yönetim paneline yönlendirir                             |
+| `/sepet`, `/favoriler`, eski `/urun/[slug]` | Demo; gerçek sipariş oluşturmaz                               |
 
 ## Kod kontrolü
 

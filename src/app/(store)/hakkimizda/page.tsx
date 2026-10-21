@@ -1,3 +1,26 @@
-import Link from "next/link";
-import {ArrowRight,MapPin} from "lucide-react";
-export default function Page(){return <div className="container-wide simple-page text-page"><span className="section-eyebrow">MERHABA, BİZ ÖZ KIRTASİYE</span><h1>Renkli fikirlerin adresi<span className="orange-dot">.</span></h1><p>İstanbul Bağcılar Güneşli'de kırtasiye, oyuncak ve okul ihtiyaçları için bir aradayız. Bu internet sitesi, mağazamızın dijital vitrini olarak hazırlanıyor.</p><div className="about-bubble"><MapPin size={28}/><div><strong>Öz Kırtasiye</strong><span>Bağcılar · Güneşli · İstanbul</span></div></div><Link href="/urunler" className="button button-primary">Ürünleri keşfet <ArrowRight size={18}/></Link></div>}
+import Link from 'next/link';
+import { ArrowRight, MapPin } from 'lucide-react';
+export default function Page() {
+  return (
+    <div className="container-wide simple-page text-page">
+      <span className="section-eyebrow">MERHABA, BİZ ÖZ KIRTASİYE</span>
+      <h1>
+        Renkli fikirlerin adresi<span className="orange-dot">.</span>
+      </h1>
+      <p>
+        İstanbul Bağcılar Güneşli'de kırtasiye, oyuncak ve okul ihtiyaçları için bir aradayız. Bu
+        internet sitesi, mağazamızın dijital vitrini olarak hazırlanıyor.
+      </p>
+      <div className="about-bubble">
+        <MapPin size={28} />
+        <div>
+          <strong>Öz Kırtasiye</strong>
+          <span>Bağcılar · Güneşli · İstanbul</span>
+        </div>
+      </div>
+      <Link href="/urunler" className="button button-primary">
+        Ürünleri keşfet <ArrowRight size={18} />
+      </Link>
+    </div>
+  );
+}
