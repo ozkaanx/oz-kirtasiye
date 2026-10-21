@@ -1,12 +1,31 @@
 'use client';
-import Image from 'next/image';
+
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Minus, Plus, ShoppingBag, Trash2, LockKeyhole } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Minus,
+  Package,
+  Plus,
+  ShoppingBag,
+  Trash2,
+  LockKeyhole,
+} from 'lucide-react';
 import { useShop } from '@/context/shop-context';
-import { getProductById } from '@/data/catalog';
 import { formatPrice } from '@/lib/format';
+
 export function CartPage() {
-  const { cart, setQuantity, removeFromCart, cartSubtotal } = useShop();
+  const {
+    cart,
+    products,
+    cartLoading,
+    cartError,
+    cartIsValid,
+    setQuantity,
+    removeFromCart,
+    cartSubtotal,
+    refreshCart,
+  } = useShop();
   return (
     <div className="container-wide basket-page">
       <div className="breadcrumbs">
@@ -15,7 +34,7 @@ export function CartPage() {
       <h1>
         Sepetim<span className="orange-dot">.</span>
       </h1>
-      {cart.length === 0 ? (
+      {!cart.length ? (
         <div className="empty-page">
           <ShoppingBag size={48} />
           <h2>Sepetin henüz boş</h2>
@@ -33,36 +52,54 @@ export function CartPage() {
                 Alışverişe devam et <ArrowRight size={16} />
               </Link>
             </div>
+            {cartLoading && (
+              <p className="cart-loading">Ürün fiyatları ve stok kontrol ediliyor...</p>
+            )}
+            {cartError && (
+              <p role="alert" className="admin-form-error">
+                {cartError} <button onClick={() => void refreshCart()}>Yenile</button>
+              </p>
+            )}
             {cart.map((line) => {
-              const p = getProductById(line.productId);
-              if (!p) return null;
+              const product = products[line.productId];
               return (
-                <div key={p.id} className="basket-item">
-                  <Link
-                    href={`/urun/${p.slug}`}
-                    className="basket-image"
-                    style={{ background: p.tint }}
-                  >
-                    <Image src={p.image} alt={p.name} width={110} height={110} />
-                  </Link>
+                <div key={line.productId} className="basket-item">
+                  <div className="basket-image">
+                    {product?.imageUrl ? (
+                      <img src={product.imageUrl} alt={product.name} />
+                    ) : (
+                      <Package size={55} color="#a9afb9" />
+                    )}
+                  </div>
                   <div className="basket-item-info">
-                    <Link href={`/urun/${p.slug}`}>{p.name}</Link>
-                    <small>Örnek ürün</small>
-                    <strong>{formatPrice(p.price)}</strong>
+                    {product ? (
+                      <Link href={`/magaza/urun/${product.slug}`}>{product.name}</Link>
+                    ) : (
+                      <strong>Ürün yayından kaldırılmış</strong>
+                    )}
+                    {product && <small>{product.stock_quantity} adet stokta</small>}
+                    {product && <strong>{formatPrice(product.price)}</strong>}
+                    {product && line.quantity > product.stock_quantity && (
+                      <small role="alert" className="cart-stock-warning">
+                        Stok yetersiz; miktarı azaltın.
+                      </small>
+                    )}
                   </div>
                   <div className="basket-item-actions">
                     <div className="quantity-picker">
                       <button
                         aria-label="Bir azalt"
-                        onClick={() => setQuantity(p.id, line.quantity - 1)}
+                        onClick={() => setQuantity(line.productId, line.quantity - 1)}
                       >
                         <Minus size={15} />
                       </button>
                       <b>{line.quantity}</b>
                       <button
                         aria-label="Bir artır"
-                        onClick={() => setQuantity(p.id, line.quantity + 1)}
-                        disabled={line.quantity >= 99}
+                        onClick={() => setQuantity(line.productId, line.quantity + 1)}
+                        disabled={
+                          line.quantity >= 99 || !product || line.quantity >= product.stock_quantity
+                        }
                       >
                         <Plus size={15} />
                       </button>
@@ -70,7 +107,7 @@ export function CartPage() {
                     <button
                       className="remove-line"
                       aria-label="Ürünü sil"
-                      onClick={() => removeFromCart(p.id)}
+                      onClick={() => removeFromCart(line.productId)}
                     >
                       <Trash2 size={18} />
                     </button>
@@ -86,20 +123,27 @@ export function CartPage() {
               <b>{formatPrice(cartSubtotal)}</b>
             </div>
             <div>
-              <span>Kargo ücreti</span>
-              <span>Ödeme aşamasında</span>
+              <span>Gönderim ücreti</span>
+              <span>Henüz belirlenmedi</span>
             </div>
             <div className="basket-total">
-              <span>Ara toplam</span>
+              <span>Tahmini ara toplam</span>
               <strong>{formatPrice(cartSubtotal)}</strong>
             </div>
             <p>
-              <LockKeyhole size={17} /> Şu anda demo sürümündesin. Ödeme alma ve sipariş oluşturma
-              kapalıdır.
+              <LockKeyhole size={17} /> Ödeme işlemi bu aşamada yapılmaz. Sipariş talebiniz mağazaya
+              iletilir.
             </p>
-            <button type="button" disabled className="button button-primary">
-              Ödemeye geç <ArrowRight size={17} />
-            </button>
+            <Link
+              href="/siparis"
+              className={`button button-primary${!cartIsValid ? 'checkout-disabled' : ''}`}
+              aria-disabled={!cartIsValid}
+              onClick={(event) => {
+                if (!cartIsValid) event.preventDefault();
+              }}
+            >
+              Talep formuna geç <ArrowRight size={17} />
+            </Link>
             <Link href="/urunler" className="basket-back">
               <ArrowLeft size={16} /> Alışverişe devam et
             </Link>

@@ -1,0 +1,272 @@
+'use client';
+
+import Link from 'next/link';
+import { type FormEvent, useState } from 'react';
+import { ArrowLeft, ArrowRight, CheckCircle2, LockKeyhole, Package } from 'lucide-react';
+import { useShop } from '@/context/shop-context';
+import { formatPrice } from '@/lib/format';
+import type { OrderRequestResult } from '@/lib/cart-types';
+
+type Fields = {
+  customerName: string;
+  phone: string;
+  city: string;
+  district: string;
+  address: string;
+  note: string;
+};
+const empty: Fields = {
+  customerName: '',
+  phone: '',
+  city: 'İstanbul',
+  district: '',
+  address: '',
+  note: '',
+};
+
+export function CheckoutRequestForm({ enabled }: { enabled: boolean }) {
+  const {
+    cart,
+    products,
+    cartLoading,
+    cartError,
+    cartIsValid,
+    cartSubtotal,
+    refreshCart,
+    clearCart,
+  } = useShop();
+  const [fields, setFields] = useState<Fields>(empty);
+  const [accepted, setAccepted] = useState(false);
+  const [website, setWebsite] = useState('');
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState('');
+  const [completed, setCompleted] = useState<OrderRequestResult | null>(null);
+
+  function update(field: keyof Fields, value: string) {
+    setFields((previous) => ({ ...previous, [field]: value }));
+  }
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!enabled || !accepted || pending || !cartIsValid) return;
+    setPending(true);
+    setError('');
+    try {
+      // Reload stock/prices before submitting, but the DB function is the final source of truth.
+      await refreshCart();
+      const response = await fetch('/api/order-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...fields, website, items: cart }),
+      });
+      const result: OrderRequestResult & { message?: string } = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Sipariş talebi oluşturulamadı.');
+      setCompleted(result);
+      clearCart();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Beklenmeyen hata oluştu.');
+    } finally {
+      setPending(false);
+    }
+  }
+
+  if (completed)
+    return (
+      <section className="container-wide checkout-finished">
+        <CheckCircle2 size={62} />
+        <h1>Talebin kaydedildi!</h1>
+        <p>
+          Talep numaran <strong>{completed.reference}</strong>. Mağazamız seninle iletişime geçerek
+          ürünleri, stok durumunu, teslimat ve ödeme seçeneklerini netleştirecek.
+        </p>
+        <p>
+          <strong>Henüz ödeme alınmadı ve stok ayrılmadı.</strong>
+        </p>
+        <Link className="button button-primary" href="/urunler">
+          Alışverişe devam et <ArrowRight size={17} />
+        </Link>
+      </section>
+    );
+
+  return (
+    <section className="container-wide checkout-page">
+      <div className="breadcrumbs">
+        <Link href="/sepet">
+          <ArrowLeft size={15} /> Sepete dön
+        </Link>
+      </div>
+      <span className="section-eyebrow">ÖZ KIRTASİYE</span>
+      <h1>
+        Sipariş talebi<span className="orange-dot">.</span>
+      </h1>
+      <p className="checkout-intro">
+        Bu form <strong>ödeme sayfası değildir.</strong> Sipariş talebini mağazaya iletir; stok
+        ayrılmaz ve ödeme alınmaz.
+      </p>
+      {!enabled && (
+        <div role="status" className="checkout-info-banner">
+          Sipariş talebi gönderimi henüz açılmadı. Sepetini hazırlayabilirsin; mağaza ayarları
+          tamamlanınca bu alan aktif olacak.
+        </div>
+      )}
+      <div className="checkout-grid">
+        <form className="checkout-customer" onSubmit={submit}>
+          <h2>İletişim ve teslimat bilgilerin</h2>
+          <div className="checkout-two-cols">
+            <label>
+              Ad soyad
+              <input
+                required
+                minLength={3}
+                maxLength={100}
+                autoComplete="name"
+                value={fields.customerName}
+                onChange={(e) => update('customerName', e.target.value)}
+                placeholder="Adınız Soyadınız"
+              />
+            </label>
+            <label>
+              Telefon
+              <input
+                required
+                type="tel"
+                minLength={10}
+                maxLength={20}
+                autoComplete="tel"
+                value={fields.phone}
+                onChange={(e) => update('phone', e.target.value)}
+                placeholder="05XX XXX XX XX"
+              />
+            </label>
+            <label>
+              İl
+              <input
+                required
+                minLength={2}
+                maxLength={80}
+                autoComplete="address-level1"
+                value={fields.city}
+                onChange={(e) => update('city', e.target.value)}
+              />
+            </label>
+            <label>
+              İlçe
+              <input
+                required
+                minLength={2}
+                maxLength={80}
+                autoComplete="address-level2"
+                value={fields.district}
+                onChange={(e) => update('district', e.target.value)}
+                placeholder="Bağcılar"
+              />
+            </label>
+          </div>
+          <label>
+            Açık adres
+            <textarea
+              required
+              minLength={10}
+              maxLength={500}
+              autoComplete="street-address"
+              rows={4}
+              value={fields.address}
+              onChange={(e) => update('address', e.target.value)}
+              placeholder="Mahalle, sokak, bina ve daire numarası"
+            />
+          </label>
+          <label>
+            Sipariş notu (isteğe bağlı)
+            <textarea
+              maxLength={500}
+              rows={3}
+              value={fields.note}
+              onChange={(e) => update('note', e.target.value)}
+              placeholder="Ürünlerle ilgili belirtmek istediğiniz bir şey var mı?"
+            />
+          </label>
+          <label className="checkout-honeypot" aria-hidden="true">
+            Web sitesi
+            <input
+              tabIndex={-1}
+              autoComplete="off"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+            />
+          </label>
+          <label className="checkout-consent">
+            <input
+              type="checkbox"
+              required
+              checked={accepted}
+              onChange={(e) => setAccepted(e.target.checked)}
+            />
+            <span>
+              İletişim ve teslimat bilgilerimin sipariş talebimin değerlendirilmesi için
+              kullanılacağını anladım.{' '}
+              <Link href="/gizlilik">Kişisel veri bilgilendirmesini oku.</Link>
+            </span>
+          </label>
+          {error && (
+            <div className="admin-form-error" role="alert">
+              {error}
+            </div>
+          )}
+          {cartError && (
+            <div className="admin-form-error" role="alert">
+              {cartError}
+            </div>
+          )}
+          <button
+            className="button button-primary checkout-submit"
+            type="submit"
+            disabled={pending || !enabled || !accepted || !cartIsValid}
+          >
+            {pending ? 'Talebin kaydediliyor...' : 'Sipariş talebini gönder'}{' '}
+            <ArrowRight size={17} />
+          </button>
+          <p className="checkout-legal-note">
+            <LockKeyhole size={15} /> Kart bilgisi istenmez. Ödeme ve kargo bedeli mağaza
+            görüşmesinde netleştirilir.
+          </p>
+        </form>
+        <aside className="checkout-summary">
+          <h2>Sepet özeti</h2>
+          {cartLoading ? (
+            <p>Ürünler kontrol ediliyor...</p>
+          ) : !cart.length ? (
+            <p>
+              Sepetin boş. <Link href="/urunler">Ürün seç.</Link>
+            </p>
+          ) : null}
+          {cart.map((line) => {
+            const product = products[line.productId];
+            return (
+              <div key={line.productId} className="checkout-summary-line">
+                {product?.imageUrl ? (
+                  <img src={product.imageUrl} alt="" />
+                ) : (
+                  <Package size={31} color="#9ba3ae" />
+                )}
+                <div>
+                  <strong>{product?.name || 'Ürün bulunamadı'}</strong>
+                  <small>
+                    {line.quantity} adet{' '}
+                    {product && line.quantity > product.stock_quantity ? '— stok yetersiz' : ''}
+                  </small>
+                </div>
+                <b>{product ? formatPrice(product.price * line.quantity) : '—'}</b>
+              </div>
+            );
+          })}
+          <div className="checkout-total">
+            <span>Tahmini ara toplam</span>
+            <strong>{formatPrice(cartSubtotal)}</strong>
+          </div>
+          <small>
+            Gönderim bedeli dahil değil. Fiyat ve stok, talep gönderiminde tekrar doğrulanır.
+          </small>
+        </aside>
+      </div>
+    </section>
+  );
+}
