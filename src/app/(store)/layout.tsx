@@ -1,12 +1,15 @@
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { CartDrawer } from '@/components/cart/cart-drawer';
-export default function StoreLayout({ children }: { children: React.ReactNode }) {
+import { getLiveCategories } from '@/lib/real-catalog';
+
+export default async function StoreLayout({ children }: { children: React.ReactNode }) {
+  const categories = await getLiveCategories();
   return (
     <>
-      <Header />
+      <Header categories={categories} />
       <main id="main-content">{children}</main>
-      <Footer />
+      <Footer categories={categories} />
       <CartDrawer />
     </>
   );

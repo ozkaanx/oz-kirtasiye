@@ -18,7 +18,11 @@ export function LiveProductCard({ product }: { product: LiveProduct }) {
             <Package size={72} color="#b8bbc3" />
           )}
         </Link>
-        <span className="product-badge">GERÇEK ÜRÜN</span>
+        {product.stock_quantity === 0 ? (
+          <span className="product-badge">TÜKENDİ</span>
+        ) : product.is_featured ? (
+          <span className="product-badge">ÖNE ÇIKAN</span>
+        ) : null}
       </div>
       <div className="product-information">
         <Link href={`/magaza/urun/${product.slug}`} className="product-title">
@@ -26,7 +30,7 @@ export function LiveProductCard({ product }: { product: LiveProduct }) {
         </Link>
         <div className="product-buy-row">
           <div className="product-prices">
-            {product.compare_at_price && product.compare_at_price > product.price && (
+            {product.compare_at_price !== null && product.compare_at_price > product.price && (
               <span className="old-price">{formatPrice(product.compare_at_price)}</span>
             )}
             <strong className="current-price">{formatPrice(product.price)}</strong>

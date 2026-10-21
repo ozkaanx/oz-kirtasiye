@@ -14,11 +14,11 @@ import {
   Sparkles,
   ChevronRight,
 } from 'lucide-react';
-import { categories } from '@/data/catalog';
+import type { StoreCategory } from '@/lib/category-utils';
 import { useShop } from '@/context/shop-context';
 import { Logo } from './logo';
 
-export function Header() {
+export function Header({ categories }: { categories: StoreCategory[] }) {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -118,15 +118,18 @@ export function Header() {
             <Link href="/urunler" className="nav-all" onClick={() => setMobileMenuOpen(false)}>
               <Menu size={18} /> Tüm Ürünler
             </Link>
-            {categories.map((category) => (
-              <Link
-                key={category.id}
-                href={`/urunler?category=${category.id}`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {category.label}
-              </Link>
-            ))}
+            {categories
+              .filter((category) => !category.parent_id)
+              .slice(0, 6)
+              .map((category) => (
+                <Link
+                  key={category.id}
+                  href={`/urunler?category=${encodeURIComponent(category.slug)}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {category.name}
+                </Link>
+              ))}
             <Link className="nav-about" href="/hakkimizda" onClick={() => setMobileMenuOpen(false)}>
               Bizi tanıyın <span>↗</span>
             </Link>
