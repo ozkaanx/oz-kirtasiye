@@ -22,7 +22,10 @@ export default async function Page() {
       )
       .order('created_at', { ascending: false })
       .limit(300),
-    supabase.from('categories').select('id,name,slug').order('sort_order'),
+    supabase
+      .from('categories')
+      .select('id,parent_id,name,slug,description,image_path,sort_order,is_active')
+      .order('sort_order'),
     supabase
       .from('stock_movements')
       .select('id,product_id,change_quantity,quantity_after,created_at,note,reason')

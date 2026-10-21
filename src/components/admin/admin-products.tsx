@@ -11,6 +11,7 @@ import {
   CirclePlus,
   ClipboardList,
   Edit3,
+  FolderTree,
   LogOut,
   Package,
   Plus,
@@ -19,8 +20,9 @@ import {
 } from 'lucide-react';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 import { formatPrice } from '@/lib/format';
+import { flattenCategories, slugifyTurkish, type StoreCategory } from '@/lib/category-utils';
 
-type Category = { id: string; name: string; slug: string };
+type Category = StoreCategory;
 type Product = {
   id: string;
   name: string;
@@ -73,19 +75,6 @@ const emptyForm: ProductForm = {
   is_featured: false,
 };
 
-function slugify(name: string) {
-  return name
-    .toLocaleLowerCase('tr-TR')
-    .replaceAll('ı', 'i')
-    .replaceAll('ğ', 'g')
-    .replaceAll('ü', 'u')
-    .replaceAll('ş', 's')
-    .replaceAll('ö', 'o')
-    .replaceAll('ç', 'c')
-    .normalize('NFKD')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-}
 function errorText(err: unknown) {
   return err instanceof Error ? err.message : 'İşlem başarısız oldu.';
 }
@@ -111,7 +100,6 @@ export function AdminProducts({
   const [stockDelta, setStockDelta] = useState('1');
   const [stockDirection, setStockDirection] = useState<'add' | 'remove'>('add');
   const [stockNote, setStockNote] = useState('');
-  const [categoryName, setCategoryName] = useState('');
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
@@ -204,7 +192,7 @@ export function AdminProducts({
     try {
       const payload = {
         name: form.name.trim(),
-        slug: slugify(form.slug),
+        slug: slugifyTurkish(form.slug),
         description: form.description.trim() || null,
         category_id: form.category_id || null,
         sku: form.sku.trim() || null,
@@ -294,25 +282,6 @@ export function AdminProducts({
     }
   }
 
-  async function addCategory(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!categoryName.trim() || pending) return;
-    setPending(true);
-    setError('');
-    setNotice('');
-    const { error } = await createBrowserSupabase()
-      .from('categories')
-      .insert({ name: categoryName.trim(), slug: slugify(categoryName), is_active: true });
-    setPending(false);
-    if (error) {
-      setError(error.message);
-      return;
-    }
-    setCategoryName('');
-    setNotice('Kategori eklendi.');
-    router.refresh();
-  }
-
   async function logout() {
     await createBrowserSupabase().auth.signOut();
     router.replace('/admin/giris');
@@ -328,6 +297,9 @@ export function AdminProducts({
           <div className="admin-side-heading">YÖNETİM</div>
           <Link className="admin-side-link active" href="/admin/urunler">
             <Boxes size={18} /> Ürün ve stok
+          </Link>
+          <Link className="admin-side-link" href="/admin/kategoriler">
+            <FolderTree size={18} /> Kategoriler
           </Link>
           <Link className="admin-side-link" href="/">
             <Package size={18} /> Mağazayı görüntüle
@@ -513,20 +485,14 @@ export function AdminProducts({
               </div>
             )}
           </div>
-          <form onSubmit={addCategory} className="admin-category-form">
-            <label>
-              Kategori ekle{' '}
-              <input
-                required
-                value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
-                placeholder="Örn. Defterler"
-              />
-            </label>
-            <button className="button button-outline" disabled={pending || !categoryName.trim()}>
-              Kategori kaydet
-            </button>
-          </form>
+          <div className="admin-category-shortcut">
+            <span>
+              <FolderTree size={20} /> Kategoriler ve alt kategoriler
+            </span>
+            <Link href="/admin/kategoriler" className="button button-outline">
+              Kategorileri yönet →
+            </Link>
+          </div>
         </div>
       </div>
       {editing && (
@@ -558,7 +524,7 @@ export function AdminProducts({
                     setForm((s) => ({
                       ...s,
                       name: e.target.value,
-                      slug: editing === 'new' ? slugify(e.target.value) : s.slug,
+                      slug: editing === 'new' ? slugifyTurkish(e.target.value) : s.slug,
                     }))
                   }
                 />
@@ -578,9 +544,15 @@ export function AdminProducts({
                   onChange={(e) => setForm((s) => ({ ...s, category_id: e.target.value }))}
                 >
                   <option value="">Kategori seçilmedi</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
+                  {flattenCategories(categories).map(({ category: c, depth }) => (
+                    <option
+                      key={c.id}
+                      value={c.id}
+                      disabled={!c.is_active && form.category_id !== c.id}
+                    >
+                      {'— '.repeat(depth)}
                       {c.name}
+                      {!c.is_active ? ' (Pasif)' : ''}
                     </option>
                   ))}
                 </select>

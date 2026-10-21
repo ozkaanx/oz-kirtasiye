@@ -11,20 +11,21 @@ import {
   PackageCheck,
   ShieldCheck,
   Sparkles,
-  Truck,
 } from 'lucide-react';
-import { categories, products } from '@/data/catalog';
-import { ProductCard } from '@/components/product/product-card';
-import type { CategoryId } from '@/types/shop';
-import type { LiveProduct } from '@/lib/real-catalog';
 import { LiveProductCard } from '@/components/product/live-product-card';
+import {
+  categoryArtwork,
+  categoryColor,
+  descendantIds,
+  type StoreCategory,
+} from '@/lib/category-utils';
+import type { LiveProduct } from '@/lib/real-catalog';
 
 const campaignCards = [
   {
     eyebrow: 'YENİ SEZON',
     title: 'Okula dönüş\nfırsatları',
     description: 'Yeni döneme rengârenk başla.',
-    href: '/urunler?category=canta',
     image: '/illustrations/bag.svg',
     tone: 'campaign-sky',
   },
@@ -32,7 +33,6 @@ const campaignCards = [
     eyebrow: 'OYUN ZAMANI',
     title: 'Oyuncakta\neğlenceli seçimler',
     description: 'Minik hayallere büyük oyunlar.',
-    href: '/urunler?category=oyuncak',
     image: '/illustrations/blocks.svg',
     tone: 'campaign-peach',
   },
@@ -40,21 +40,32 @@ const campaignCards = [
     eyebrow: 'İLHAM AL',
     title: 'Renklerini\nözgür bırak',
     description: 'Sanat ve hobi ürünlerini keşfet.',
-    href: '/urunler?category=boya',
     image: '/illustrations/paints.svg',
     tone: 'campaign-mint',
   },
 ];
 
-export function HomeStorefront({ liveProducts = [] }: { liveProducts?: LiveProduct[] }) {
-  const [activeCategory, setActiveCategory] = useState<CategoryId | 'all'>('all');
-  const visibleProducts = useMemo(
-    () =>
-      activeCategory === 'all'
-        ? products.slice(0, 8)
-        : products.filter((p) => p.category === activeCategory),
-    [activeCategory],
-  );
+type Props = { liveProducts: LiveProduct[]; categories: StoreCategory[] };
+
+export function HomeStorefront({ liveProducts, categories }: Props) {
+  const [activeCategory, setActiveCategory] = useState('all');
+  const topCategories = categories.filter((category) => !category.parent_id).slice(0, 6);
+  const featuredProducts = useMemo(() => {
+    const category = categories.find((item) => item.slug === activeCategory);
+    const ids = category ? descendantIds(categories, category.id) : null;
+    const list = liveProducts.filter(
+      (product) => !ids || (product.category_id && ids.has(product.category_id)),
+    );
+    return list
+      .sort(
+        (a, b) =>
+          Number(b.is_featured) - Number(a.is_featured) || b.created_at.localeCompare(a.created_at),
+      )
+      .slice(0, 8);
+  }, [activeCategory, categories, liveProducts]);
+  const newestProducts = [...liveProducts]
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, 4);
 
   return (
     <>
@@ -111,7 +122,7 @@ export function HomeStorefront({ liveProducts = [] }: { liveProducts?: LiveProdu
           <ShieldCheck size={24} />
           <span>
             <strong>Özenli alışveriş</strong>
-            <small>Kolayca keşfet, seç ve ekle</small>
+            <small>Kolayca keşfet ve seç</small>
           </span>
         </div>
         <div>
@@ -140,64 +151,47 @@ export function HomeStorefront({ liveProducts = [] }: { liveProducts?: LiveProdu
             <p>Aradığını bulmanın en renkli yolu.</p>
           </div>
           <Link href="/urunler" className="text-link">
-            Tüm kategoriler <ArrowRight size={17} />
+            Tüm ürünler <ArrowRight size={17} />
           </Link>
         </div>
-        <div className="category-grid">
-          {categories.map((c) => (
-            <Link className="category-card" key={c.id} href={`/urunler?category=${c.id}`}>
-              <div className="category-picture" style={{ backgroundColor: c.color }}>
-                <Image src={c.picture} width={180} height={160} alt="" />
-              </div>
-              <h3>{c.label}</h3>
-              <span className="category-link">
-                Keşfet <ArrowUpRight size={14} />
-              </span>
-            </Link>
-          ))}
-        </div>
+        {topCategories.length ? (
+          <div className="category-grid">
+            {topCategories.map((category, index) => (
+              <Link
+                className="category-card"
+                key={category.id}
+                href={`/urunler?category=${encodeURIComponent(category.slug)}`}
+              >
+                <div className="category-picture" style={{ backgroundColor: categoryColor(index) }}>
+                  <Image src={categoryArtwork(category)} width={180} height={160} alt="" />
+                </div>
+                <h3>{category.name}</h3>
+                <span className="category-link">
+                  Keşfet <ArrowUpRight size={14} />
+                </span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="store-empty-note">Kategorilerimiz çok yakında burada olacak.</p>
+        )}
       </section>
 
-      <section className="container-wide campaigns-grid" aria-label="Öne çıkan kategoriler">
-        {campaignCards.map((c) => (
-          <Link href={c.href} key={c.eyebrow} className={`campaign-card ${c.tone}`}>
+      <section className="container-wide campaigns-grid" aria-label="Keşif alanları">
+        {campaignCards.map((item) => (
+          <Link href="/urunler" key={item.eyebrow} className={`campaign-card ${item.tone}`}>
             <div>
-              <span className="campaign-eyebrow">{c.eyebrow}</span>
-              <h3>{c.title}</h3>
-              <p>{c.description}</p>
+              <span className="campaign-eyebrow">{item.eyebrow}</span>
+              <h3>{item.title}</h3>
+              <p>{item.description}</p>
               <span className="campaign-cta">
                 Keşfet <ArrowRight size={16} />
               </span>
             </div>
-            <Image src={c.image} width={210} height={210} alt="" />
+            <Image src={item.image} width={210} height={210} alt="" />
           </Link>
         ))}
       </section>
-
-      {liveProducts.length > 0 && (
-        <section
-          className="container-wide products-section real-products-section"
-          id="gercek-urunler"
-        >
-          <div className="section-heading">
-            <div>
-              <span className="section-eyebrow">ÖZ KIRTASİYE KOLEKSİYONU</span>
-              <h2>
-                Mağazamızdaki ürünler<span className="orange-dot">.</span>
-              </h2>
-              <p>Fiyat ve stok bilgileri mağaza veritabanından gelir.</p>
-            </div>
-          </div>
-          <p className="real-products-notice">
-            Online sipariş ve ödeme henüz etkin değil. Ürünleri şu anda inceleyebilirsin.
-          </p>
-          <div className="products-grid">
-            {liveProducts.slice(0, 8).map((p) => (
-              <LiveProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </section>
-      )}
 
       <section className="container-wide products-section" id="urunler">
         <div className="section-heading">
@@ -206,10 +200,7 @@ export function HomeStorefront({ liveProducts = [] }: { liveProducts?: LiveProdu
             <h2>
               Çok sevilen ürünler<span className="orange-dot">.</span>
             </h2>
-            <p>
-              Renkli dünyamızdan öne çıkanlar.{' '}
-              <span className="demo-note">Ürün ve fiyatlar örnektir.</span>
-            </p>
+            <p>Fiyat ve stok bilgileri mağazamızın gerçek kataloğundan gelir.</p>
           </div>
           <Link href="/urunler" className="text-link">
             Tüm ürünler <ArrowRight size={17} />
@@ -223,22 +214,26 @@ export function HomeStorefront({ liveProducts = [] }: { liveProducts?: LiveProdu
           >
             Tümü
           </button>
-          {categories.map((c) => (
+          {topCategories.map((category) => (
             <button
               type="button"
-              key={c.id}
-              className={activeCategory === c.id ? 'active' : ''}
-              onClick={() => setActiveCategory(c.id)}
+              key={category.id}
+              className={activeCategory === category.slug ? 'active' : ''}
+              onClick={() => setActiveCategory(category.slug)}
             >
-              {c.label}
+              {category.name}
             </button>
           ))}
         </div>
-        <div className="products-grid">
-          {visibleProducts.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
+        {featuredProducts.length ? (
+          <div className="products-grid">
+            {featuredProducts.map((product) => (
+              <LiveProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <p className="store-empty-note">Bu kategoride henüz yayınlanmış ürün bulunmuyor.</p>
+        )}
         <div className="centered-cta">
           <Link className="button button-outline" href="/urunler">
             Tüm ürünleri gör <ArrowRight size={18} />
@@ -265,31 +260,33 @@ export function HomeStorefront({ liveProducts = [] }: { liveProducts?: LiveProdu
           <p>
             Oyuncaklardan yaratıcı hobi setlerine, meraklı küçük zihinler için renkli seçenekler.
           </p>
-          <Link href="/urunler?category=oyuncak" className="button button-dark">
-            Oyuncaklara göz at <ArrowUpRight size={18} />
+          <Link href="/urunler" className="button button-dark">
+            Ürünlere göz at <ArrowUpRight size={18} />
           </Link>
         </div>
       </section>
 
-      <section className="container-wide products-section second-product-section">
-        <div className="section-heading">
-          <div>
-            <span className="section-eyebrow">YENİ FİKİRLERE YER AÇ</span>
-            <h2>
-              Keşfedilecek daha çok şey var<span className="orange-dot">.</span>
-            </h2>
-            <p>Okul ve ofis için renkli seçenekler.</p>
+      {newestProducts.length > 0 && (
+        <section className="container-wide products-section second-product-section">
+          <div className="section-heading">
+            <div>
+              <span className="section-eyebrow">YENİ FİKİRLERE YER AÇ</span>
+              <h2>
+                Yeni gelenler<span className="orange-dot">.</span>
+              </h2>
+              <p>Koleksiyonumuza en son eklenen gerçek ürünler.</p>
+            </div>
+            <Link href="/urunler" className="text-link">
+              Hepsini keşfet <ArrowRight size={17} />
+            </Link>
           </div>
-          <Link href="/urunler" className="text-link">
-            Hepsini keşfet <ArrowRight size={17} />
-          </Link>
-        </div>
-        <div className="products-grid">
-          {products.slice(4, 8).map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      </section>
+          <div className="products-grid">
+            {newestProducts.map((product) => (
+              <LiveProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="container-wide local-section">
         <div className="local-icon">

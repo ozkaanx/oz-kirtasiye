@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { ArrowUpRight, Heart, Instagram, MapPin, Mail, Phone, Sparkles } from 'lucide-react';
 import { Logo } from './logo';
+import type { StoreCategory } from '@/lib/category-utils';
 
-export function Footer() {
+export function Footer({ categories }: { categories: StoreCategory[] }) {
   return (
     <footer className="site-footer">
       <div className="container-wide">
@@ -20,9 +21,17 @@ export function Footer() {
           <div className="footer-col">
             <h3>Keşfet</h3>
             <Link href="/urunler">Tüm ürünler</Link>
-            <Link href="/urunler?category=defter">Defter & ajanda</Link>
-            <Link href="/urunler?category=kalem">Kalemler</Link>
-            <Link href="/urunler?category=oyuncak">Oyuncaklar</Link>
+            {categories
+              .filter((category) => !category.parent_id)
+              .slice(0, 4)
+              .map((category) => (
+                <Link
+                  key={category.id}
+                  href={`/urunler?category=${encodeURIComponent(category.slug)}`}
+                >
+                  {category.name}
+                </Link>
+              ))}
           </div>
           <div className="footer-col">
             <h3>Öz Kırtasiye</h3>
@@ -47,7 +56,7 @@ export function Footer() {
             © {new Date().getFullYear()} Öz Kırtasiye. Sevgiyle hazırlandı{' '}
             <Heart size={13} fill="#ff7897" color="#ff7897" />
           </span>
-          <span>Demo mağaza · Ürünler ve fiyatlar örnektir.</span>
+          <span>Ürünler ve stok bilgileri mağaza veritabanından gelir.</span>
         </div>
       </div>
     </footer>
