@@ -3,26 +3,15 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  BarChart3,
-  Boxes,
-  ClipboardList,
-  FileText,
-  FolderTree,
-  Menu,
-  Package,
-  Settings2,
-  Truck,
-  X,
-} from 'lucide-react';
+import { BarChart3, BadgePercent, Boxes, ClipboardList, FolderTree, Menu, Package, Settings2, Truck, X } from 'lucide-react';
 import styles from './admin-sidebar.module.css';
 
 const navigation = [
   { href: '/admin/genel-bakis', label: 'Genel bakış', icon: BarChart3 },
   { href: '/admin/urunler', label: 'Ürün ve stok', icon: Boxes },
   { href: '/admin/kategoriler', label: 'Kategoriler', icon: FolderTree },
+  { href: '/admin/kuponlar', label: 'Kuponlar', icon: BadgePercent },
   { href: '/admin/siparisler', label: 'Sipariş yönetimi', icon: ClipboardList },
-  { href: '/admin/faturalar', label: 'Faturalar', icon: FileText },
   { href: '/admin/kargo-ayarlari', label: 'Kargo ve teslimat', icon: Truck },
   { href: '/admin/ayarlar', label: 'İşletme ayarları', icon: Settings2 },
   { href: '/', label: 'Mağazayı görüntüle', icon: Package },
@@ -52,7 +41,7 @@ export function AdminSidebar() {
           onClick={() => setOpen(false)}
         />
       )}
-      <aside id="admin-side-navigation" className={`admin-sidebar${open ? 'is-open' : ''}`}>
+      <aside id="admin-side-navigation" className={`admin-sidebar${open ? ' is-open' : ''}`}>
         <div className="admin-mobile-sidebar-head">
           <strong>Yönetim menüsü</strong>
           <button type="button" aria-label="Menüyü kapat" onClick={() => setOpen(false)}>

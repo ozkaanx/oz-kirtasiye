@@ -33,6 +33,8 @@ export type CustomerOrder = {
   delivery_method: string;
   total: number;
   shipping_fee: number;
+  discount_amount: number;
+  coupon_code: string | null;
   order_request_items: CustomerOrderItem[];
   order_invoice_register?: {
     status: 'pending' | 'issued';

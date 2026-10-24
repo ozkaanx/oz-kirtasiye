@@ -1,9 +1,6 @@
 import type { Metadata } from 'next';
 import { createServerSupabase } from '@/lib/supabase/server';
-import {
-  AdminOrderRequests,
-  type AdminOrderRequest,
-} from '@/components/admin/admin-order-requests';
+import { AdminOrderRequests, type AdminOrderRequest } from '@/components/admin/admin-order-requests';
 
 export const metadata: Metadata = {
   title: 'Sipariş ve Kargo Yönetimi',
@@ -15,16 +12,14 @@ export default async function AdminOrderRequestsPage() {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase
     .from('order_requests')
-    .select(
-      `
+    .select(`
       id, reference, customer_name, phone, city, district, address, note,
-      status, payment_status, subtotal, delivery_method, shipping_fee, total, created_at, carrier, tracking_number,
+      status, payment_status, subtotal, discount_amount, coupon_code, delivery_method, shipping_fee, total, created_at, carrier, tracking_number,
       shipped_at, delivered_at, inventory_deducted_at, inventory_restored_at,
       cancellation_reason,
       order_request_items(id, product_name, variant_label, unit_price, quantity, line_total),
       order_request_status_history(id, from_status, to_status, note, created_at)
-    `,
-    )
+    `)
     .order('created_at', { ascending: false })
     .limit(100);
 
@@ -33,6 +28,7 @@ export default async function AdminOrderRequestsPage() {
     status: row.status as AdminOrderRequest['status'],
     payment_status: row.payment_status as AdminOrderRequest['payment_status'],
     subtotal: Number(row.subtotal),
+    discount_amount: Number(row.discount_amount),
     shipping_fee: Number(row.shipping_fee),
     total: Number(row.total),
     delivery_method: row.delivery_method as AdminOrderRequest['delivery_method'],
