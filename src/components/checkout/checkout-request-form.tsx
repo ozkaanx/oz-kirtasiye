@@ -2,20 +2,28 @@
 
 import Link from 'next/link';
 import { type FormEvent, useState } from 'react';
-import { ArrowLeft, ArrowRight, CheckCircle2, LockKeyhole, Package, Store, Truck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, LockKeyhole, MapPin, Package, Store, Truck } from 'lucide-react';
 import { useShop } from '@/context/shop-context';
 import { formatPrice } from '@/lib/format';
 import type { OrderRequestResult } from '@/lib/cart-types';
 import { LEGAL_DOCUMENT_VERSION } from '@/lib/store-profile';
 import { deliveryQuote, type DeliveryMethod, type DeliverySettings } from '@/lib/delivery';
 import styles from './delivery-options.module.css';
+import type { CustomerAddress, CustomerProfile } from '@/lib/customer';
 
 type Fields = { customerName: string; phone: string; city: string; district: string; address: string; note: string };
 const empty: Fields = { customerName: '', phone: '', city: 'İstanbul', district: '', address: '', note: '' };
 
-export function CheckoutRequestForm({ enabled, settings }: { enabled: boolean; settings: DeliverySettings }) {
+export function CheckoutRequestForm({ enabled, settings, savedAddresses, profile, loggedIn }: { enabled: boolean; settings: DeliverySettings; savedAddresses: CustomerAddress[]; profile: CustomerProfile | null; loggedIn: boolean }) {
   const { cart, products, cartLoading, cartError, cartIsValid, cartSubtotal, refreshCart, clearCart } = useShop();
-  const [fields, setFields] = useState<Fields>(empty);
+  const preferredAddress = savedAddresses.find((address) => address.is_default) ?? savedAddresses[0] ?? null;
+  const [fields, setFields] = useState<Fields>(() => ({
+    ...empty,
+    customerName: profile?.full_name?.trim() || preferredAddress?.recipient_name || '',
+    phone: profile?.phone?.trim() || preferredAddress?.phone || '',
+  }));
+  const [selectedAddressId, setSelectedAddressId] = useState(() => preferredAddress?.id ?? '');
+  const selectedAddress = savedAddresses.find((address) => address.id === selectedAddressId) ?? null;
   const [method, setMethod] = useState<DeliveryMethod>(settings.shipping_enabled ? 'shipping' : 'pickup');
   const [privacyRead, setPrivacyRead] = useState(false);
   const [preInformationRead, setPreInformationRead] = useState(false);
@@ -25,12 +33,32 @@ export function CheckoutRequestForm({ enabled, settings }: { enabled: boolean; s
   const [completed, setCompleted] = useState<OrderRequestResult | null>(null);
   const quote = deliveryQuote(settings, cartSubtotal, method);
   const anyMethodAvailable = settings.shipping_enabled || settings.pickup_enabled;
+  const hasSavedShippingAddress = loggedIn && method === 'shipping' && selectedAddress !== null;
+  const showContactForm = method === 'pickup' || !hasSavedShippingAddress;
+  const showShippingAddressForm = method === 'shipping' && !hasSavedShippingAddress;
 
-  function update(field: keyof Fields, value: string) { setFields((previous) => ({ ...previous, [field]: value })); }
+  function update(field: keyof Fields, value: string) {
+    setFields((previous) => ({ ...previous, [field]: value }));
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!enabled || !quote.available || !privacyRead || !preInformationRead || pending || !cartIsValid) return;
+    if (loggedIn && method === 'shipping' && savedAddresses.length > 0 && !selectedAddress) {
+      setError('Lütfen geçerli bir teslimat adresi seç.');
+      return;
+    }
+    // Saved addresses always supply the order payload directly; never rely on stale, hidden inputs.
+    const orderFields: Fields = hasSavedShippingAddress && selectedAddress
+      ? {
+          ...fields,
+          customerName: selectedAddress.recipient_name,
+          phone: selectedAddress.phone,
+          city: selectedAddress.city,
+          district: selectedAddress.district,
+          address: selectedAddress.address,
+        }
+      : fields;
     setPending(true);
     setError('');
     try {
@@ -40,7 +68,7 @@ export function CheckoutRequestForm({ enabled, settings }: { enabled: boolean; s
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...fields,
+          ...orderFields,
           website,
           items: cart,
           deliveryMethod: method,
@@ -129,15 +157,85 @@ export function CheckoutRequestForm({ enabled, settings }: { enabled: boolean; s
             {settings.pickup_instructions && <p>{settings.pickup_instructions}</p>}
             <small>Ürünler hazır olduğunda mağazayla görüşerek teslim alabilirsin.</small>
           </aside>}
-          <div className="checkout-two-cols">
-            <label>Ad soyad<input required minLength={3} maxLength={100} autoComplete="name" value={fields.customerName} onChange={(e) => update('customerName', e.target.value)} placeholder="Adınız Soyadınız" /></label>
-            <label>Telefon<input required type="tel" minLength={10} maxLength={20} autoComplete="tel" value={fields.phone} onChange={(e) => update('phone', e.target.value)} placeholder="05XX XXX XX XX" /></label>
-            {method === 'shipping' && <>
-              <label>İl<input required minLength={2} maxLength={80} autoComplete="address-level1" value={fields.city} onChange={(e) => update('city', e.target.value)} /></label>
-              <label>İlçe<input required minLength={2} maxLength={80} autoComplete="address-level2" value={fields.district} onChange={(e) => update('district', e.target.value)} placeholder="Bağcılar" /></label>
-            </>}
-          </div>
-          {method === 'shipping' && <label>Açık adres<textarea required minLength={10} maxLength={500} autoComplete="street-address" rows={4} value={fields.address} onChange={(e) => update('address', e.target.value)} placeholder="Mahalle, sokak, bina ve daire numarası" /></label>}
+          {loggedIn && method === 'shipping' && (
+            <section className={styles.savedAddressBox} aria-label="Kayıtlı teslimat adresleri">
+              <div className={styles.savedAddressHeading}>
+                <strong>Teslimat adresim</strong>
+                <Link href="/hesabim">Adreslerimi yönet</Link>
+              </div>
+              {savedAddresses.length > 0 ? (
+                <>
+                  <label className={styles.savedAddressLabel}>
+                    Kayıtlı adres seç
+                    <select
+                      className={styles.savedAddressSelect}
+                      value={selectedAddressId}
+                      onChange={(event) => setSelectedAddressId(event.target.value)}
+                    >
+                      {savedAddresses.map((address) => (
+                        <option key={address.id} value={address.id}>
+                          {address.label} — {address.district} / {address.city}
+                          {address.is_default ? ' (Varsayılan)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {selectedAddress && (
+                    <div className={styles.addressSummary} aria-live="polite">
+                      <MapPin size={19} aria-hidden="true" className={styles.addressSummaryIcon} />
+                      <div className={styles.addressSummaryDetails}>
+                        <strong>{selectedAddress.label}</strong>
+                        <span>{selectedAddress.recipient_name} · {selectedAddress.phone}</span>
+                        <span>{selectedAddress.address}, {selectedAddress.district} / {selectedAddress.city}</span>
+                      </div>
+                      <CheckCircle2 size={19} aria-label="Seçili adres" className={styles.addressSummaryCheck} />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className={styles.noSavedAddress}>
+                  Kayıtlı adresin bulunmuyor. Teslimat bilgilerini aşağıya doldurabilirsin.
+                  Sonraki alışverişlerinde kullanmak için <Link href="/hesabim">adres defterine ekleyebilirsin.</Link>
+                </p>
+              )}
+            </section>
+          )}
+          {!loggedIn && (
+            <p className={styles.guestInfo}>
+              Üye olmadan devam edebilirsin. <Link href="/giris?next=%2Fsiparis">Giriş yaparsan</Link> kayıtlı adreslerini seçebilirsin.
+            </p>
+          )}
+          {method === 'pickup' && <p className={styles.pickupContactHint}>Siparişi mağazadan teslim alacak kişinin adı ve telefonunu yaz.</p>}
+          {showContactForm && (
+            <div className="checkout-two-cols">
+              <label>
+                Ad soyad
+                <input required minLength={3} maxLength={100} autoComplete="name" value={fields.customerName} onChange={(event) => update('customerName', event.target.value)} placeholder="Adınız Soyadınız" />
+              </label>
+              <label>
+                Telefon
+                <input required type="tel" minLength={10} maxLength={20} autoComplete="tel" value={fields.phone} onChange={(event) => update('phone', event.target.value)} placeholder="05XX XXX XX XX" />
+              </label>
+              {showShippingAddressForm && (
+                <>
+                  <label>
+                    İl
+                    <input required minLength={2} maxLength={80} autoComplete="address-level1" value={fields.city} onChange={(event) => update('city', event.target.value)} />
+                  </label>
+                  <label>
+                    İlçe
+                    <input required minLength={2} maxLength={80} autoComplete="address-level2" value={fields.district} onChange={(event) => update('district', event.target.value)} placeholder="Bağcılar" />
+                  </label>
+                </>
+              )}
+            </div>
+          )}
+          {showShippingAddressForm && (
+            <label>
+              Açık adres
+              <textarea required minLength={10} maxLength={500} autoComplete="street-address" rows={4} value={fields.address} onChange={(event) => update('address', event.target.value)} placeholder="Mahalle, sokak, bina ve daire numarası" />
+            </label>
+          )}
           <label>Sipariş notu (isteğe bağlı)<textarea maxLength={500} rows={3} value={fields.note} onChange={(e) => update('note', e.target.value)} placeholder="Ürünlerle ilgili belirtmek istediğiniz bir şey var mı?" /></label>
           <label className="checkout-honeypot" aria-hidden="true">Web sitesi<input tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} /></label>
           <label className="checkout-consent"><input type="checkbox" required checked={privacyRead} onChange={(e) => setPrivacyRead(e.target.checked)} /><span><Link href="/gizlilik" target="_blank" rel="noopener noreferrer">KVKK aydınlatma metnini</Link> okudum. Sipariş talebim için iletişim ve teslimat bilgilerimin işleneceğini anladım. Bu işaretleme reklam izni değildir.</span></label>
