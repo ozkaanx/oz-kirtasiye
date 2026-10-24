@@ -39,7 +39,7 @@ export function AdminSidebar() {
           onClick={() => setOpen(false)}
         />
       )}
-      <aside id="admin-side-navigation" className={`admin-sidebar${open ? ' is-open' : ''}`}>
+      <aside id="admin-side-navigation" className={`admin-sidebar${open ? 'is-open' : ''}`}>
         <div className="admin-mobile-sidebar-head">
           <strong>Yönetim menüsü</strong>
           <button type="button" aria-label="Menüyü kapat" onClick={() => setOpen(false)}>
