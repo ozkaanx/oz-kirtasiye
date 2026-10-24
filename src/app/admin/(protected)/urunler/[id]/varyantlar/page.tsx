@@ -8,6 +8,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 export const dynamic = 'force-dynamic';
+
+function errorMessage(value: unknown): string | null {
+  if (!value || typeof value !== 'object' || !('message' in value)) return null;
+  return typeof value.message === 'string' ? value.message : null;
+}
+
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createServerSupabase();
@@ -49,7 +55,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       product={product}
       variants={variantsWithImages}
       movements={movements ?? []}
-      loadError={productError?.message ?? variantError?.message ?? null}
+      loadError={errorMessage(productError) ?? errorMessage(variantError)}
     />
   );
 }

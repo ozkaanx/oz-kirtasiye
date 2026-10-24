@@ -67,7 +67,7 @@ export function CartPage({ settings }: { settings: DeliverySettings }) {
             <div><span>Kargo ile gönderim</span><span>{shipping.available && shipping.fee !== null ? formatPrice(shipping.fee) : "Henüz aktif değil"}</span></div>
             {pickup.available && <div><span>Mağazadan teslim</span><b>Ücretsiz</b></div>}
             <CouponBox {...promo} />
-            {promo.quote && <div><span>Kupon indirimi ({promo.quote.code})</span><b>−{formatPrice(promo.quote.discountAmount)}</b></div>}
+            {promo.quote && promo.quote.discountAmount > 0 && <div><span>{promo.quote.code ? `Kupon (${promo.quote.code})` : `Kampanya (${promo.quote.campaignName})`}</span><b>−{formatPrice(promo.quote.discountAmount)}</b></div>}
             <div className="basket-total"><span>{promo.quote ? 'İndirimli ürünler' : 'Ürünler toplamı'}</span><strong>{formatPrice(promo.quote ? promo.quote.subtotal - promo.quote.discountAmount : cartSubtotal)}</strong></div>
             {shipping.available && shipping.total !== null && <p className="delivery-cart-footnote">Kargo ile toplam: <strong>{formatPrice(promo.quote ? promo.quote.total : shipping.total)}</strong>{!promo.quote && shipping.freeShippingRemaining !== null && ` · Ücretsiz kargoya ${formatPrice(shipping.freeShippingRemaining)} kaldı.`}</p>}
             {pickup.available && <p className="delivery-cart-footnote">Mağazadan teslim seçilirse ek kargo bedeli olmaz.</p>}

@@ -13,3 +13,6 @@
 .clear{border:0;color:#5e6671;background:transparent;cursor:pointer;display:inline-flex;gap:3px;align-items:center;font-size:11px}
 .hint{display:block;margin-top:11px;color:#77808d;font-size:11px;line-height:1.6}
 @media(max-width:390px){.apply{flex:1 0 100%;}.row input{flex:1 0 100%;}}
+
+.automatic{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:9px 0;padding:10px 11px;background:#edf9f1;border:1px solid #bfe8ce;border-radius:9px;color:#20683a;font-size:12px;line-height:1.5}
+.automatic svg{flex:none}

@@ -49,6 +49,7 @@ export type AdminOrderRequest = {
   shipping_fee: number;
   discount_amount: number;
   coupon_code: string | null;
+  automatic_campaign_name: string | null;
   total: number;
   created_at: string;
   carrier: string | null;
@@ -107,7 +108,7 @@ export function AdminOrderRequests({
     return requests.filter((order) => {
       if (filter !== 'all' && order.status !== filter) return false;
       if (deliveryFilter !== 'all' && order.delivery_method !== deliveryFilter) return false;
-      if (text && !`${order.reference} ${order.customer_name} ${order.phone} ${order.city} ${order.district} ${order.coupon_code??''}`
+      if (text && !`${order.reference} ${order.customer_name} ${order.phone} ${order.city} ${order.district} ${order.coupon_code??''} ${order.automatic_campaign_name??''}`
         .toLocaleLowerCase('tr-TR').includes(text)) return false;
       const orderDay = new Intl.DateTimeFormat('sv-SE', {
         timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -248,7 +249,7 @@ export function AdminOrderRequests({
                   <div className="order-request-info">
                     <div><span>Müşteri</span><strong>{order.customer_name}</strong><a href={`tel:${order.phone}`}>{order.phone}</a></div>
                     <div><span>{order.delivery_method === 'pickup' ? 'Mağazadan teslim' : 'Teslimat adresi'}</span><strong>{order.delivery_method === 'pickup' ? 'Mağaza teslim noktası' : `${order.city} / ${order.district}`}</strong><p>{order.address}</p></div>
-                    <div><span>Ürün toplamı</span><strong>{formatPrice(order.subtotal)}</strong>{order.delivery_method !== 'legacy' && <>{order.discount_amount > 0 && <small>Kupon ({order.coupon_code}): −{formatPrice(order.discount_amount)}</small>}<small>Kargo: {formatPrice(order.shipping_fee)}</small><strong>Genel toplam: {formatPrice(order.total)}</strong></>}<small>Ödeme kaydı: Tahsil edilmedi</small>{order.delivery_method === 'legacy' && <small>Önceki sipariş · Kargo tutarı kaydedilmemiş</small>}</div>
+                    <div><span>Ürün toplamı</span><strong>{formatPrice(order.subtotal)}</strong>{order.delivery_method !== 'legacy' && <>{order.discount_amount > 0 && <small>{order.coupon_code ? `Kupon (${order.coupon_code})` : `Kampanya (${order.automatic_campaign_name})`}: −{formatPrice(order.discount_amount)}</small>}<small>Kargo: {formatPrice(order.shipping_fee)}</small><strong>Genel toplam: {formatPrice(order.total)}</strong></>}<small>Ödeme kaydı: Tahsil edilmedi</small>{order.delivery_method === 'legacy' && <small>Önceki sipariş · Kargo tutarı kaydedilmemiş</small>}</div>
                   </div>
                   <div className="order-request-items">
                     {order.order_request_items.map((item) => <div key={item.id}><span>{item.product_name}{item.variant_label ? ` — ${item.variant_label}` : ""} × {item.quantity}</span><b>{formatPrice(item.line_total)}</b></div>)}

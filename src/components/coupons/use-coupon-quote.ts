@@ -15,7 +15,7 @@ export function useCouponQuote(items: CartLine[], deliveryMethod: DeliveryMethod
   const key = `${couponCode}:${deliveryMethod}:${itemsKey}`;
 
   useEffect(() => {
-    if (!couponCode) return;
+    if (!items.length) return;
     const controller = new AbortController();
     // Quotes are informational. Checkout revalidates price, limits, coupon and shipping atomically.
     const timer = setTimeout(() => { void (async () => {
@@ -35,9 +35,9 @@ export function useCouponQuote(items: CartLine[], deliveryMethod: DeliveryMethod
       }
     })(); }, 300);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [couponCode, deliveryMethod, itemsKey, key]);
+  }, [items.length, couponCode, deliveryMethod, itemsKey, key]);
 
-  if (!couponCode) return {quote:null,error:'',loading:false};
+  if (!items.length) return {quote:null,error:'',loading:false};
   if (!result || result.key!==key) return {quote:null,error:'',loading:true};
   return {quote:result.quote,error:result.error,loading:false};
 }

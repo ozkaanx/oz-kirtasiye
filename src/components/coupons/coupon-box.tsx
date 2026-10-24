@@ -28,10 +28,11 @@ export function CouponBox({ quote, error, loading }: {
           placeholder="Örn. OZKIRTASIYE10" />
         <button className={styles.apply} disabled={loading} type="submit">{loading ? 'Kontrol...' : 'Uygula'}</button>
       </form>
+      {quote?.campaignName && quote.discountAmount > 0 && <p className={styles.automatic} role="status"><CheckCircle2 size={15}/> Otomatik kampanya: <strong>{quote.campaignName}</strong> · −{formatPrice(quote.discountAmount)}</p>}
       {couponCode && <div className={styles.status}>
         {loading ? <small>Kupon sunucuda doğrulanıyor...</small>
           : error ? <small className={styles.error} role="alert">{error}</small>
-          : quote ? <small className={styles.ok}><CheckCircle2 size={14}/> {quote.code}: {formatPrice(quote.discountAmount)} indirim</small>
+          : quote ? (quote.code ? <small className={styles.ok}><CheckCircle2 size={14}/> {quote.code}: {formatPrice(quote.discountAmount)} indirim</small> : <small className={styles.ok}>Otomatik kampanya daha avantajlı; kupon kullanılmadı.</small>)
           : null}
         <button type="button" className={styles.clear} onClick={() => {setCouponCode('');setDraft('');}} aria-label="Kuponu kaldır">
           <X size={15}/> Kaldır
