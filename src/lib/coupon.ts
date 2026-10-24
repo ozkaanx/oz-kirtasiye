@@ -2,7 +2,8 @@ import type { CartLine } from '@/lib/cart-types';
 import type { DeliveryMethod } from '@/lib/delivery';
 
 export type CouponQuote = {
-  code: string;
+  code: string | null;
+  campaignName: string | null;
   subtotal: number;
   discountAmount: number;
   shippingFee: number;

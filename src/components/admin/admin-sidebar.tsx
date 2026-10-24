@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BadgePercent, Boxes, ClipboardList, FolderTree, Menu, Package, Settings2, Truck, X } from 'lucide-react';
+import { BarChart3, BadgePercent, Megaphone, ReceiptText, Boxes, ClipboardList, FolderTree, Menu, Package, Settings2, Truck, X } from 'lucide-react';
 import styles from './admin-sidebar.module.css';
 
 const navigation = [
@@ -11,7 +11,9 @@ const navigation = [
   { href: '/admin/urunler', label: 'Ürün ve stok', icon: Boxes },
   { href: '/admin/kategoriler', label: 'Kategoriler', icon: FolderTree },
   { href: '/admin/kuponlar', label: 'Kuponlar', icon: BadgePercent },
+  { href: '/admin/kampanyalar', label: 'Otomatik kampanyalar', icon: Megaphone },
   { href: '/admin/siparisler', label: 'Sipariş yönetimi', icon: ClipboardList },
+  { href: '/admin/faturalar', label: 'Faturalar', icon: ReceiptText },
   { href: '/admin/kargo-ayarlari', label: 'Kargo ve teslimat', icon: Truck },
   { href: '/admin/ayarlar', label: 'İşletme ayarları', icon: Settings2 },
   { href: '/', label: 'Mağazayı görüntüle', icon: Package },

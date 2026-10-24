@@ -121,7 +121,7 @@ export function CheckoutRequestForm({ enabled, settings, savedAddresses, profile
       <CheckCircle2 size={62} />
       <h1>Talebin kaydedildi!</h1>
       <p>Talep numaran <strong>{completed.reference}</strong>. Mağazamız seninle iletişime geçerek hazırlık ve ödeme seçeneklerini netleştirecek.</p>
-      <p><strong>{completed.deliveryMethod === 'pickup' ? 'Mağazadan teslim' : 'Kargo teslimatı'}</strong> · Ürünler: {formatPrice(completed.subtotal)} {completed.discountAmount > 0 && <>· Kupon indirimi: −{formatPrice(completed.discountAmount)} </>}· Kargo: {formatPrice(completed.shippingFee)} · <strong>Toplam: {formatPrice(completed.total)}</strong></p>
+      <p><strong>{completed.deliveryMethod === 'pickup' ? 'Mağazadan teslim' : 'Kargo teslimatı'}</strong> · Ürünler: {formatPrice(completed.subtotal)} {completed.discountAmount > 0 && <>· {completed.couponCode ? 'Kupon' : 'Kampanya'} indirimi: −{formatPrice(completed.discountAmount)} </>}· Kargo: {formatPrice(completed.shippingFee)} · <strong>Toplam: {formatPrice(completed.total)}</strong></p>
       <p><strong>Henüz ödeme alınmadı ve stok ayrılmadı.</strong></p>
       <Link className="button button-primary" href="/urunler">Alışverişe devam et <ArrowRight size={17} /></Link>
     </section>
@@ -295,7 +295,7 @@ export function CheckoutRequestForm({ enabled, settings, savedAddresses, profile
           })}
           <CouponBox {...promo} />
           <div className="delivery-summary-row"><span>Ürünler</span><b>{formatPrice(cartSubtotal)}</b></div>
-          {promo.quote && <div className="delivery-summary-row"><span>Kupon indirimi ({promo.quote.code})</span><b>−{formatPrice(promo.quote.discountAmount)}</b></div>}
+          {promo.quote && promo.quote.discountAmount > 0 && <div className="delivery-summary-row"><span>{promo.quote.code ? `Kupon indirimi (${promo.quote.code})` : `Kampanya indirimi (${promo.quote.campaignName})`}</span><b>−{formatPrice(promo.quote.discountAmount)}</b></div>}
           <div className="delivery-summary-row"><span>{method === 'pickup' ? 'Mağazadan teslim' : 'Kargo bedeli'}</span><b>{quote.fee === null ? 'Mevcut değil' : formatPrice(promo.quote ? promo.quote.shippingFee : quote.fee)}</b></div>
           <div className="checkout-total"><span>Tahmini toplam</span><strong>{quote.total === null ? '—' : formatPrice(promo.quote ? promo.quote.total : quote.total)}</strong></div>
           {method === 'shipping' && !promo.quote && quote.freeShippingRemaining !== null && <small>Ücretsiz kargoya {formatPrice(quote.freeShippingRemaining)} kaldı.</small>}

@@ -179,7 +179,7 @@ export function CustomerAccount({userId,email,initialProfile,initialAddresses,in
             <div className={styles.orderList}>{initialOrders.map(order=><article className={styles.orderCard} key={order.id}>
               <div className={styles.orderHeading}><div><strong>#{order.reference}</strong><small>{new Date(order.created_at).toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'})}</small></div><span className={styles.status}>{statusLabels[order.status]??order.status}</span></div>
               <div className={styles.orderItems}>{order.order_request_items?.map((line,index)=><div key={`${order.id}-${index}`}><span>{line.product_name}{line.variant_label ? ` — ${line.variant_label}` : ""} × {line.quantity}</span><b>{formatPrice(Number(line.line_total))}</b></div>)}</div>
-              {Number(order.discount_amount)>0 && <p style={{fontSize:12,color:'#217447',marginTop:10}}>Kupon indirimi ({order.coupon_code}): −{formatPrice(Number(order.discount_amount))}</p>}
+              {Number(order.discount_amount)>0 && <p style={{fontSize:12,color:'#217447',marginTop:10}}>{order.coupon_code ? `Kupon (${order.coupon_code})` : `Kampanya (${order.automatic_campaign_name})`}: −{formatPrice(Number(order.discount_amount))}</p>}
               <div className={styles.orderFooter}><small>{order.delivery_method==='pickup'?'Mağazadan teslim':'Kargo'} · {order.payment_status==='not_collected'?'Ödeme alınmadı':'Ödeme durumunu mağazadan doğrulayın'}</small><strong>{formatPrice(Number(order.total))}</strong></div>
               <p style={{fontSize:12,color:'#68727e',marginTop:9}}>
                 {order.order_invoice_register?.status==='issued'

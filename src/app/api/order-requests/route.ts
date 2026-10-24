@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     const sessionClient = await createServerSupabase();
     const { data: authData } = await sessionClient.auth.getUser();
     const supabase = createOrderServerClient();
-    const { data, error } = await supabase.rpc('submit_order_request_with_billing_and_coupon', {
+    const { data, error } = await supabase.rpc('submit_order_request_with_auto_discounts', {
       p_customer_name: body.customerName,
       p_phone: body.phone,
       p_city: body.city,
@@ -72,9 +72,9 @@ export async function POST(request: NextRequest) {
       const knownValidationError = error.code === '22023';
       return NextResponse.json({ message: knownValidationError ? error.message : 'Sipariş talebi oluşturulamadı. Lütfen tekrar deneyin.' }, { status: 400 });
     }
-    const result = (data as {id: string;reference: string;subtotal: number; shipping_fee: number; total: number; delivery_method: 'pickup' | 'shipping'; discount_amount: number; code: string | null}[] | null)?.[0];
+    const result = (data as {id: string;reference: string;subtotal: number; shipping_fee: number; total: number; delivery_method: 'pickup' | 'shipping'; discount_amount: number; code: string | null; campaign_name: string | null}[] | null)?.[0];
     if (!result) return NextResponse.json({ message: 'Talep kaydedilemedi.' }, { status: 503 });
-    return NextResponse.json({ id: result.id, reference: result.reference, subtotal: Number(result.subtotal), discountAmount: Number(result.discount_amount), couponCode: result.code, shippingFee: Number(result.shipping_fee), total: Number(result.total), deliveryMethod: result.delivery_method }, { status: 201 });
+    return NextResponse.json({ id: result.id, reference: result.reference, subtotal: Number(result.subtotal), discountAmount: Number(result.discount_amount), couponCode: result.code, campaignName: result.campaign_name, shippingFee: Number(result.shipping_fee), total: Number(result.total), deliveryMethod: result.delivery_method }, { status: 201 });
   } catch {
     return NextResponse.json({ message: 'İstek okunamadı.' }, { status: 400 });
   }

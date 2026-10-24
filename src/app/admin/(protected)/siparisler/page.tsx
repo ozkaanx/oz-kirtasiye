@@ -14,7 +14,7 @@ export default async function AdminOrderRequestsPage() {
     .from('order_requests')
     .select(`
       id, reference, customer_name, phone, city, district, address, note,
-      status, payment_status, subtotal, discount_amount, coupon_code, delivery_method, shipping_fee, total, created_at, carrier, tracking_number,
+      status, payment_status, subtotal, discount_amount, coupon_code, automatic_campaign_name, delivery_method, shipping_fee, total, created_at, carrier, tracking_number,
       shipped_at, delivered_at, inventory_deducted_at, inventory_restored_at,
       cancellation_reason,
       order_request_items(id, product_name, variant_label, unit_price, quantity, line_total),
