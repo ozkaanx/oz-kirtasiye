@@ -302,7 +302,7 @@ export function AdminProducts({
             <FolderTree size={18} /> Kategoriler
           </Link>
           <Link className="admin-side-link" href="/admin/siparisler">
-            <ClipboardList size={18} /> Sipariş talepleri
+            <ClipboardList size={18} /> Sipariş yönetimi
           </Link>
           <Link className="admin-side-link" href="/">
             <Package size={18} /> Mağazayı görüntüle

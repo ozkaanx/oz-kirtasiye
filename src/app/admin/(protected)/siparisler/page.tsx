@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
 import { createServerSupabase } from '@/lib/supabase/server';
-import { AdminOrderRequests } from '@/components/admin/admin-order-requests';
+import {
+  AdminOrderRequests,
+  type AdminOrderRequest,
+} from '@/components/admin/admin-order-requests';
 
 export const metadata: Metadata = {
-  title: 'Sipariş Talepleri',
+  title: 'Sipariş ve Kargo Yönetimi',
   robots: { index: false, follow: false },
 };
 export const dynamic = 'force-dynamic';
@@ -13,22 +16,32 @@ export default async function AdminOrderRequestsPage() {
   const { data, error } = await supabase
     .from('order_requests')
     .select(
-      'id,reference,customer_name,phone,city,district,address,note,status,payment_status,subtotal,created_at,order_request_items(id,product_name,unit_price,quantity,line_total)',
+      `
+      id, reference, customer_name, phone, city, district, address, note,
+      status, payment_status, subtotal, created_at, carrier, tracking_number,
+      shipped_at, delivered_at, inventory_deducted_at, inventory_restored_at,
+      cancellation_reason,
+      order_request_items(id, product_name, unit_price, quantity, line_total),
+      order_request_status_history(id, from_status, to_status, note, created_at)
+    `,
     )
     .order('created_at', { ascending: false })
     .limit(100);
-  return (
-    <AdminOrderRequests
-      requests={(data ?? []).map((row) => ({
-        ...row,
-        subtotal: Number(row.subtotal),
-        order_request_items: (row.order_request_items ?? []).map((item) => ({
-          ...item,
-          unit_price: Number(item.unit_price),
-          line_total: Number(item.line_total),
-        })),
-      }))}
-      loadError={error?.message ?? null}
-    />
-  );
+
+  const requests: AdminOrderRequest[] = (data ?? []).map((row) => ({
+    ...row,
+    status: row.status as AdminOrderRequest['status'],
+    payment_status: row.payment_status as AdminOrderRequest['payment_status'],
+    subtotal: Number(row.subtotal),
+    order_request_items: (row.order_request_items ?? []).map((item) => ({
+      ...item,
+      unit_price: Number(item.unit_price),
+      line_total: Number(item.line_total),
+    })),
+    order_request_status_history: (row.order_request_status_history ?? [])
+      .slice()
+      .sort((a, b) => a.created_at.localeCompare(b.created_at)),
+  }));
+
+  return <AdminOrderRequests requests={requests} loadError={error?.message ?? null} />;
 }
