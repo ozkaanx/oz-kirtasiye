@@ -19,6 +19,7 @@ export type CustomerAddress = {
 
 export type CustomerOrderItem = {
   product_name: string;
+  variant_label?: string | null;
   quantity: number;
   line_total: number;
 };

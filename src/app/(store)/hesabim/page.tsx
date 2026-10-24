@@ -29,7 +29,7 @@ export default async function AccountPage() {
     supabase
       .from('order_requests')
       .select(
-        'id,reference,created_at,status,payment_status,delivery_method,total,shipping_fee,order_request_items(product_name,quantity,line_total),order_invoice_register(status,document_type,invoice_number,issue_date)',
+        'id,reference,created_at,status,payment_status,delivery_method,total,shipping_fee,order_request_items(product_name,variant_label,quantity,line_total),order_invoice_register(status,document_type,invoice_number,issue_date)',
       )
       .eq('customer_user_id', user.id)
       .order('created_at', { ascending: false })

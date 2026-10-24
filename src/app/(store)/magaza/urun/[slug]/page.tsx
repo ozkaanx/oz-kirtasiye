@@ -5,6 +5,7 @@ import { ArrowLeft, Package } from 'lucide-react';
 import { getLiveProductBySlug } from '@/lib/real-catalog';
 import { formatPrice } from '@/lib/format';
 import { LivePurchaseButton } from '@/components/product/live-purchase-button';
+import { LiveVariantPicker } from '@/components/product/live-variant-picker';
 import { LiveFavoriteButton } from '@/components/product/live-favorite-button';
 
 export const dynamic = 'force-dynamic';
@@ -31,35 +32,52 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
           <ArrowLeft size={15} /> Ürünlere geri dön
         </Link>
       </div>
-      <section className="real-detail-card">
-        <div className="real-detail-photo">
-          {product.imageUrl ? (
-            <img src={product.imageUrl} alt={product.name} />
-          ) : (
-            <Package size={100} color="#bcc0c9" />
-          )}
-        </div>
-        <div className="real-detail-info">
-          <span className="section-eyebrow">ÖZ KIRTASİYE</span>
-          <h1>
-            {product.name}
-            <span className="orange-dot">.</span>
-          </h1>
-          <div className="real-detail-price">{formatPrice(product.price)}</div>
-          <p>{product.description ?? 'Ürün detayları yakında eklenecek.'}</p>
-          <p>
-            <strong>
-              {product.stock_quantity > 0 ? `${product.stock_quantity} adet stokta` : 'Stokta yok'}
-            </strong>
-          </p>
+      {product.has_variants ? (
+        <section className="variant-detail-page">
+          <LiveVariantPicker
+            productId={product.id}
+            name={product.name}
+            description={product.description}
+            variants={product.variants}
+            imageUrl={product.imageUrl}
+            galleryUrls={product.galleryUrls}
+          />
           <p className="real-no-checkout">
-            Online ödeme henüz aktif değil. Ürünü sepete ekleyerek mağazaya sipariş talebi
-            gönderebilirsiniz.
+            Online ödeme henüz aktif değil; sipariş talebi oluşturabilirsiniz.
           </p>
-          <LivePurchaseButton productId={product.id} stock={product.stock_quantity} detail />
-          <LiveFavoriteButton productId={product.id} />
-        </div>
-      </section>
+        </section>
+      ) : (
+        <section className="real-detail-card">
+          <div className="real-detail-photo">
+            {product.imageUrl ? (
+              <img src={product.imageUrl} alt={product.name} />
+            ) : (
+              <Package size={100} color="#bcc0c9" />
+            )}
+          </div>
+          <div className="real-detail-info">
+            <span className="section-eyebrow">ÖZ KIRTASİYE</span>
+            <h1>
+              {product.name}
+              <span className="orange-dot">.</span>
+            </h1>
+            <div className="real-detail-price">{formatPrice(product.price)}</div>
+            <p>{product.description ?? 'Ürün detayları yakında eklenecek.'}</p>
+            <p>
+              <strong>
+                {product.stock_quantity > 0
+                  ? `${product.stock_quantity} adet stokta`
+                  : 'Stokta yok'}
+              </strong>
+            </p>
+            <p className="real-no-checkout">
+              Online ödeme henüz aktif değil. Sepete ekleyip sipariş talebi gönderebilirsiniz.
+            </p>
+            <LivePurchaseButton productId={product.id} stock={product.stock_quantity} detail />
+            <LiveFavoriteButton productId={product.id} />
+          </div>
+        </section>
+      )}
     </main>
   );
 }

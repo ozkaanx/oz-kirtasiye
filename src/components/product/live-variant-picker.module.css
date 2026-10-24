@@ -1,0 +1,161 @@
+.wrapper {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+  width: 100%;
+}
+.gallery {
+  min-width: 0;
+}
+.hero {
+  width: 100%;
+  min-height: 340px;
+  aspect-ratio: 1/1;
+  background: #f5f6f7;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.hero img {
+  width: 94%;
+  height: 94%;
+  object-fit: contain;
+}
+.thumbs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin-top: 12px;
+}
+.thumbs button {
+  border: 1px solid #e2e6eb;
+  border-radius: 9px;
+  background: #fff;
+  padding: 4px;
+  width: 70px;
+  height: 70px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.thumbs button[aria-pressed='true'] {
+  border-color: #ff6745;
+}
+.thumbs img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: 0;
+}
+.group {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.group legend {
+  font-size: 13px;
+  color: #555c66;
+  margin-bottom: 12px;
+}
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  background: #fff;
+  border: 1px solid #dce1e7;
+  border-radius: 10px;
+  min-height: 40px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.chip[aria-pressed='true'] {
+  border-color: #fc6947;
+  background: #fff0ec;
+  color: #ad3e23;
+  font-weight: 750;
+}
+.chip:hover {
+  border-color: #fa977c;
+}
+.price {
+  font-size: 26px;
+  font-weight: 850;
+  color: #181c23;
+}
+.stock {
+  font-size: 13px;
+  color: #59616f;
+}
+.warning {
+  font-size: 14px;
+  color: #a53c22;
+}
+.buy {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.buy :global(.button) {
+  min-height: 44px;
+}
+.quantity {
+  display: flex;
+  align-items: center;
+  border: 1px solid #dce1e7;
+  border-radius: 9px;
+  min-height: 44px;
+  overflow: hidden;
+}
+.quantity button {
+  border: 0;
+  background: #fff;
+  padding: 11px;
+  cursor: pointer;
+}
+.quantity button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.quantity span {
+  min-width: 28px;
+  text-align: center;
+  font-weight: 700;
+}
+@media (max-width: 640px) {
+  .hero {
+    min-height: 230px;
+  }
+  .buy :global(.button) {
+    flex: 1;
+  }
+}
+
+.heading {
+  font-weight: 850;
+  font-size: clamp(24px, 3vw, 40px);
+  letter-spacing: -1px;
+  margin: 0;
+}
+.description {
+  font-size: 14px;
+  color: #666e79;
+  line-height: 1.7;
+}
+@media (max-width: 800px) {
+  .wrapper {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}

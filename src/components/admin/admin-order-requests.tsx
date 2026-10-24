@@ -20,11 +20,6 @@ import {
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { formatPrice } from '@/lib/format';
-import {
-  OrderInvoiceCard,
-  type OrderInvoiceBilling,
-  type OrderInvoiceRecord,
-} from '@/components/admin/order-invoice-card';
 import filterStyles from './admin-list-filters.module.css';
 
 type OrderStatus =
@@ -39,6 +34,7 @@ type Action = 'contact' | 'prepare' | 'ship' | 'deliver' | 'cancel' | 'pickup_co
 type OrderItem = {
   id: string;
   product_name: string;
+  variant_label?: string | null;
   unit_price: number;
   quantity: number;
   line_total: number;
@@ -73,8 +69,6 @@ export type AdminOrderRequest = {
   inventory_deducted_at: string | null;
   inventory_restored_at: string | null;
   cancellation_reason: string | null;
-  order_billing_details: OrderInvoiceBilling | null;
-  order_invoice_register: OrderInvoiceRecord | null;
   order_request_items: OrderItem[];
   order_request_status_history: OrderHistory[];
 };
@@ -404,17 +398,12 @@ export function AdminOrderRequests({
                       )}
                     </div>
                   </div>
-                  <OrderInvoiceCard
-                    billing={order.order_billing_details}
-                    invoice={order.order_invoice_register}
-                    paymentStatus={order.payment_status}
-                    orderStatus={order.status}
-                  />
                   <div className="order-request-items">
                     {order.order_request_items.map((item) => (
                       <div key={item.id}>
                         <span>
-                          {item.product_name} × {item.quantity}
+                          {item.product_name}
+                          {item.variant_label ? ` — ${item.variant_label}` : ''} × {item.quantity}
                         </span>
                         <b>{formatPrice(item.line_total)}</b>
                       </div>

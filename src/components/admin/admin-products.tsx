@@ -40,6 +40,7 @@ type Product = {
   price: number;
   compare_at_price: number | null;
   stock_quantity: number;
+  has_variants: boolean;
   low_stock_threshold: number;
   is_active: boolean;
   is_featured: boolean;
@@ -195,6 +196,7 @@ export function AdminProducts({
     });
   }
   function startStock(p: Product) {
+    if (p.has_variants) return;
     setSelected(p);
     setStockDelta('1');
     setStockDirection('add');
@@ -279,12 +281,14 @@ export function AdminProducts({
           .upload(path, photo, { contentType: photo.type, upsert: false });
         if (uploadError)
           throw new Error('Ürün kaydedildi ancak fotoğraf yüklenemedi: ' + uploadError.message);
-        const { error: imageError } = await supabase.from('product_images').insert({
-          product_id: productId,
-          storage_path: path,
-          sort_order: 0,
-          alt_text: form.name.trim(),
-        });
+        const { error: imageError } = await supabase
+          .from('product_images')
+          .insert({
+            product_id: productId,
+            storage_path: path,
+            sort_order: 0,
+            alt_text: form.name.trim(),
+          });
         if (imageError)
           throw new Error(
             'Ürün kaydedildi ancak görsel kaydı oluşturulamadı: ' + imageError.message,
@@ -516,8 +520,13 @@ export function AdminProducts({
                               <strong>{p.name}</strong>
                             </div>
                           </td>
-                          <td>{formatPrice(Number(p.price))}</td>
-                          <td>{p.stock_quantity} adet</td>
+                          <td>
+                            {p.has_variants && <small>Başlangıç </small>}
+                            {formatPrice(Number(p.price))}
+                          </td>
+                          <td>
+                            {p.stock_quantity} adet {p.has_variants && <small>(varyant)</small>}
+                          </td>
                           <td>
                             <span
                               className={`admin-status ${p.stock_quantity === 0 ? 'out' : p.stock_quantity <= p.low_stock_threshold ? 'low' : 'in'}`}
@@ -536,9 +545,24 @@ export function AdminProducts({
                               <button className="admin-edit" onClick={() => startEdit(p)}>
                                 <Edit3 size={14} /> Düzenle
                               </button>
-                              <button className="admin-edit" onClick={() => startStock(p)}>
-                                <Boxes size={14} /> Stok
-                              </button>
+                              {p.has_variants ? (
+                                <Link
+                                  className="admin-edit"
+                                  href={`/admin/urunler/${p.id}/varyantlar`}
+                                >
+                                  <Boxes size={14} /> Varyant stok
+                                </Link>
+                              ) : (
+                                <button className="admin-edit" onClick={() => startStock(p)}>
+                                  <Boxes size={14} /> Stok
+                                </button>
+                              )}
+                              <Link
+                                className="admin-edit"
+                                href={`/admin/urunler/${p.id}/varyantlar`}
+                              >
+                                Varyantlar
+                              </Link>
                             </div>
                           </td>
                         </tr>

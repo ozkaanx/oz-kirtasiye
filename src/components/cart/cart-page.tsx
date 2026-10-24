@@ -1,5 +1,7 @@
 'use client';
 
+import { cartLineKey } from '@/lib/cart-types';
+
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -65,9 +67,9 @@ export function CartPage({ settings }: { settings: DeliverySettings }) {
               </p>
             )}
             {cart.map((line) => {
-              const product = products[line.productId];
+              const product = products[cartLineKey(line.productId, line.variantId)];
               return (
-                <div key={line.productId} className="basket-item">
+                <div key={cartLineKey(line.productId, line.variantId)} className="basket-item">
                   <div className="basket-image">
                     {product?.imageUrl ? (
                       <img src={product.imageUrl} alt={product.name} />
@@ -81,7 +83,12 @@ export function CartPage({ settings }: { settings: DeliverySettings }) {
                     ) : (
                       <strong>Ürün yayından kaldırılmış</strong>
                     )}
-                    {product && <small>{product.stock_quantity} adet stokta</small>}
+                    {product && (
+                      <small>
+                        {product.variantLabel ? `${product.variantLabel} · ` : ''}
+                        {product.stock_quantity} adet stokta
+                      </small>
+                    )}
                     {product && <strong>{formatPrice(product.price)}</strong>}
                     {product && line.quantity > product.stock_quantity && (
                       <small role="alert" className="cart-stock-warning">
@@ -93,14 +100,18 @@ export function CartPage({ settings }: { settings: DeliverySettings }) {
                     <div className="quantity-picker">
                       <button
                         aria-label="Bir azalt"
-                        onClick={() => setQuantity(line.productId, line.quantity - 1)}
+                        onClick={() =>
+                          setQuantity(line.productId, line.quantity - 1, line.variantId)
+                        }
                       >
                         <Minus size={15} />
                       </button>
                       <b>{line.quantity}</b>
                       <button
                         aria-label="Bir artır"
-                        onClick={() => setQuantity(line.productId, line.quantity + 1)}
+                        onClick={() =>
+                          setQuantity(line.productId, line.quantity + 1, line.variantId)
+                        }
                         disabled={
                           line.quantity >= 99 || !product || line.quantity >= product.stock_quantity
                         }
@@ -111,7 +122,7 @@ export function CartPage({ settings }: { settings: DeliverySettings }) {
                     <button
                       className="remove-line"
                       aria-label="Ürünü sil"
-                      onClick={() => removeFromCart(line.productId)}
+                      onClick={() => removeFromCart(line.productId, line.variantId)}
                     >
                       <Trash2 size={18} />
                     </button>

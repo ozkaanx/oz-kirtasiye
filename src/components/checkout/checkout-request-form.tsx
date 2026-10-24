@@ -1,5 +1,7 @@
 'use client';
 
+import { cartLineKey } from '@/lib/cart-types';
+
 import Link from 'next/link';
 import { type FormEvent, useState } from 'react';
 import {
@@ -517,9 +519,12 @@ export function CheckoutRequestForm({
             </p>
           ) : null}
           {cart.map((line) => {
-            const product = products[line.productId];
+            const product = products[cartLineKey(line.productId, line.variantId)];
             return (
-              <div key={line.productId} className="checkout-summary-line">
+              <div
+                key={cartLineKey(line.productId, line.variantId)}
+                className="checkout-summary-line"
+              >
                 {product?.imageUrl ? (
                   <img src={product.imageUrl} alt="" />
                 ) : (
@@ -527,6 +532,7 @@ export function CheckoutRequestForm({
                 )}
                 <div>
                   <strong>{product?.name || 'Ürün bulunamadı'}</strong>
+                  {product?.variantLabel && <small>{product.variantLabel}</small>}
                   <small>
                     {line.quantity} adet{' '}
                     {product && line.quantity > product.stock_quantity ? '— stok yetersiz' : ''}
