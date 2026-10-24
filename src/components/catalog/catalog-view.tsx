@@ -17,6 +17,10 @@ type Props = {
 
 type SortType = 'featured' | 'newest' | 'price-asc' | 'price-desc' | 'name';
 
+function effectivePrice(product: LiveProduct) {
+  return product.promotion?.discountedPrice ?? product.price;
+}
+
 export function CatalogView({ initialCategory, initialSearch, liveProducts, categories }: Props) {
   const router = useRouter();
   const [categorySlug, setCategorySlug] = useState(initialCategory);
@@ -48,15 +52,15 @@ export function CatalogView({ initialCategory, initialSearch, liveProducts, cate
       ) {
         return false;
       }
-      if (maxPrice !== 'all' && product.price > Number(maxPrice)) return false;
+      if (maxPrice !== 'all' && effectivePrice(product) > Number(maxPrice)) return false;
       if (inStock && product.stock_quantity === 0) return false;
       return true;
     });
     switch (sort) {
       case 'price-asc':
-        return result.sort((a, b) => a.price - b.price);
+        return result.sort((a, b) => effectivePrice(a) - effectivePrice(b));
       case 'price-desc':
-        return result.sort((a, b) => b.price - a.price);
+        return result.sort((a, b) => effectivePrice(b) - effectivePrice(a));
       case 'name':
         return result.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
       case 'newest':

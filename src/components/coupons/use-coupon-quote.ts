@@ -18,26 +18,36 @@ export function useCouponQuote(items: CartLine[], deliveryMethod: DeliveryMethod
     if (!items.length) return;
     const controller = new AbortController();
     // Quotes are informational. Checkout revalidates price, limits, coupon and shipping atomically.
-    const timer = setTimeout(() => { void (async () => {
-      try {
-        const response = await fetch('/api/coupon-quote', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ items: JSON.parse(itemsKey), deliveryMethod, couponCode }),
-          cache: 'no-store',
-          signal: controller.signal,
-        });
-        const data: CouponQuote & { message?: string } = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Kupon geçersiz.');
-        if (!controller.signal.aborted) setResult({key, quote:data, error:''});
-      } catch (cause) {
-        if (!controller.signal.aborted) setResult({key, quote:null, error:cause instanceof Error ? cause.message : 'Kupon doğrulanamadı.'});
-      }
-    })(); }, 300);
-    return () => { clearTimeout(timer); controller.abort(); };
+    const timer = setTimeout(() => {
+      void (async () => {
+        try {
+          const response = await fetch('/api/coupon-quote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: JSON.parse(itemsKey), deliveryMethod, couponCode }),
+            cache: 'no-store',
+            signal: controller.signal,
+          });
+          const data: CouponQuote & { message?: string } = await response.json();
+          if (!response.ok) throw new Error(data.message || 'Kupon geçersiz.');
+          if (!controller.signal.aborted) setResult({ key, quote: data, error: '' });
+        } catch (cause) {
+          if (!controller.signal.aborted)
+            setResult({
+              key,
+              quote: null,
+              error: cause instanceof Error ? cause.message : 'Kupon doğrulanamadı.',
+            });
+        }
+      })();
+    }, 300);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [items.length, couponCode, deliveryMethod, itemsKey, key]);
 
-  if (!items.length) return {quote:null,error:'',loading:false};
-  if (!result || result.key!==key) return {quote:null,error:'',loading:true};
-  return {quote:result.quote,error:result.error,loading:false};
+  if (!items.length) return { quote: null, error: '', loading: false };
+  if (!result || result.key !== key) return { quote: null, error: '', loading: true };
+  return { quote: result.quote, error: result.error, loading: false };
 }

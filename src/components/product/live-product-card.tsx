@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { Package } from 'lucide-react';
 import type { LiveProduct } from '@/lib/real-catalog';
-import { formatPrice } from '@/lib/format';
 import { LivePurchaseButton } from '@/components/product/live-purchase-button';
 import { LiveFavoriteButton } from '@/components/product/live-favorite-button';
+import { CampaignPrice } from './campaign-price';
+import styles from './campaign-price.module.css';
 
 export function LiveProductCard({ product }: { product: LiveProduct }) {
   return (
@@ -22,6 +23,8 @@ export function LiveProductCard({ product }: { product: LiveProduct }) {
         </Link>
         {product.stock_quantity === 0 ? (
           <span className="product-badge">TÜKENDİ</span>
+        ) : product.promotion ? (
+          <span className={styles.ribbon}>%{product.promotion.discountPercent} KAMPANYA</span>
         ) : product.is_featured ? (
           <span className="product-badge">ÖNE ÇIKAN</span>
         ) : null}
@@ -32,10 +35,12 @@ export function LiveProductCard({ product }: { product: LiveProduct }) {
         </Link>
         <div className="product-buy-row">
           <div className="product-prices">
-            {product.compare_at_price !== null && product.compare_at_price > product.price && (
-              <span className="old-price">{formatPrice(product.compare_at_price)}</span>
-            )}
-            <strong className="current-price">{formatPrice(product.price)}</strong>
+            <CampaignPrice
+              price={product.price}
+              compareAtPrice={product.compare_at_price}
+              promotion={product.promotion}
+              campaignNotice={product.campaignNotice}
+            />
             <small className="live-stock">
               {product.stock_quantity > 0 ? `${product.stock_quantity} adet stokta` : 'Stokta yok'}
             </small>

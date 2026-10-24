@@ -3,7 +3,20 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BadgePercent, Megaphone, ReceiptText, Boxes, ClipboardList, FolderTree, Menu, Package, Settings2, Truck, X } from 'lucide-react';
+import {
+  BarChart3,
+  BadgePercent,
+  Megaphone,
+  ReceiptText,
+  Boxes,
+  ClipboardList,
+  FolderTree,
+  Menu,
+  Package,
+  Settings2,
+  Truck,
+  X,
+} from 'lucide-react';
 import styles from './admin-sidebar.module.css';
 
 const navigation = [
@@ -43,7 +56,7 @@ export function AdminSidebar() {
           onClick={() => setOpen(false)}
         />
       )}
-      <aside id="admin-side-navigation" className={`admin-sidebar${open ? ' is-open' : ''}`}>
+      <aside id="admin-side-navigation" className={`admin-sidebar${open ? 'is-open' : ''}`}>
         <div className="admin-mobile-sidebar-head">
           <strong>Yönetim menüsü</strong>
           <button type="button" aria-label="Menüyü kapat" onClick={() => setOpen(false)}>

@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import { Minus, Plus, ShoppingBag, Package } from 'lucide-react';
 import { LiveFavoriteButton } from './live-favorite-button';
+import { CampaignPrice } from './campaign-price';
 import { useShop } from '@/context/shop-context';
 import type { LiveVariant } from '@/lib/real-catalog';
-import { formatPrice } from '@/lib/format';
 import styles from './live-variant-picker.module.css';
 
 export function LiveVariantPicker({
@@ -23,20 +23,26 @@ export function LiveVariantPicker({
   name: string;
   description: string | null;
 }) {
-  const active = variants.filter((v) => v.is_active);
-  const [selectedId, setSelectedId] = useState<string>(
-    active.find((v) => v.stock_quantity > 0)?.id ?? active[0]?.id ?? '',
-  );
+  const active = variants.filter((variant) => variant.is_active);
+  const [selectedId, setSelectedId] = useState<string>(() => {
+    const available = active.filter((variant) => variant.stock_quantity > 0);
+    const best = [...(available.length ? available : active)].sort(
+      (a, b) =>
+        (a.promotion?.discountedPrice ?? a.price) - (b.promotion?.discountedPrice ?? b.price),
+    )[0];
+    return best?.id ?? '';
+  });
   const [amount, setAmount] = useState(1);
   const [photoIndex, setPhotoIndex] = useState<number | null>(null);
   const { addToCart } = useShop();
-  const selected = active.find((v) => v.id === selectedId) ?? null;
-  const colors = [...new Set(active.map((v) => v.color).filter(Boolean))];
-  const sizes = [...new Set(active.map((v) => v.size).filter(Boolean))];
+  const selected = active.find((variant) => variant.id === selectedId) ?? null;
+  const colors = [...new Set(active.map((variant) => variant.color).filter(Boolean))];
+  const sizes = [...new Set(active.map((variant) => variant.size).filter(Boolean))];
   const image =
     photoIndex != null
       ? (galleryUrls[photoIndex] ?? imageUrl)
       : (selected?.imageUrl ?? galleryUrls[0] ?? imageUrl);
+
   function selectVariant(variant: LiveVariant | undefined) {
     if (!variant) return;
     setSelectedId(variant.id);
@@ -45,14 +51,14 @@ export function LiveVariantPicker({
   }
   function selectColor(color: string) {
     selectVariant(
-      active.find((v) => v.color === color && v.size === selected?.size) ??
-        active.find((v) => v.color === color),
+      active.find((variant) => variant.color === color && variant.size === selected?.size) ??
+        active.find((variant) => variant.color === color),
     );
   }
   function selectSize(size: string) {
     selectVariant(
-      active.find((v) => v.size === size && v.color === selected?.color) ??
-        active.find((v) => v.size === size),
+      active.find((variant) => variant.size === size && variant.color === selected?.color) ??
+        active.find((variant) => variant.size === size),
     );
   }
   return (
@@ -131,9 +137,14 @@ export function LiveVariantPicker({
           </p>
         ) : (
           <>
-            <div className={styles.price}>{selected && formatPrice(selected.price)}</div>
-            {selected?.compare_at_price != null && selected.compare_at_price > selected.price && (
-              <del>{formatPrice(selected.compare_at_price)}</del>
+            {selected && (
+              <CampaignPrice
+                price={selected.price}
+                compareAtPrice={selected.compare_at_price}
+                promotion={selected.promotion}
+                campaignNotice={selected.campaignNotice}
+                size="detail"
+              />
             )}
             <p className={styles.stock}>
               {selected && selected.stock_quantity > 0
@@ -146,7 +157,7 @@ export function LiveVariantPicker({
                   type="button"
                   aria-label="Adedi azalt"
                   disabled={amount <= 1}
-                  onClick={() => setAmount((v) => v - 1)}
+                  onClick={() => setAmount((value) => value - 1)}
                 >
                   <Minus size={16} />
                 </button>
@@ -155,7 +166,7 @@ export function LiveVariantPicker({
                   type="button"
                   aria-label="Adedi artır"
                   disabled={!selected || amount >= Math.min(selected.stock_quantity, 99)}
-                  onClick={() => setAmount((v) => v + 1)}
+                  onClick={() => setAmount((value) => value + 1)}
                 >
                   <Plus size={16} />
                 </button>

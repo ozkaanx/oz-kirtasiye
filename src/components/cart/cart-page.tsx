@@ -3,7 +3,16 @@
 import { cartLineKey } from '@/lib/cart-types';
 
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Minus, Package, Plus, ShoppingBag, Trash2, LockKeyhole } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Minus,
+  Package,
+  Plus,
+  ShoppingBag,
+  Trash2,
+  LockKeyhole,
+} from 'lucide-react';
 import { useShop } from '@/context/shop-context';
 import { formatPrice } from '@/lib/format';
 import { deliveryQuote, type DeliverySettings } from '@/lib/delivery';
@@ -11,51 +20,117 @@ import { CouponBox } from '@/components/coupons/coupon-box';
 import { useCouponQuote } from '@/components/coupons/use-coupon-quote';
 
 export function CartPage({ settings }: { settings: DeliverySettings }) {
-  const { cart, products, cartLoading, cartError, cartIsValid, setQuantity, removeFromCart,
-    cartSubtotal, couponCode, refreshCart } = useShop();
+  const {
+    cart,
+    products,
+    cartLoading,
+    cartError,
+    cartIsValid,
+    setQuantity,
+    removeFromCart,
+    cartSubtotal,
+    couponCode,
+    refreshCart,
+  } = useShop();
   const shipping = deliveryQuote(settings, cartSubtotal, 'shipping');
   const pickup = deliveryQuote(settings, cartSubtotal, 'pickup');
   const anyDelivery = shipping.available || pickup.available;
-  const promo = useCouponQuote(cart,shipping.available ? 'shipping' : 'pickup');
+  const promo = useCouponQuote(cart, shipping.available ? 'shipping' : 'pickup');
   const couponBlocked = !!couponCode && (promo.loading || !!promo.error || !promo.quote);
   return (
     <div className="container-wide basket-page">
-      <div className="breadcrumbs"><Link href="/">Ana Sayfa</Link> › Sepetim</div>
-      <h1>Sepetim<span className="orange-dot">.</span></h1>
+      <div className="breadcrumbs">
+        <Link href="/">Ana Sayfa</Link> › Sepetim
+      </div>
+      <h1>
+        Sepetim<span className="orange-dot">.</span>
+      </h1>
       {!cart.length ? (
-        <div className="empty-page"><ShoppingBag size={48}/><h2>Sepetin henüz boş</h2>
+        <div className="empty-page">
+          <ShoppingBag size={48} />
+          <h2>Sepetin henüz boş</h2>
           <p>Yeni fikirlerin için ilk ürünü seçmeye ne dersin?</p>
-          <Link className="button button-primary" href="/urunler">Ürünlere göz at <ArrowRight size={17}/></Link>
+          <Link className="button button-primary" href="/urunler">
+            Ürünlere göz at <ArrowRight size={17} />
+          </Link>
         </div>
       ) : (
         <div className="basket-layout">
           <section className="basket-items">
-            <div className="basket-items-title"><strong>Sepetindeki ürünler ({cart.reduce((s, l) => s + l.quantity, 0)})</strong>
-              <Link href="/urunler">Alışverişe devam et <ArrowRight size={16}/></Link>
+            <div className="basket-items-title">
+              <strong>Sepetindeki ürünler ({cart.reduce((s, l) => s + l.quantity, 0)})</strong>
+              <Link href="/urunler">
+                Alışverişe devam et <ArrowRight size={16} />
+              </Link>
             </div>
-            {cartLoading && <p className="cart-loading">Ürün fiyatları ve stok kontrol ediliyor...</p>}
-            {cartError && <p role="alert" className="admin-form-error">{cartError} <button onClick={() => void refreshCart()}>Yenile</button></p>}
+            {cartLoading && (
+              <p className="cart-loading">Ürün fiyatları ve stok kontrol ediliyor...</p>
+            )}
+            {cartError && (
+              <p role="alert" className="admin-form-error">
+                {cartError} <button onClick={() => void refreshCart()}>Yenile</button>
+              </p>
+            )}
             {cart.map((line) => {
-              const product = products[cartLineKey(line.productId,line.variantId)];
+              const product = products[cartLineKey(line.productId, line.variantId)];
               return (
-                <div key={cartLineKey(line.productId,line.variantId)} className="basket-item">
-                  <div className="basket-image">{product?.imageUrl
-                    ? <img src={product.imageUrl} alt={product.name}/>
-                    : <Package size={55} color="#a9afb9"/>}</div>
+                <div key={cartLineKey(line.productId, line.variantId)} className="basket-item">
+                  <div className="basket-image">
+                    {product?.imageUrl ? (
+                      <img src={product.imageUrl} alt={product.name} />
+                    ) : (
+                      <Package size={55} color="#a9afb9" />
+                    )}
+                  </div>
                   <div className="basket-item-info">
-                    {product ? <Link href={`/magaza/urun/${product.slug}`}>{product.name}</Link> : <strong>Ürün yayından kaldırılmış</strong>}
-                    {product && <small>{product.variantLabel ? `${product.variantLabel} · ` : ""}{product.stock_quantity} adet stokta</small>}
+                    {product ? (
+                      <Link href={`/magaza/urun/${product.slug}`}>{product.name}</Link>
+                    ) : (
+                      <strong>Ürün yayından kaldırılmış</strong>
+                    )}
+                    {product && (
+                      <small>
+                        {product.variantLabel ? `${product.variantLabel} · ` : ''}
+                        {product.stock_quantity} adet stokta
+                      </small>
+                    )}
                     {product && <strong>{formatPrice(product.price)}</strong>}
-                    {product && line.quantity > product.stock_quantity && <small role="alert" className="cart-stock-warning">Stok yetersiz; miktarı azaltın.</small>}
+                    {product && line.quantity > product.stock_quantity && (
+                      <small role="alert" className="cart-stock-warning">
+                        Stok yetersiz; miktarı azaltın.
+                      </small>
+                    )}
                   </div>
                   <div className="basket-item-actions">
                     <div className="quantity-picker">
-                      <button aria-label="Bir azalt" onClick={() => setQuantity(line.productId, line.quantity - 1, line.variantId)}><Minus size={15}/></button>
+                      <button
+                        aria-label="Bir azalt"
+                        onClick={() =>
+                          setQuantity(line.productId, line.quantity - 1, line.variantId)
+                        }
+                      >
+                        <Minus size={15} />
+                      </button>
                       <b>{line.quantity}</b>
-                      <button aria-label="Bir artır" onClick={() => setQuantity(line.productId, line.quantity + 1, line.variantId)}
-                        disabled={line.quantity >= 99 || !product || line.quantity >= product.stock_quantity}><Plus size={15}/></button>
+                      <button
+                        aria-label="Bir artır"
+                        onClick={() =>
+                          setQuantity(line.productId, line.quantity + 1, line.variantId)
+                        }
+                        disabled={
+                          line.quantity >= 99 || !product || line.quantity >= product.stock_quantity
+                        }
+                      >
+                        <Plus size={15} />
+                      </button>
                     </div>
-                    <button className="remove-line" aria-label="Ürünü sil" onClick={() => removeFromCart(line.productId,line.variantId)}><Trash2 size={18}/></button>
+                    <button
+                      className="remove-line"
+                      aria-label="Ürünü sil"
+                      onClick={() => removeFromCart(line.productId, line.variantId)}
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 </div>
               );
@@ -63,21 +138,79 @@ export function CartPage({ settings }: { settings: DeliverySettings }) {
           </section>
           <aside className="basket-summary">
             <h2>Sipariş özeti</h2>
-            <div><span>Ürünler toplamı</span><b>{formatPrice(cartSubtotal)}</b></div>
-            <div><span>Kargo ile gönderim</span><span>{shipping.available && shipping.fee !== null ? formatPrice(shipping.fee) : "Henüz aktif değil"}</span></div>
-            {pickup.available && <div><span>Mağazadan teslim</span><b>Ücretsiz</b></div>}
+            <div>
+              <span>Ürünler toplamı</span>
+              <b>{formatPrice(cartSubtotal)}</b>
+            </div>
+            <div>
+              <span>Kargo ile gönderim</span>
+              <span>
+                {shipping.available && shipping.fee !== null
+                  ? formatPrice(shipping.fee)
+                  : 'Henüz aktif değil'}
+              </span>
+            </div>
+            {pickup.available && (
+              <div>
+                <span>Mağazadan teslim</span>
+                <b>Ücretsiz</b>
+              </div>
+            )}
             <CouponBox {...promo} />
-            {promo.quote && promo.quote.discountAmount > 0 && <div><span>{promo.quote.code ? `Kupon (${promo.quote.code})` : `Kampanya (${promo.quote.campaignName})`}</span><b>−{formatPrice(promo.quote.discountAmount)}</b></div>}
-            <div className="basket-total"><span>{promo.quote ? 'İndirimli ürünler' : 'Ürünler toplamı'}</span><strong>{formatPrice(promo.quote ? promo.quote.subtotal - promo.quote.discountAmount : cartSubtotal)}</strong></div>
-            {shipping.available && shipping.total !== null && <p className="delivery-cart-footnote">Kargo ile toplam: <strong>{formatPrice(promo.quote ? promo.quote.total : shipping.total)}</strong>{!promo.quote && shipping.freeShippingRemaining !== null && ` · Ücretsiz kargoya ${formatPrice(shipping.freeShippingRemaining)} kaldı.`}</p>}
-            {pickup.available && <p className="delivery-cart-footnote">Mağazadan teslim seçilirse ek kargo bedeli olmaz.</p>}
-            {!anyDelivery && <p role="status" className="delivery-cart-footnote">Henüz teslimat seçeneği aktif değil. Sipariş talebi kapalı.</p>}
-            <p><LockKeyhole size={17}/> Ödeme işlemi bu aşamada yapılmaz. Sipariş talebiniz mağazaya iletilir.</p>
-            <Link href="/siparis" className={`button button-primary${!cartIsValid || !anyDelivery || couponBlocked ? ' checkout-disabled' : ''}`}
-              aria-disabled={!cartIsValid || !anyDelivery || couponBlocked} onClick={(event) => { if (!cartIsValid || !anyDelivery || couponBlocked) event.preventDefault(); }}>
-              Talep formuna geç <ArrowRight size={17}/>
+            {promo.quote && promo.quote.discountAmount > 0 && (
+              <div>
+                <span>
+                  {promo.quote.code
+                    ? `Kupon (${promo.quote.code})`
+                    : `Kampanya (${promo.quote.campaignName})`}
+                </span>
+                <b>−{formatPrice(promo.quote.discountAmount)}</b>
+              </div>
+            )}
+            <div className="basket-total">
+              <span>{promo.quote ? 'İndirimli ürünler' : 'Ürünler toplamı'}</span>
+              <strong>
+                {formatPrice(
+                  promo.quote ? promo.quote.subtotal - promo.quote.discountAmount : cartSubtotal,
+                )}
+              </strong>
+            </div>
+            {shipping.available && shipping.total !== null && (
+              <p className="delivery-cart-footnote">
+                Kargo ile toplam:{' '}
+                <strong>{formatPrice(promo.quote ? promo.quote.total : shipping.total)}</strong>
+                {!promo.quote &&
+                  shipping.freeShippingRemaining !== null &&
+                  ` · Ücretsiz kargoya ${formatPrice(shipping.freeShippingRemaining)} kaldı.`}
+              </p>
+            )}
+            {pickup.available && (
+              <p className="delivery-cart-footnote">
+                Mağazadan teslim seçilirse ek kargo bedeli olmaz.
+              </p>
+            )}
+            {!anyDelivery && (
+              <p role="status" className="delivery-cart-footnote">
+                Henüz teslimat seçeneği aktif değil. Sipariş talebi kapalı.
+              </p>
+            )}
+            <p>
+              <LockKeyhole size={17} /> Ödeme işlemi bu aşamada yapılmaz. Sipariş talebiniz mağazaya
+              iletilir.
+            </p>
+            <Link
+              href="/siparis"
+              className={`button button-primary${!cartIsValid || !anyDelivery || couponBlocked ? 'checkout-disabled' : ''}`}
+              aria-disabled={!cartIsValid || !anyDelivery || couponBlocked}
+              onClick={(event) => {
+                if (!cartIsValid || !anyDelivery || couponBlocked) event.preventDefault();
+              }}
+            >
+              Talep formuna geç <ArrowRight size={17} />
             </Link>
-            <Link href="/urunler" className="basket-back"><ArrowLeft size={16}/> Alışverişe devam et</Link>
+            <Link href="/urunler" className="basket-back">
+              <ArrowLeft size={16} /> Alışverişe devam et
+            </Link>
           </aside>
         </div>
       )}

@@ -1,7 +1,13 @@
 'use client';
 
 import {
-  createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
 } from 'react';
 import { cartLineKey, type CartLine, type CartProduct } from '@/lib/cart-types';
 
@@ -36,10 +42,15 @@ const UUID = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i;
 function isValidLine(value: unknown): value is CartLine {
   if (!value || typeof value !== 'object') return false;
   const line = value as Partial<CartLine>;
-  return typeof line.productId === 'string' && UUID.test(line.productId) &&
+  return (
+    typeof line.productId === 'string' &&
+    UUID.test(line.productId) &&
     (line.variantId == null || (typeof line.variantId === 'string' && UUID.test(line.variantId))) &&
-    Number.isInteger(line.quantity) && typeof line.quantity === 'number' &&
-    line.quantity >= 1 && line.quantity <= 99;
+    Number.isInteger(line.quantity) &&
+    typeof line.quantity === 'number' &&
+    line.quantity >= 1 &&
+    line.quantity <= 99
+  );
 }
 
 function readCart(): CartLine[] {
@@ -47,23 +58,31 @@ function readCart(): CartLine[] {
     const parsed: unknown = JSON.parse(window.localStorage.getItem(CART_KEY) ?? '[]');
     if (!Array.isArray(parsed)) return [];
     const seen = new Set<string>();
-    return parsed.filter((item): item is CartLine => {
-      if (!isValidLine(item)) return false;
-      const key = cartLineKey(item.productId, item.variantId);
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }).slice(0, 20);
-  } catch { return []; }
+    return parsed
+      .filter((item): item is CartLine => {
+        if (!isValidLine(item)) return false;
+        const key = cartLineKey(item.productId, item.variantId);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 20);
+  } catch {
+    return [];
+  }
 }
 
 function readFavorites(): string[] {
   try {
     const parsed: unknown = JSON.parse(window.localStorage.getItem(FAVORITES_KEY) ?? '[]');
     return Array.isArray(parsed)
-      ? [...new Set(parsed.filter((id): id is string => typeof id === 'string' && UUID.test(id)))].slice(0, 100)
+      ? [
+          ...new Set(parsed.filter((id): id is string => typeof id === 'string' && UUID.test(id))),
+        ].slice(0, 100)
       : [];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 export function ShopProvider({ children }: { children: ReactNode }) {
@@ -83,25 +102,52 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     if (/^[A-Z0-9_-]{4,32}$/.test(storedCoupon)) setCouponCode(storedCoupon);
     setLoaded(true);
   }, []);
-  useEffect(() => { if (loaded) window.localStorage.setItem(CART_KEY, JSON.stringify(cart)); }, [cart, loaded]);
-  useEffect(() => { if (loaded) window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites)); }, [favorites, loaded]);
-  useEffect(() => { if (loaded) window.localStorage.setItem(COUPON_KEY, couponCode); }, [couponCode,loaded]);
+  useEffect(() => {
+    if (loaded) window.localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  }, [cart, loaded]);
+  useEffect(() => {
+    if (loaded) window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+  }, [favorites, loaded]);
+  useEffect(() => {
+    if (loaded) window.localStorage.setItem(COUPON_KEY, couponCode);
+  }, [couponCode, loaded]);
 
-  const cartIdentity = useMemo(() => cart.map(line => cartLineKey(line.productId, line.variantId)).sort().join(','), [cart]);
+  const cartIdentity = useMemo(
+    () =>
+      cart
+        .map((line) => cartLineKey(line.productId, line.variantId))
+        .sort()
+        .join(','),
+    [cart],
+  );
   const loadProducts = useCallback(async (lines: CartLine[], signal?: AbortSignal) => {
-    if (!lines.length) { setProducts({}); setCartLoading(false); setCartError(''); return; }
-    setCartLoading(true); setCartError('');
+    if (!lines.length) {
+      setProducts({});
+      setCartLoading(false);
+      setCartError('');
+      return;
+    }
+    setCartLoading(true);
+    setCartError('');
     try {
-      const items = lines.map(({productId, variantId}) => ({productId, variantId:variantId ?? null}));
-      const response = await fetch(`/api/cart-items?items=${encodeURIComponent(JSON.stringify(items))}`, { cache:'no-store', signal });
+      const items = lines.map(({ productId, variantId }) => ({
+        productId,
+        variantId: variantId ?? null,
+      }));
+      const response = await fetch(
+        `/api/cart-items?items=${encodeURIComponent(JSON.stringify(items))}`,
+        { cache: 'no-store', signal },
+      );
       if (!response.ok) throw new Error('Sepet ürünleri yüklenemedi.');
       const body: { products: CartProduct[] } = await response.json();
       if (signal?.aborted) return;
-      setProducts(Object.fromEntries(body.products.map(product => [product.key, product])));
+      setProducts(Object.fromEntries(body.products.map((product) => [product.key, product])));
     } catch (error) {
       if (signal?.aborted) return;
       setCartError(error instanceof Error ? error.message : 'Sepet ürünleri yüklenemedi.');
-    } finally { if (!signal?.aborted) setCartLoading(false); }
+    } finally {
+      if (!signal?.aborted) setCartLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -114,48 +160,113 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   }, [cartIdentity, loaded, loadProducts]);
 
   const refreshCart = useCallback(() => loadProducts(cart), [cart, loadProducts]);
-  const setQuantity = useCallback((productId: string, quantity: number, variantId?: string | null) => {
-    if (!UUID.test(productId) || !Number.isInteger(quantity)) return;
-    const key=cartLineKey(productId,variantId);
-    setCart(previous => quantity<=0 ? previous.filter(line => cartLineKey(line.productId,line.variantId)!==key)
-      : previous.map(line => cartLineKey(line.productId,line.variantId)===key
-        ? {...line,quantity:Math.min(quantity,99)} : line));
-  }, []);
-  const addToCart = useCallback((productId: string, amount=1, variantId?: string | null) => {
-    if (!UUID.test(productId) || (variantId != null && !UUID.test(variantId)) || !Number.isInteger(amount) || amount<1) return;
-    const key=cartLineKey(productId,variantId);
-    setCart(previous => previous.some(line => cartLineKey(line.productId,line.variantId)===key)
-      ? previous.map(line => cartLineKey(line.productId,line.variantId)===key
-          ? {...line,quantity:Math.min(99,line.quantity+amount)} : line)
-      : previous.length>=20 ? previous : [...previous,{productId,variantId:variantId ?? null,quantity:Math.min(99,amount)}]);
+  const setQuantity = useCallback(
+    (productId: string, quantity: number, variantId?: string | null) => {
+      if (!UUID.test(productId) || !Number.isInteger(quantity)) return;
+      const key = cartLineKey(productId, variantId);
+      setCart((previous) =>
+        quantity <= 0
+          ? previous.filter((line) => cartLineKey(line.productId, line.variantId) !== key)
+          : previous.map((line) =>
+              cartLineKey(line.productId, line.variantId) === key
+                ? { ...line, quantity: Math.min(quantity, 99) }
+                : line,
+            ),
+      );
+    },
+    [],
+  );
+  const addToCart = useCallback((productId: string, amount = 1, variantId?: string | null) => {
+    if (
+      !UUID.test(productId) ||
+      (variantId != null && !UUID.test(variantId)) ||
+      !Number.isInteger(amount) ||
+      amount < 1
+    )
+      return;
+    const key = cartLineKey(productId, variantId);
+    setCart((previous) =>
+      previous.some((line) => cartLineKey(line.productId, line.variantId) === key)
+        ? previous.map((line) =>
+            cartLineKey(line.productId, line.variantId) === key
+              ? { ...line, quantity: Math.min(99, line.quantity + amount) }
+              : line,
+          )
+        : previous.length >= 20
+          ? previous
+          : [
+              ...previous,
+              { productId, variantId: variantId ?? null, quantity: Math.min(99, amount) },
+            ],
+    );
     setCartOpen(true);
   }, []);
   const removeFromCart = useCallback((productId: string, variantId?: string | null) => {
-    const key=cartLineKey(productId,variantId);
-    setCart(previous => previous.filter(line => cartLineKey(line.productId,line.variantId)!==key));
+    const key = cartLineKey(productId, variantId);
+    setCart((previous) =>
+      previous.filter((line) => cartLineKey(line.productId, line.variantId) !== key),
+    );
   }, []);
-  const clearCart=useCallback(() => {setCart([]);setCouponCode('');},[]);
-  const toggleFavorite=useCallback((productId:string) => {
+  const clearCart = useCallback(() => {
+    setCart([]);
+    setCouponCode('');
+  }, []);
+  const toggleFavorite = useCallback((productId: string) => {
     if (!UUID.test(productId)) return;
-    setFavorites(previous => previous.includes(productId)
-      ? previous.filter(id => id!==productId)
-      : [...previous,productId].slice(0,100));
+    setFavorites((previous) =>
+      previous.includes(productId)
+        ? previous.filter((id) => id !== productId)
+        : [...previous, productId].slice(0, 100),
+    );
   }, []);
-  const cartCount=useMemo(() => cart.reduce((sum,line)=>sum+line.quantity,0),[cart]);
-  const cartSubtotal=useMemo(() => cart.reduce((sum,line)=>sum+
-    (products[cartLineKey(line.productId,line.variantId)]?.price ?? 0)*line.quantity,0),[cart,products]);
-  const cartIsValid=!cartLoading&&!cartError&&cart.length>0&&cart.every(line=>{
-    const product=products[cartLineKey(line.productId,line.variantId)];
-    return !!product && line.quantity<=product.stock_quantity;
-  });
-  return <ShopContext.Provider value={{
-    cart,products,cartLoading,cartError,favorites,couponCode,setCouponCode,cartOpen,setCartOpen,addToCart,
-    setQuantity,removeFromCart,clearCart,toggleFavorite,cartCount,cartSubtotal,cartIsValid,refreshCart,
-  }}>{children}</ShopContext.Provider>;
+  const cartCount = useMemo(() => cart.reduce((sum, line) => sum + line.quantity, 0), [cart]);
+  const cartSubtotal = useMemo(
+    () =>
+      cart.reduce(
+        (sum, line) =>
+          sum + (products[cartLineKey(line.productId, line.variantId)]?.price ?? 0) * line.quantity,
+        0,
+      ),
+    [cart, products],
+  );
+  const cartIsValid =
+    !cartLoading &&
+    !cartError &&
+    cart.length > 0 &&
+    cart.every((line) => {
+      const product = products[cartLineKey(line.productId, line.variantId)];
+      return !!product && line.quantity <= product.stock_quantity;
+    });
+  return (
+    <ShopContext.Provider
+      value={{
+        cart,
+        products,
+        cartLoading,
+        cartError,
+        favorites,
+        couponCode,
+        setCouponCode,
+        cartOpen,
+        setCartOpen,
+        addToCart,
+        setQuantity,
+        removeFromCart,
+        clearCart,
+        toggleFavorite,
+        cartCount,
+        cartSubtotal,
+        cartIsValid,
+        refreshCart,
+      }}
+    >
+      {children}
+    </ShopContext.Provider>
+  );
 }
 
 export function useShop() {
-  const context=useContext(ShopContext);
+  const context = useContext(ShopContext);
   if (!context) throw new Error('useShop, ShopProvider içinde kullanılmalıdır.');
   return context;
 }
