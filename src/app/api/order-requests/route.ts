@@ -54,12 +54,16 @@ export async function POST(request: NextRequest) {
     if (body.deliveryMethod !== 'shipping' && body.deliveryMethod !== 'pickup') {
       return NextResponse.json({ message: 'Bir teslimat yöntemi seçmelisin.' }, { status: 400 });
     }
+    const billing = body.billing;
+    if (!billing || typeof billing !== 'object' || Array.isArray(billing)) {
+      return NextResponse.json({ message: 'Fatura bilgilerini tamamlamalısın.' }, { status: 400 });
+    }
     // Verified server-side cookie session is the ONLY source of the customer identity.
     // A guest remains a guest; client-supplied user IDs are ignored.
     const sessionClient = await createServerSupabase();
     const { data: authData } = await sessionClient.auth.getUser();
     const supabase = createOrderServerClient();
-    const { data, error } = await supabase.rpc('submit_order_request_with_delivery_for_customer', {
+    const { data, error } = await supabase.rpc('submit_order_request_with_billing', {
       p_customer_name: body.customerName,
       p_phone: body.phone,
       p_city: body.city,
@@ -72,6 +76,7 @@ export async function POST(request: NextRequest) {
       p_notice_version: LEGAL_DOCUMENT_VERSION,
       p_delivery_method: body.deliveryMethod,
       p_customer_user_id: authData.user?.id ?? null,
+      p_billing: billing,
     });
     if (error) {
       const knownValidationError = error.code === '22023';

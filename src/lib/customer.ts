@@ -33,4 +33,10 @@ export type CustomerOrder = {
   total: number;
   shipping_fee: number;
   order_request_items: CustomerOrderItem[];
+  order_invoice_register?: {
+    status: 'pending' | 'issued';
+    document_type: 'e_arsiv' | 'e_fatura' | null;
+    invoice_number: string | null;
+    issue_date: string | null;
+  } | null;
 };

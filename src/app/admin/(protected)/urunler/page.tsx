@@ -21,7 +21,7 @@ export default async function Page() {
         'id,name,slug,description,category_id,sku,price,compare_at_price,stock_quantity,low_stock_threshold,is_active,is_featured,product_images(storage_path,sort_order)',
       )
       .order('created_at', { ascending: false })
-      .limit(300),
+      .limit(1000),
     supabase
       .from('categories')
       .select('id,parent_id,name,slug,description,image_path,sort_order,is_active')

@@ -22,7 +22,9 @@ export default async function AdminOrderRequestsPage() {
       shipped_at, delivered_at, inventory_deducted_at, inventory_restored_at,
       cancellation_reason,
       order_request_items(id, product_name, unit_price, quantity, line_total),
-      order_request_status_history(id, from_status, to_status, note, created_at)
+      order_request_status_history(id, from_status, to_status, note, created_at),
+      order_billing_details(buyer_type,recipient_name,company_name,tax_office,tax_number,city,district,address),
+      order_invoice_register(status,document_type,invoice_number,issue_date,provider)
     `,
     )
     .order('created_at', { ascending: false })
@@ -30,6 +32,12 @@ export default async function AdminOrderRequestsPage() {
 
   const requests: AdminOrderRequest[] = (data ?? []).map((row) => ({
     ...row,
+    order_billing_details: (Array.isArray(row.order_billing_details)
+      ? (row.order_billing_details[0] ?? null)
+      : (row.order_billing_details ?? null)) as AdminOrderRequest['order_billing_details'],
+    order_invoice_register: (Array.isArray(row.order_invoice_register)
+      ? (row.order_invoice_register[0] ?? null)
+      : (row.order_invoice_register ?? null)) as AdminOrderRequest['order_invoice_register'],
     status: row.status as AdminOrderRequest['status'],
     payment_status: row.payment_status as AdminOrderRequest['payment_status'],
     subtotal: Number(row.subtotal),

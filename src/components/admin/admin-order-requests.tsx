@@ -20,6 +20,12 @@ import {
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { formatPrice } from '@/lib/format';
+import {
+  OrderInvoiceCard,
+  type OrderInvoiceBilling,
+  type OrderInvoiceRecord,
+} from '@/components/admin/order-invoice-card';
+import filterStyles from './admin-list-filters.module.css';
 
 type OrderStatus =
   | 'new'
@@ -67,6 +73,8 @@ export type AdminOrderRequest = {
   inventory_deducted_at: string | null;
   inventory_restored_at: string | null;
   cancellation_reason: string | null;
+  order_billing_details: OrderInvoiceBilling | null;
+  order_invoice_register: OrderInvoiceRecord | null;
   order_request_items: OrderItem[];
   order_request_status_history: OrderHistory[];
 };
@@ -99,6 +107,11 @@ export function AdminOrderRequests({
   const router = useRouter();
   const [filter, setFilter] = useState<'all' | OrderStatus>('all');
   const [query, setQuery] = useState('');
+  const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'shipping' | 'pickup' | 'legacy'>(
+    'all',
+  );
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -110,15 +123,35 @@ export function AdminOrderRequests({
 
   const filtered = useMemo(() => {
     const text = query.trim().toLocaleLowerCase('tr-TR');
-    return requests.filter(
-      (order) =>
-        (filter === 'all' || order.status === filter) &&
-        (!text ||
-          `${order.reference} ${order.customer_name} ${order.phone} ${order.city} ${order.district}`
-            .toLocaleLowerCase('tr-TR')
-            .includes(text)),
-    );
-  }, [requests, filter, query]);
+    return requests.filter((order) => {
+      if (filter !== 'all' && order.status !== filter) return false;
+      if (deliveryFilter !== 'all' && order.delivery_method !== deliveryFilter) return false;
+      if (
+        text &&
+        !`${order.reference} ${order.customer_name} ${order.phone} ${order.city} ${order.district}`
+          .toLocaleLowerCase('tr-TR')
+          .includes(text)
+      )
+        return false;
+      const orderDay = new Intl.DateTimeFormat('sv-SE', {
+        timeZone: 'Europe/Istanbul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date(order.created_at));
+      if (dateFrom && orderDay < dateFrom) return false;
+      if (dateTo && orderDay > dateTo) return false;
+      return true;
+    });
+  }, [requests, filter, query, deliveryFilter, dateFrom, dateTo]);
+
+  function clearOrderFilters() {
+    setFilter('all');
+    setQuery('');
+    setDeliveryFilter('all');
+    setDateFrom('');
+    setDateTo('');
+  }
 
   function closeForms() {
     setShipOrderId(null);
@@ -270,12 +303,54 @@ export function AdminOrderRequests({
               <label className="order-search">
                 <Search size={16} />
                 <input
+                  aria-label="Sipariş numarası, müşteri veya telefon ara"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Sipariş no, müşteri veya telefon"
                 />
               </label>
             </div>
+            <div className={filterStyles.filters}>
+              <label className={filterStyles.field}>
+                Teslimat şekli
+                <select
+                  value={deliveryFilter}
+                  onChange={(event) =>
+                    setDeliveryFilter(event.target.value as typeof deliveryFilter)
+                  }
+                >
+                  <option value="all">Tüm teslimatlar</option>
+                  <option value="shipping">Kargo ile</option>
+                  <option value="pickup">Mağazadan teslim</option>
+                  <option value="legacy">Eski kayıtlar</option>
+                </select>
+              </label>
+              <label className={filterStyles.field}>
+                Başlangıç tarihi
+                <input
+                  type="date"
+                  value={dateFrom}
+                  max={dateTo || undefined}
+                  onChange={(event) => setDateFrom(event.target.value)}
+                />
+              </label>
+              <label className={filterStyles.field}>
+                Bitiş tarihi
+                <input
+                  type="date"
+                  value={dateTo}
+                  min={dateFrom || undefined}
+                  onChange={(event) => setDateTo(event.target.value)}
+                />
+              </label>
+              <button type="button" className={filterStyles.reset} onClick={clearOrderFilters}>
+                Filtreleri temizle
+              </button>
+            </div>
+            <p className={filterStyles.result}>
+              {filtered.length} / {requests.length} sipariş görüntüleniyor. Filtreler yüklenen son
+              100 kayıt üzerinde çalışır.
+            </p>
 
             {!filtered.length && (
               <div className="admin-no-results">
@@ -329,6 +404,12 @@ export function AdminOrderRequests({
                       )}
                     </div>
                   </div>
+                  <OrderInvoiceCard
+                    billing={order.order_billing_details}
+                    invoice={order.order_invoice_register}
+                    paymentStatus={order.payment_status}
+                    orderStatus={order.status}
+                  />
                   <div className="order-request-items">
                     {order.order_request_items.map((item) => (
                       <div key={item.id}>

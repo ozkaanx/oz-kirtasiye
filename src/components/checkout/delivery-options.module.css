@@ -34,16 +34,23 @@
   background: #fff;
   color: #242a32;
   cursor: pointer;
-  transition: border-color 150ms ease, background-color 150ms ease;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
 }
 
-.option:hover { border-color: #ff9c80; }
+.option:hover {
+  border-color: #ff9c80;
+}
 .option[data-selected='true'] {
   border-color: #ff643c;
   background-color: #fff8f4;
 }
 
-.option:focus-within { outline: 2px solid #ffb293; outline-offset: 2px; }
+.option:focus-within {
+  outline: 2px solid #ffb293;
+  outline-offset: 2px;
+}
 
 .radio {
   display: block;
@@ -66,7 +73,11 @@
   color: #ff643c;
 }
 
-.icon svg { display: block; width: 21px; height: 21px; }
+.icon svg {
+  display: block;
+  width: 21px;
+  height: 21px;
+}
 
 .content {
   display: flex;
@@ -107,16 +118,68 @@
     min-height: 76px;
     padding: 14px;
   }
-  .icon, .icon svg { width: 20px; height: 20px; }
-  .price { grid-column: 3; justify-self: start; margin-top: 0; }
+  .icon,
+  .icon svg {
+    width: 20px;
+    height: 20px;
+  }
+  .price {
+    grid-column: 3;
+    justify-self: start;
+    margin-top: 0;
+  }
 }
 
-.savedAddressBox{border:1px solid #e6e8ed;border-radius:13px;padding:15px 16px;margin:0 0 22px;background:#fffaf7}
-.savedAddressHeading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:9px;font-size:13px}
-.savedAddressHeading a,.guestInfo a{color:#ef6039;text-decoration:underline;text-underline-offset:3px;font-weight:750}
-.savedAddressBox p,.guestInfo{font-size:12px;line-height:1.65;color:#68727e;margin:5px 0 17px}
-.savedAddressLabel{display:flex;flex-direction:column;gap:8px;font-size:12px;font-weight:720;color:#3b424b}
-.savedAddressSelect{display:block!important;width:100%!important;max-width:100%;min-width:0;padding:11px 12px!important;border:1px solid #dfe2e8;border-radius:10px;background:#fff;color:#2d333a;font-size:13px}
+.savedAddressBox {
+  border: 1px solid #e6e8ed;
+  border-radius: 13px;
+  padding: 15px 16px;
+  margin: 0 0 22px;
+  background: #fffaf7;
+}
+.savedAddressHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 9px;
+  font-size: 13px;
+}
+.savedAddressHeading a,
+.guestInfo a {
+  color: #ef6039;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 750;
+}
+.savedAddressBox p,
+.guestInfo {
+  font-size: 12px;
+  line-height: 1.65;
+  color: #68727e;
+  margin: 5px 0 17px;
+}
+.savedAddressLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 720;
+  color: #3b424b;
+}
+.savedAddressSelect {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100%;
+  min-width: 0;
+  padding: 11px 12px !important;
+  border: 1px solid #dfe2e8;
+  border-radius: 10px;
+  background: #fff;
+  color: #2d333a;
+  font-size: 13px;
+}
 
 /* Saved-address card: predictable dimensions with or without the selected state. */
 .noSavedAddress {
@@ -125,7 +188,11 @@
   line-height: 1.65;
   margin: 10px 0 0 !important;
 }
-.noSavedAddress a { color: #e85c37; font-weight: 750; text-decoration: underline; }
+.noSavedAddress a {
+  color: #e85c37;
+  font-weight: 750;
+  text-decoration: underline;
+}
 .addressSummary {
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr) 20px;
@@ -138,8 +205,16 @@
   border: 1px solid #e1e5eb;
   border-radius: 12px;
 }
-.addressSummaryIcon { color: #ff643c; margin-top: 2px; flex-shrink: 0; }
-.addressSummaryCheck { color: #218653; margin-top: 2px; flex-shrink: 0; }
+.addressSummaryIcon {
+  color: #ff643c;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.addressSummaryCheck {
+  color: #218653;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
 .addressSummaryDetails {
   display: flex;
   flex-direction: column;
@@ -150,9 +225,23 @@
   line-height: 1.5;
   color: #66717d;
 }
-.addressSummaryDetails strong { color: #252a31; font-weight: 800; font-size: 14px; }
-.pickupContactHint { color: #66717d; font-size: 12px; line-height: 1.6; margin: 0 0 4px; }
+.addressSummaryDetails strong {
+  color: #252a31;
+  font-weight: 800;
+  font-size: 14px;
+}
+.pickupContactHint {
+  color: #66717d;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0 0 4px;
+}
 @media (max-width: 500px) {
-  .savedAddressBox { padding: 13px; }
-  .addressSummary { padding: 12px; gap: 8px; }
+  .savedAddressBox {
+    padding: 13px;
+  }
+  .addressSummary {
+    padding: 12px;
+    gap: 8px;
+  }
 }
