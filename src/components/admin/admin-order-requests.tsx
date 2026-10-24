@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
+  Settings2,
   ArrowLeft,
   Boxes,
   CheckCircle2,
@@ -192,6 +193,9 @@ export function AdminOrderRequests({
           </Link>
           <Link className="admin-side-link active" href="/admin/siparisler">
             <ClipboardList size={18} /> Sipariş talepleri
+          </Link>
+          <Link className="admin-side-link" href="/admin/ayarlar">
+            <Settings2 size={18} /> İşletme ayarları
           </Link>
           <Link className="admin-side-link" href="/">
             <Package size={18} /> Mağazayı görüntüle
