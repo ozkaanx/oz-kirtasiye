@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hasSupabaseConfig } from '@/lib/supabase/config';
 import { createOrderServerClient } from '@/lib/supabase/order-server';
+import { LEGAL_DOCUMENT_VERSION } from '@/lib/store-profile';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,8 +38,20 @@ export async function POST(request: NextRequest) {
     if (!Array.isArray(body.items) || body.items.length < 1 || body.items.length > 20) {
       return NextResponse.json({ message: 'Sepet geçersiz.' }, { status: 400 });
     }
+    if (
+      body.preInformationRead !== true ||
+      body.privacyNoticeRead !== true ||
+      body.noticeVersion !== LEGAL_DOCUMENT_VERSION
+    ) {
+      return NextResponse.json(
+        {
+          message: 'Ön bilgilendirmeyi ve KVKK açıklamasını okumalı, ardından tekrar denemelisin.',
+        },
+        { status: 400 },
+      );
+    }
     const supabase = createOrderServerClient();
-    const { data, error } = await supabase.rpc('submit_order_request', {
+    const { data, error } = await supabase.rpc('submit_order_request_with_notices', {
       p_customer_name: body.customerName,
       p_phone: body.phone,
       p_city: body.city,
@@ -46,6 +59,9 @@ export async function POST(request: NextRequest) {
       p_address: body.address,
       p_note: body.note,
       p_items: body.items,
+      p_pre_information_read: true,
+      p_privacy_notice_read: true,
+      p_notice_version: LEGAL_DOCUMENT_VERSION,
     });
     if (error) {
       const knownValidationError = error.code === '22023';

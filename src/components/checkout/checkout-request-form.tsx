@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2, LockKeyhole, Package } from 'lucid
 import { useShop } from '@/context/shop-context';
 import { formatPrice } from '@/lib/format';
 import type { OrderRequestResult } from '@/lib/cart-types';
+import { LEGAL_DOCUMENT_VERSION } from '@/lib/store-profile';
 
 type Fields = {
   customerName: string;
@@ -36,7 +37,8 @@ export function CheckoutRequestForm({ enabled }: { enabled: boolean }) {
     clearCart,
   } = useShop();
   const [fields, setFields] = useState<Fields>(empty);
-  const [accepted, setAccepted] = useState(false);
+  const [privacyRead, setPrivacyRead] = useState(false);
+  const [preInformationRead, setPreInformationRead] = useState(false);
   const [website, setWebsite] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
@@ -47,7 +49,7 @@ export function CheckoutRequestForm({ enabled }: { enabled: boolean }) {
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!enabled || !accepted || pending || !cartIsValid) return;
+    if (!enabled || !privacyRead || !preInformationRead || pending || !cartIsValid) return;
     setPending(true);
     setError('');
     try {
@@ -56,7 +58,14 @@ export function CheckoutRequestForm({ enabled }: { enabled: boolean }) {
       const response = await fetch('/api/order-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...fields, website, items: cart }),
+        body: JSON.stringify({
+          ...fields,
+          website,
+          items: cart,
+          privacyNoticeRead: privacyRead,
+          preInformationRead,
+          noticeVersion: LEGAL_DOCUMENT_VERSION,
+        }),
       });
       const result: OrderRequestResult & { message?: string } = await response.json();
       if (!response.ok) throw new Error(result.message || 'Sipariş talebi oluşturulamadı.');
@@ -197,13 +206,34 @@ export function CheckoutRequestForm({ enabled }: { enabled: boolean }) {
             <input
               type="checkbox"
               required
-              checked={accepted}
-              onChange={(e) => setAccepted(e.target.checked)}
+              checked={privacyRead}
+              onChange={(e) => setPrivacyRead(e.target.checked)}
             />
             <span>
-              İletişim ve teslimat bilgilerimin sipariş talebimin değerlendirilmesi için
-              kullanılacağını anladım.{' '}
-              <Link href="/gizlilik">Kişisel veri bilgilendirmesini oku.</Link>
+              <Link href="/gizlilik" target="_blank" rel="noopener noreferrer">
+                KVKK aydınlatma metnini
+              </Link>{' '}
+              okudum. Sipariş talebim için iletişim ve teslimat bilgilerimin işleneceğini anladım.
+              Bu işaretleme reklam izni değildir.
+            </span>
+          </label>
+          <label className="checkout-consent">
+            <input
+              type="checkbox"
+              required
+              checked={preInformationRead}
+              onChange={(e) => setPreInformationRead(e.target.checked)}
+            />
+            <span>
+              <Link href="/on-bilgilendirme" target="_blank" rel="noopener noreferrer">
+                Ön bilgilendirmeyi
+              </Link>{' '}
+              ve{' '}
+              <Link href="/teslimat-iade" target="_blank" rel="noopener noreferrer">
+                teslimat/iade açıklamalarını
+              </Link>{' '}
+              inceledim. Bunun ödeme alınmayan ve kesin satış oluşturmayan bir talep olduğunu
+              biliyorum.
             </span>
           </label>
           {error && (
@@ -219,7 +249,7 @@ export function CheckoutRequestForm({ enabled }: { enabled: boolean }) {
           <button
             className="button button-primary checkout-submit"
             type="submit"
-            disabled={pending || !enabled || !accepted || !cartIsValid}
+            disabled={pending || !enabled || !privacyRead || !preInformationRead || !cartIsValid}
           >
             {pending ? 'Talebin kaydediliyor...' : 'Sipariş talebini gönder'}{' '}
             <ArrowRight size={17} />

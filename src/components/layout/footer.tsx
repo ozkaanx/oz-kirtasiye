@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowUpRight, Heart, Instagram, MapPin, Mail, Phone, Sparkles } from 'lucide-react';
+import { ArrowUpRight, Heart, MapPin, Sparkles } from 'lucide-react';
 import { Logo } from './logo';
 import type { StoreCategory } from '@/lib/category-utils';
 
@@ -41,8 +41,12 @@ export function Footer({ categories }: { categories: StoreCategory[] }) {
             <Link href="/sepet">Sepetim</Link>
           </div>
           <div className="footer-col">
-            <h3>Bir merhaba de!</h3>
-            <p>Mağazamızda renkli bir dünya seni bekliyor.</p>
+            <h3>Yardım ve yasal bilgiler</h3>
+            <Link href="/teslimat-iade">Teslimat ve iade</Link>
+            <Link href="/on-bilgilendirme">Ön bilgilendirme</Link>
+            <Link href="/mesafeli-satis-sozlesmesi">Mesafeli satış sözleşmesi</Link>
+            <Link href="/gizlilik">KVKK aydınlatma</Link>
+            <Link href="/cerez-politikasi">Çerez politikası</Link>
             <Link className="footer-contact" href="/iletisim">
               İletişime geç <ArrowUpRight size={16} />
             </Link>
