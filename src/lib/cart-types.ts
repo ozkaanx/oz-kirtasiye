@@ -21,6 +21,8 @@ export type OrderRequestResult = {
   id: string;
   reference: string;
   subtotal: number;
+  discountAmount: number;
+  couponCode: string | null;
   shippingFee: number;
   total: number;
   deliveryMethod: 'shipping' | 'pickup';
