@@ -13,8 +13,9 @@ import {
 } from 'lucide-react';
 import { useShop } from '@/context/shop-context';
 import { formatPrice } from '@/lib/format';
+import { deliveryQuote, type DeliverySettings } from '@/lib/delivery';
 
-export function CartPage() {
+export function CartPage({ settings }: { settings: DeliverySettings }) {
   const {
     cart,
     products,
@@ -26,6 +27,9 @@ export function CartPage() {
     cartSubtotal,
     refreshCart,
   } = useShop();
+  const shipping = deliveryQuote(settings, cartSubtotal, 'shipping');
+  const pickup = deliveryQuote(settings, cartSubtotal, 'pickup');
+  const anyDelivery = shipping.available || pickup.available;
   return (
     <div className="container-wide basket-page">
       <div className="breadcrumbs">
@@ -123,23 +127,50 @@ export function CartPage() {
               <b>{formatPrice(cartSubtotal)}</b>
             </div>
             <div>
-              <span>Gönderim ücreti</span>
-              <span>Henüz belirlenmedi</span>
+              <span>Kargo ile gönderim</span>
+              <span>
+                {shipping.available && shipping.fee !== null
+                  ? formatPrice(shipping.fee)
+                  : 'Henüz aktif değil'}
+              </span>
             </div>
+            {pickup.available && (
+              <div>
+                <span>Mağazadan teslim</span>
+                <b>Ücretsiz</b>
+              </div>
+            )}
             <div className="basket-total">
-              <span>Tahmini ara toplam</span>
+              <span>Ürünler toplamı</span>
               <strong>{formatPrice(cartSubtotal)}</strong>
             </div>
+            {shipping.available && shipping.total !== null && (
+              <p className="delivery-cart-footnote">
+                Kargo ile toplam: <strong>{formatPrice(shipping.total)}</strong>
+                {shipping.freeShippingRemaining !== null &&
+                  ` · Ücretsiz kargoya ${formatPrice(shipping.freeShippingRemaining)} kaldı.`}
+              </p>
+            )}
+            {pickup.available && (
+              <p className="delivery-cart-footnote">
+                Mağazadan teslim seçilirse ek kargo bedeli olmaz.
+              </p>
+            )}
+            {!anyDelivery && (
+              <p role="status" className="delivery-cart-footnote">
+                Henüz teslimat seçeneği aktif değil. Sipariş talebi kapalı.
+              </p>
+            )}
             <p>
               <LockKeyhole size={17} /> Ödeme işlemi bu aşamada yapılmaz. Sipariş talebiniz mağazaya
               iletilir.
             </p>
             <Link
               href="/siparis"
-              className={`button button-primary${!cartIsValid ? 'checkout-disabled' : ''}`}
-              aria-disabled={!cartIsValid}
+              className={`button button-primary${!cartIsValid || !anyDelivery ? 'checkout-disabled' : ''}`}
+              aria-disabled={!cartIsValid || !anyDelivery}
               onClick={(event) => {
-                if (!cartIsValid) event.preventDefault();
+                if (!cartIsValid || !anyDelivery) event.preventDefault();
               }}
             >
               Talep formuna geç <ArrowRight size={17} />

@@ -4,7 +4,6 @@ import { type FormEvent, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Settings2,
   Activity,
   ArrowLeft,
   Boxes,
@@ -20,6 +19,7 @@ import {
   X,
 } from 'lucide-react';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
+import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { formatPrice } from '@/lib/format';
 import { flattenCategories, slugifyTurkish, type StoreCategory } from '@/lib/category-utils';
 
@@ -231,14 +231,12 @@ export function AdminProducts({
           .upload(path, photo, { contentType: photo.type, upsert: false });
         if (uploadError)
           throw new Error('Ürün kaydedildi ancak fotoğraf yüklenemedi: ' + uploadError.message);
-        const { error: imageError } = await supabase
-          .from('product_images')
-          .insert({
-            product_id: productId,
-            storage_path: path,
-            sort_order: 0,
-            alt_text: form.name.trim(),
-          });
+        const { error: imageError } = await supabase.from('product_images').insert({
+          product_id: productId,
+          storage_path: path,
+          sort_order: 0,
+          alt_text: form.name.trim(),
+        });
         if (imageError)
           throw new Error(
             'Ürün kaydedildi ancak görsel kaydı oluşturulamadı: ' + imageError.message,
@@ -290,30 +288,7 @@ export function AdminProducts({
   }
   return (
     <div className="admin-shell">
-      <aside className="admin-sidebar">
-        <Link href="/" className="admin-brand">
-          öz kırtasiye<span>.</span>
-        </Link>
-        <div className="admin-sidegroup">
-          <div className="admin-side-heading">YÖNETİM</div>
-          <Link className="admin-side-link active" href="/admin/urunler">
-            <Boxes size={18} /> Ürün ve stok
-          </Link>
-          <Link className="admin-side-link" href="/admin/kategoriler">
-            <FolderTree size={18} /> Kategoriler
-          </Link>
-          <Link className="admin-side-link" href="/admin/siparisler">
-            <ClipboardList size={18} /> Sipariş yönetimi
-          </Link>
-          <Link className="admin-side-link" href="/admin/ayarlar">
-            <Settings2 size={18} /> İşletme ayarları
-          </Link>
-          <Link className="admin-side-link" href="/">
-            <Package size={18} /> Mağazayı görüntüle
-          </Link>
-        </div>
-        <div className="admin-side-footer">Supabase · Canlı ürün ve stok verileri</div>
-      </aside>
+      <AdminSidebar />
       <div className="admin-main">
         <div className="admin-top">
           <Link href="/">

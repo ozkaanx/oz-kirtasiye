@@ -3,21 +3,20 @@
 import { type FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  ArrowLeft,
-  Boxes,
-  ClipboardList,
-  FolderTree,
-  LogOut,
-  Package,
-  Save,
-  Settings2,
-  ShieldCheck,
-} from 'lucide-react';
+import { ArrowLeft, LogOut, Save, ShieldCheck } from 'lucide-react';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
+import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { storeDetailsMissing, type StoreSettings } from '@/lib/store-profile';
 
-type EditableKey = Exclude<keyof StoreSettings, 'id'>;
+type EditableKey = Exclude<
+  keyof StoreSettings,
+  | 'id'
+  | 'shipping_enabled'
+  | 'pickup_enabled'
+  | 'shipping_flat_fee'
+  | 'free_shipping_threshold'
+  | 'pickup_instructions'
+>;
 type FormFields = Record<EditableKey, string>;
 const fields: EditableKey[] = [
   'brand_name',
@@ -138,30 +137,7 @@ export function AdminStoreSettings({ initialSettings }: { initialSettings: Store
 
   return (
     <div className="admin-shell">
-      <aside className="admin-sidebar">
-        <Link href="/" className="admin-brand">
-          öz kırtasiye<span>.</span>
-        </Link>
-        <div className="admin-sidegroup">
-          <div className="admin-side-heading">YÖNETİM</div>
-          <Link href="/admin/urunler" className="admin-side-link">
-            <Boxes size={18} /> Ürün ve stok
-          </Link>
-          <Link href="/admin/kategoriler" className="admin-side-link">
-            <FolderTree size={18} /> Kategoriler
-          </Link>
-          <Link href="/admin/siparisler" className="admin-side-link">
-            <ClipboardList size={18} /> Sipariş yönetimi
-          </Link>
-          <Link href="/admin/ayarlar" className="admin-side-link active">
-            <Settings2 size={18} /> İşletme ayarları
-          </Link>
-          <Link href="/" className="admin-side-link">
-            <Package size={18} /> Mağazayı görüntüle
-          </Link>
-        </div>
-        <div className="admin-side-footer">Supabase · Kurumsal ve yasal iletişim bilgileri</div>
-      </aside>
+      <AdminSidebar />
       <div className="admin-main">
         <div className="admin-top">
           <Link href="/">

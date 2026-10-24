@@ -3346,7 +3346,7 @@ a:focus-visible {
   grid-template-columns: 1fr 1fr;
   gap: 0 17px;
 }
-.checkout-customer input:not([type='checkbox']),
+.checkout-customer input:not([type='checkbox']):not([type='radio']),
 .checkout-customer textarea {
   width: 100%;
   border: 1px solid #dfe3e8;
@@ -4231,5 +4231,411 @@ a:focus-visible {
   .settings-form-actions .button {
     width: 100%;
     justify-content: center;
+  }
+}
+
+/* Shipping costs and pickup — isolated styles to preserve existing storefront */
+.delivery-admin-page {
+  padding-top: 44px;
+  padding-bottom: 88px;
+  max-width: 1050px;
+}
+.delivery-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  padding: 12px 15px;
+  background: #fff5f0;
+  font-size: 14px;
+  font-weight: 750;
+  margin: 8px 0 18px;
+  cursor: pointer;
+}
+.delivery-toggle input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--orange);
+}
+.delivery-preview {
+  font-size: 13px;
+  line-height: 1.7;
+  background: #f6f8fb;
+  padding: 13px 17px;
+  border-radius: 9px;
+  margin-top: 10px;
+}
+.delivery-help {
+  font-size: 12px;
+  color: #7b838b;
+  line-height: 1.65;
+  margin: 13px 0 0;
+}
+.delivery-pickup-address {
+  background: #f5f8f5;
+  border: 1px solid #e2eae2;
+  padding: 15px 17px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 10px 0 17px;
+}
+.delivery-pickup-address strong {
+  font-size: 13px;
+}
+.delivery-pickup-address p {
+  margin: 7px 0;
+  color: #5f6b64;
+}
+.delivery-pickup-address small {
+  color: #758278;
+}
+.delivery-pickup-address a {
+  color: var(--orange);
+  text-decoration: underline;
+}
+.delivery-instructions {
+  display: block;
+  margin-top: 16px;
+  font-size: 12px;
+}
+.delivery-instructions textarea {
+  display: block;
+  width: 100%;
+  margin-top: 9px;
+  border: 1px solid #e1e4e9;
+  border-radius: 9px;
+  padding: 13px;
+  resize: vertical;
+  font: inherit;
+}
+.delivery-choices {
+  border: 0;
+  padding: 0;
+  margin: 0 0 23px;
+  display: grid;
+  gap: 11px;
+}
+.delivery-choices legend {
+  font-size: 14px;
+  font-weight: 850;
+  margin-bottom: 12px;
+}
+.delivery-choice {
+  border: 1px solid #e4e6eb;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.delivery-choice.selected {
+  border-color: var(--orange);
+  background: #fff9f6;
+}
+.delivery-choice input {
+  accent-color: var(--orange);
+  flex-shrink: 0;
+}
+.delivery-choice > svg {
+  color: var(--orange);
+  flex-shrink: 0;
+}
+.delivery-choice span {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+}
+.delivery-choice strong {
+  font-size: 13px;
+}
+.delivery-choice small {
+  font-size: 11px;
+  color: #7a808a;
+}
+.delivery-choice b {
+  font-size: 12px;
+  white-space: nowrap;
+}
+.delivery-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 11px 0;
+  color: #555d68;
+  font-size: 13px;
+  border-bottom: 1px solid #eef0f3;
+}
+.delivery-summary-row b {
+  color: #1f2630;
+}
+.delivery-cart-footnote {
+  font-size: 12px;
+  line-height: 1.65;
+  color: #6e7682;
+  margin: 9px 0;
+}
+@media (max-width: 600px) {
+  .delivery-admin-page {
+    padding-top: 25px;
+  }
+  .delivery-choice {
+    padding: 11px;
+  }
+  .delivery-choice > svg {
+    width: 18px;
+  }
+}
+
+/* Ortak yönetim menüsü ve mobil erişim */
+.admin-mobile-menu-toggle,
+.admin-mobile-sidebar-head,
+.admin-sidebar-backdrop {
+  display: none;
+}
+.admin-body .delivery-admin-page {
+  width: 100%;
+  max-width: none;
+  padding: 0 0 32px;
+}
+@media (max-width: 950px) {
+  .admin-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .admin-sidebar {
+    display: flex;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(300px, 86vw);
+    z-index: 121;
+    overflow-y: auto;
+    transform: translateX(-103%);
+    transition: transform 0.2s ease;
+    box-shadow: 8px 0 25px #0002;
+  }
+  .admin-sidebar.is-open {
+    transform: translateX(0);
+  }
+  .admin-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    border: 0;
+    background: rgba(9, 14, 20, 0.58);
+    cursor: pointer;
+  }
+  .admin-mobile-menu-toggle {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    position: fixed;
+    top: 13px;
+    left: 12px;
+    z-index: 90;
+    border: 1px solid #e0e3e8;
+    background: #fff;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 12px;
+    font-weight: 750;
+    color: #222;
+    box-shadow: 0 2px 8px #00000012;
+  }
+  .admin-mobile-sidebar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #fff;
+    font-size: 13px;
+    padding: 0 8px;
+  }
+  .admin-mobile-sidebar-head button {
+    display: grid;
+    place-items: center;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    padding: 8px;
+  }
+  .admin-top {
+    padding-left: 105px;
+    padding-right: 18px;
+  }
+}
+@media (max-width: 500px) {
+  .admin-top {
+    padding-left: 105px;
+    padding-right: 12px;
+    gap: 7px;
+  }
+  .admin-top .admin-logout {
+    font-size: 11px;
+  }
+  .admin-body {
+    padding: 16px;
+  }
+}
+
+/* UI layout hotfix: radio fields must not inherit full-width checkout text input styles. */
+.checkout-customer .delivery-choices {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0 0 24px;
+}
+.checkout-customer .delivery-choices legend {
+  width: 100%;
+  font-size: 14px;
+  font-weight: 800;
+  margin: 0 0 12px;
+}
+.checkout-customer .delivery-choice {
+  width: 100%;
+  min-width: 0;
+  min-height: 78px;
+  display: grid;
+  grid-template-columns: 20px 24px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  padding: 16px;
+  margin: 0;
+  border: 1px solid #e4e6eb;
+  border-radius: 14px;
+  background: #fff;
+  color: #22272f;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.checkout-customer .delivery-choice:hover {
+  border-color: #ff9c80;
+}
+.checkout-customer .delivery-choice.selected {
+  border-color: var(--orange);
+  background: #fff8f4;
+}
+.checkout-customer .delivery-choice .delivery-choice-radio {
+  display: block;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 50%;
+  accent-color: var(--orange);
+  flex: none;
+}
+.checkout-customer .delivery-choice .delivery-choice-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  color: var(--orange);
+  flex: none;
+}
+.checkout-customer .delivery-choice .delivery-choice-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 5px;
+  flex: initial;
+}
+.checkout-customer .delivery-choice-content strong {
+  font-size: 14px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.checkout-customer .delivery-choice-content small {
+  font-size: 12px;
+  color: #737b87;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.checkout-customer .delivery-choice .delivery-choice-price {
+  display: block;
+  flex: none;
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 800;
+  white-space: nowrap;
+  color: #333943;
+  justify-self: end;
+}
+/* Shared admin navigation: consistent layout regardless of selected page. */
+.admin-sidebar .admin-sidegroup .admin-side-link {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  min-height: 45px;
+  padding: 11px 12px;
+  margin: 0;
+  border-radius: 9px;
+  color: #d0d3d8;
+  text-align: left;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+}
+.admin-sidebar .admin-sidegroup .admin-side-link .admin-side-icon {
+  display: block;
+  width: 19px;
+  height: 19px;
+  flex: none;
+  color: inherit;
+}
+.admin-sidebar .admin-sidegroup .admin-side-link .admin-side-text {
+  display: block;
+  width: auto;
+  min-width: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  overflow-wrap: break-word;
+}
+.admin-sidebar .admin-sidegroup .admin-side-link:hover,
+.admin-sidebar .admin-sidegroup .admin-side-link.is-current {
+  color: #fff;
+  background: #30363e;
+}
+.admin-sidebar .admin-sidegroup .admin-side-link.is-current .admin-side-icon {
+  color: var(--orange);
+}
+@media (max-width: 600px) {
+  .checkout-customer .delivery-choice {
+    grid-template-columns: 18px 22px minmax(0, 1fr);
+    gap: 10px;
+    min-height: 76px;
+    padding: 13px;
+  }
+  .checkout-customer .delivery-choice .delivery-choice-icon,
+  .checkout-customer .delivery-choice .delivery-choice-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+  .checkout-customer .delivery-choice .delivery-choice-price {
+    grid-column: 3;
+    justify-self: start;
+    margin-top: 2px;
   }
 }

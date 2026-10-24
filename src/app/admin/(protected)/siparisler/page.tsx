@@ -18,7 +18,7 @@ export default async function AdminOrderRequestsPage() {
     .select(
       `
       id, reference, customer_name, phone, city, district, address, note,
-      status, payment_status, subtotal, created_at, carrier, tracking_number,
+      status, payment_status, subtotal, delivery_method, shipping_fee, total, created_at, carrier, tracking_number,
       shipped_at, delivered_at, inventory_deducted_at, inventory_restored_at,
       cancellation_reason,
       order_request_items(id, product_name, unit_price, quantity, line_total),
@@ -33,6 +33,9 @@ export default async function AdminOrderRequestsPage() {
     status: row.status as AdminOrderRequest['status'],
     payment_status: row.payment_status as AdminOrderRequest['payment_status'],
     subtotal: Number(row.subtotal),
+    shipping_fee: Number(row.shipping_fee),
+    total: Number(row.total),
+    delivery_method: row.delivery_method as AdminOrderRequest['delivery_method'],
     order_request_items: (row.order_request_items ?? []).map((item) => ({
       ...item,
       unit_price: Number(item.unit_price),

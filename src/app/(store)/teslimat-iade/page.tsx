@@ -15,9 +15,11 @@ export default async function DeliveryAndReturnsPage() {
     >
       <LegalSection title="Teslimat bilgileri">
         <p>
-          Şu an online ödeme yerine sipariş talebi alınıyor. Ürün teslimatı ve olası kargo ücreti
-          işletme tarafından müşteriyle görüşülerek netleştirilir. Canlı ödemeye geçildiğinde tüm
-          teslimat ücretleri ve taahhüt edilen süre ödeme öncesinde gösterilecektir.
+          Şu an online ödeme yerine sipariş talebi alınıyor. Kargo veya mağazadan teslim seçenekleri
+          yönetim panelinde açıldığında talep formunda seçilebilir; varsa sabit kargo bedeli ve
+          tahmini toplam gönderim öncesinde gösterilir. Ödeme ve kesin teslimat taahhütleri ayrıca
+          netleştirilir. Canlı ödemeye geçildiğinde tüm teslimat ücretleri ve taahhüt edilen süre
+          ödeme öncesinde gösterilecektir.
         </p>
         <p>
           {settings.shipping_information ||
