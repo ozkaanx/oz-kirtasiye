@@ -10,4 +10,11 @@ export type CartProduct = {
   imageUrl: string | null;
 };
 
-export type OrderRequestResult = { id: string; reference: string; subtotal: number };
+export type OrderRequestResult = {
+  id: string;
+  reference: string;
+  subtotal: number;
+  shippingFee: number;
+  total: number;
+  deliveryMethod: 'shipping' | 'pickup';
+};

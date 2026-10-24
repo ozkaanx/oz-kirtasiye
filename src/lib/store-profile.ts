@@ -1,5 +1,5 @@
 /** Update this identifier when published disclosure copy materially changes. */
-export const LEGAL_DOCUMENT_VERSION = '2026-10-24-v1';
+export const LEGAL_DOCUMENT_VERSION = '2026-10-24-v2';
 
 export type StoreSettings = {
   id: number;
@@ -16,6 +16,11 @@ export type StoreSettings = {
   return_address: string | null;
   shipping_information: string | null;
   return_instructions: string | null;
+  shipping_enabled: boolean;
+  pickup_enabled: boolean;
+  shipping_flat_fee: number | null;
+  free_shipping_threshold: number | null;
+  pickup_instructions: string | null;
 };
 
 export const DEFAULT_STORE_SETTINGS: StoreSettings = {
@@ -33,6 +38,11 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   return_address: null,
   shipping_information: null,
   return_instructions: null,
+  shipping_enabled: false,
+  pickup_enabled: false,
+  shipping_flat_fee: null,
+  free_shipping_threshold: null,
+  pickup_instructions: null,
 };
 
 export function storeDetailsMissing(settings: StoreSettings): string[] {

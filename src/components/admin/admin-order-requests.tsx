@@ -4,13 +4,10 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Settings2,
   ArrowLeft,
-  Boxes,
   CheckCircle2,
   ClipboardList,
   Clock3,
-  FolderTree,
   LogOut,
   Package,
   PackageCheck,
@@ -21,6 +18,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
+import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { formatPrice } from '@/lib/format';
 
 type OrderStatus =
@@ -31,7 +29,7 @@ type OrderStatus =
   | 'delivered'
   | 'completed' // Historical state from the previous implementation.
   | 'cancelled';
-type Action = 'contact' | 'prepare' | 'ship' | 'deliver' | 'cancel';
+type Action = 'contact' | 'prepare' | 'ship' | 'deliver' | 'cancel' | 'pickup_collect';
 type OrderItem = {
   id: string;
   product_name: string;
@@ -58,6 +56,9 @@ export type AdminOrderRequest = {
   status: OrderStatus;
   payment_status: 'not_collected';
   subtotal: number;
+  delivery_method: 'legacy' | 'shipping' | 'pickup';
+  shipping_fee: number;
+  total: number;
   created_at: string;
   carrier: string | null;
   tracking_number: string | null;
@@ -137,7 +138,7 @@ export function AdminOrderRequests({
     )
       return;
     if (
-      action === 'deliver' &&
+      (action === 'deliver' || action === 'pickup_collect') &&
       !window.confirm(`${order.reference} siparişinin gerçekten teslim edildiğini onaylıyor musun?`)
     )
       return;
@@ -153,13 +154,16 @@ export function AdminOrderRequests({
     setError('');
     setSuccess('');
     try {
-      const { error: dbError } = await createBrowserSupabase().rpc('manage_order_request', {
-        p_order_id: order.id,
-        p_action: action,
-        p_carrier: action === 'ship' ? carrier.trim() : null,
-        p_tracking_number: action === 'ship' ? trackingNumber.trim() : null,
-        p_reason: action === 'cancel' ? cancelReason.trim() || null : null,
-      });
+      const { error: dbError } =
+        action === 'pickup_collect'
+          ? await createBrowserSupabase().rpc('complete_pickup_order', { p_order_id: order.id })
+          : await createBrowserSupabase().rpc('manage_order_request', {
+              p_order_id: order.id,
+              p_action: action,
+              p_carrier: action === 'ship' ? carrier.trim() : null,
+              p_tracking_number: action === 'ship' ? trackingNumber.trim() : null,
+              p_reason: action === 'cancel' ? cancelReason.trim() || null : null,
+            });
       if (dbError) throw dbError;
       closeForms();
       setSuccess(`${order.reference}: Sipariş durumu güncellendi.`);
@@ -179,30 +183,7 @@ export function AdminOrderRequests({
 
   return (
     <div className="admin-shell">
-      <aside className="admin-sidebar">
-        <Link href="/" className="admin-brand">
-          öz kırtasiye<span>.</span>
-        </Link>
-        <div className="admin-sidegroup">
-          <div className="admin-side-heading">YÖNETİM</div>
-          <Link className="admin-side-link" href="/admin/urunler">
-            <Boxes size={18} /> Ürün ve stok
-          </Link>
-          <Link className="admin-side-link" href="/admin/kategoriler">
-            <FolderTree size={18} /> Kategoriler
-          </Link>
-          <Link className="admin-side-link active" href="/admin/siparisler">
-            <ClipboardList size={18} /> Sipariş talepleri
-          </Link>
-          <Link className="admin-side-link" href="/admin/ayarlar">
-            <Settings2 size={18} /> İşletme ayarları
-          </Link>
-          <Link className="admin-side-link" href="/">
-            <Package size={18} /> Mağazayı görüntüle
-          </Link>
-        </div>
-        <div className="admin-side-footer">Supabase · Sipariş ve kargo takibi</div>
-      </aside>
+      <AdminSidebar />
 
       <div className="admin-main">
         <div className="admin-top">
@@ -321,16 +302,31 @@ export function AdminOrderRequests({
                       <a href={`tel:${order.phone}`}>{order.phone}</a>
                     </div>
                     <div>
-                      <span>Teslimat adresi</span>
+                      <span>
+                        {order.delivery_method === 'pickup'
+                          ? 'Mağazadan teslim'
+                          : 'Teslimat adresi'}
+                      </span>
                       <strong>
-                        {order.city} / {order.district}
+                        {order.delivery_method === 'pickup'
+                          ? 'Mağaza teslim noktası'
+                          : `${order.city} / ${order.district}`}
                       </strong>
                       <p>{order.address}</p>
                     </div>
                     <div>
                       <span>Ürün toplamı</span>
                       <strong>{formatPrice(order.subtotal)}</strong>
-                      <small>Ödeme kaydı: Tahsil edilmedi · Kargo hariç</small>
+                      {order.delivery_method !== 'legacy' && (
+                        <>
+                          <small>Kargo: {formatPrice(order.shipping_fee)}</small>
+                          <strong>Genel toplam: {formatPrice(order.total)}</strong>
+                        </>
+                      )}
+                      <small>Ödeme kaydı: Tahsil edilmedi</small>
+                      {order.delivery_method === 'legacy' && (
+                        <small>Önceki sipariş · Kargo tutarı kaydedilmemiş</small>
+                      )}
                     </div>
                   </div>
                   <div className="order-request-items">
@@ -389,7 +385,7 @@ export function AdminOrderRequests({
                         <Package size={16} /> Hazırlığa al · Stoktan düş
                       </button>
                     )}
-                    {order.status === 'processing' && (
+                    {order.status === 'processing' && order.delivery_method !== 'pickup' && (
                       <button
                         disabled={!!pending}
                         className="button button-primary"
@@ -400,6 +396,15 @@ export function AdminOrderRequests({
                         }}
                       >
                         <Truck size={16} /> Kargoya ver
+                      </button>
+                    )}
+                    {order.status === 'processing' && order.delivery_method === 'pickup' && (
+                      <button
+                        disabled={!!pending}
+                        className="button button-primary"
+                        onClick={() => void updateOrder(order, 'pickup_collect')}
+                      >
+                        <CheckCircle2 size={16} /> Mağazadan teslim edildi
                       </button>
                     )}
                     {order.status === 'shipped' && (
@@ -429,58 +434,60 @@ export function AdminOrderRequests({
                     )}
                   </div>
 
-                  {shipOrderId === order.id && order.status === 'processing' && (
-                    <form
-                      className="order-action-form"
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        void updateOrder(order, 'ship');
-                      }}
-                    >
-                      <strong>Kargo bilgileri</strong>
-                      <div className="order-form-fields">
-                        <label>
-                          Kargo firması
-                          <input
-                            required
-                            maxLength={60}
-                            minLength={2}
-                            value={carrier}
-                            onChange={(event) => setCarrier(event.target.value)}
-                            placeholder="Örn. Yurtiçi Kargo"
-                          />
-                        </label>
-                        <label>
-                          Takip numarası
-                          <input
-                            required
-                            minLength={3}
-                            maxLength={80}
-                            pattern="[a-zA-Z0-9_-]{3,80}"
-                            value={trackingNumber}
-                            onChange={(event) => setTrackingNumber(event.target.value)}
-                            placeholder="Örn. YK123456789"
-                          />
-                        </label>
-                      </div>
-                      <div className="order-form-footer">
-                        <button
-                          className="button button-outline"
-                          type="button"
-                          onClick={closeForms}
-                        >
-                          Vazgeç
-                        </button>
-                        <button
-                          disabled={!!pending}
-                          className="button button-primary"
-                          type="submit"
-                        >
-                          Kargoya verildi olarak kaydet
-                        </button>
-                      </div>
-                    </form>
-                  )}
+                  {shipOrderId === order.id &&
+                    order.status === 'processing' &&
+                    order.delivery_method !== 'pickup' && (
+                      <form
+                        className="order-action-form"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          void updateOrder(order, 'ship');
+                        }}
+                      >
+                        <strong>Kargo bilgileri</strong>
+                        <div className="order-form-fields">
+                          <label>
+                            Kargo firması
+                            <input
+                              required
+                              maxLength={60}
+                              minLength={2}
+                              value={carrier}
+                              onChange={(event) => setCarrier(event.target.value)}
+                              placeholder="Örn. Yurtiçi Kargo"
+                            />
+                          </label>
+                          <label>
+                            Takip numarası
+                            <input
+                              required
+                              minLength={3}
+                              maxLength={80}
+                              pattern="[a-zA-Z0-9_-]{3,80}"
+                              value={trackingNumber}
+                              onChange={(event) => setTrackingNumber(event.target.value)}
+                              placeholder="Örn. YK123456789"
+                            />
+                          </label>
+                        </div>
+                        <div className="order-form-footer">
+                          <button
+                            className="button button-outline"
+                            type="button"
+                            onClick={closeForms}
+                          >
+                            Vazgeç
+                          </button>
+                          <button
+                            disabled={!!pending}
+                            className="button button-primary"
+                            type="submit"
+                          >
+                            Kargoya verildi olarak kaydet
+                          </button>
+                        </div>
+                      </form>
+                    )}
                   {cancelOrderId === order.id &&
                     (['new', 'contacted', 'processing'] as OrderStatus[]).includes(
                       order.status,

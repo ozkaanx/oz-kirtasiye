@@ -15,8 +15,9 @@ export default async function PreInformationPage() {
       <LegalSection title="Ürünler ve fiyat">
         <p>
           Ürünlerin temel nitelikleri, satış fiyatı ve stok durumu ilgili ürün sayfalarında
-          gösterilir. Talep formunda görünen toplam, ürünlerin ara toplamıdır; kargo ve varsa diğer
-          ücretleri içermez. İlave bedeller tüketiciye açıkça bildirilmeden tahsil edilemez.
+          gösterilir. Sipariş talebindeki tahmini toplam, seçilen yönteme göre ürün ara toplamı ve
+          yapılandırılmış kargo bedelini içerir. Kesin tutar talep oluşturulurken sunucuda yeniden
+          hesaplanır. İlave bedeller tüketiciye açıkça bildirilmeden tahsil edilemez.
         </p>
       </LegalSection>
       <LegalSection title="Mevcut sipariş talebi akışı">

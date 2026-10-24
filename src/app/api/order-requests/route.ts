@@ -50,8 +50,11 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+    if (body.deliveryMethod !== 'shipping' && body.deliveryMethod !== 'pickup') {
+      return NextResponse.json({ message: 'Bir teslimat yöntemi seçmelisin.' }, { status: 400 });
+    }
     const supabase = createOrderServerClient();
-    const { data, error } = await supabase.rpc('submit_order_request_with_notices', {
+    const { data, error } = await supabase.rpc('submit_order_request_with_delivery', {
       p_customer_name: body.customerName,
       p_phone: body.phone,
       p_city: body.city,
@@ -62,6 +65,7 @@ export async function POST(request: NextRequest) {
       p_pre_information_read: true,
       p_privacy_notice_read: true,
       p_notice_version: LEGAL_DOCUMENT_VERSION,
+      p_delivery_method: body.deliveryMethod,
     });
     if (error) {
       const knownValidationError = error.code === '22023';
@@ -74,10 +78,28 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    const result = (data as { id: string; reference: string; subtotal: number }[] | null)?.[0];
+    const result = (
+      data as
+        | {
+            id: string;
+            reference: string;
+            subtotal: number;
+            shipping_fee: number;
+            total: number;
+            delivery_method: 'pickup' | 'shipping';
+          }[]
+        | null
+    )?.[0];
     if (!result) return NextResponse.json({ message: 'Talep kaydedilemedi.' }, { status: 503 });
     return NextResponse.json(
-      { id: result.id, reference: result.reference, subtotal: Number(result.subtotal) },
+      {
+        id: result.id,
+        reference: result.reference,
+        subtotal: Number(result.subtotal),
+        shippingFee: Number(result.shipping_fee),
+        total: Number(result.total),
+        deliveryMethod: result.delivery_method,
+      },
       { status: 201 },
     );
   } catch {
