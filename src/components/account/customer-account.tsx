@@ -249,6 +249,10 @@ export function CustomerAccount({
               {label}
             </button>
           ))}
+          <Link href="/hesabim/iade" className={styles.tab}>
+            <Package size={18} />
+            İade ve değişim
+          </Link>
           <Link href="/urunler" className={styles.shopLink}>
             Alışverişe dön <ArrowRight size={16} />
           </Link>

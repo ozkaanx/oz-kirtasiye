@@ -1,0 +1,303 @@
+.root {
+  min-width: 0;
+}
+.warning {
+  display: flex;
+  gap: 12px;
+  background: #fff4e9;
+  border: 1px solid #f5dbc1;
+  padding: 15px 18px;
+  border-radius: 12px;
+  color: #89501d;
+  font-size: 12px;
+  line-height: 1.65;
+  margin-bottom: 22px;
+}
+.warning svg {
+  flex-shrink: 0;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.metrics > div {
+  min-width: 0;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid #e5e8ef;
+  border-radius: 12px;
+  display: grid;
+  gap: 6px;
+}
+.metrics small {
+  color: #637082;
+  font-size: 12px;
+}
+.metrics strong {
+  font-size: 27px;
+  color: #1c2735;
+}
+.filterBar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.filterBar > label {
+  flex: 1;
+  min-width: 200px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.filterBar > label svg {
+  position: absolute;
+  left: 13px;
+  color: #647084;
+}
+.filterBar input,
+.filterBar select {
+  border: 1px solid #dce1e9;
+  background: white;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  min-width: 0;
+}
+.filterBar input {
+  padding-left: 40px;
+  width: 100%;
+}
+.filterBar select {
+  min-width: 210px;
+  max-width: 100%;
+}
+.count {
+  color: #717d8b;
+  font-size: 12px;
+  margin: 12px 0 20px;
+}
+.list {
+  display: grid;
+  gap: 16px;
+}
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 50px;
+  color: #7c8793;
+  background: white;
+  border: 1px solid #e4e9f0;
+  border-radius: 14px;
+}
+.card {
+  background: white;
+  border: 1px solid #e4e8ef;
+  border-radius: 16px;
+  padding: 22px;
+  min-width: 0;
+}
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #edf0f4;
+  padding-bottom: 15px;
+}
+.cardHead > div {
+  display: grid;
+  gap: 6px;
+}
+.cardHead strong {
+  font-size: 17px;
+}
+.cardHead small,
+.details small {
+  font-size: 11px;
+  color: #788393;
+}
+.status {
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 12px;
+  color: #a04b21;
+  background: #fff0e7;
+}
+.details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 19px 0;
+}
+.details > div {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  min-width: 0;
+}
+.details strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.details span,
+.details a {
+  font-size: 12px;
+  color: #556373;
+  overflow-wrap: anywhere;
+}
+.customerNote,
+.adminNote,
+.invoiceWarning,
+.restocked,
+.warningSmall {
+  font-size: 12px;
+  line-height: 1.65;
+  padding: 11px 14px;
+  border-radius: 9px;
+  overflow-wrap: anywhere;
+}
+.customerNote {
+  background: #f8f9fb;
+}
+.adminNote {
+  background: #edf7ff;
+}
+.invoiceWarning,
+.warningSmall {
+  background: #fff5e7;
+  color: #8a531f;
+}
+.invoiceWarning a {
+  text-decoration: underline;
+  font-weight: 700;
+  color: inherit;
+}
+.restocked {
+  color: #267046;
+  background: #ecfaef;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin: 18px 0 0;
+}
+.actions button {
+  font-size: 13px;
+}
+.actionForm {
+  border: 1px solid #e5e7eb;
+  background: #fbfcfd;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 18px;
+  display: grid;
+  gap: 14px;
+}
+.actionForm h3 {
+  font-size: 16px;
+  margin: 0;
+}
+.actionForm > label {
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.actionForm textarea,
+.actionForm select {
+  border: 1px solid #d4dbe5;
+  border-radius: 9px;
+  background: white;
+  padding: 11px;
+  font-size: 13px;
+  width: 100%;
+}
+.actionForm textarea {
+  resize: vertical;
+}
+.actionForm .checkLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-weight: 450;
+  line-height: 1.6;
+  cursor: pointer;
+}
+.checkLabel input {
+  width: 17px;
+  height: 17px;
+  margin-top: 3px;
+  flex-shrink: 0;
+  accent-color: #ff643c;
+}
+.timeline {
+  border-top: 1px solid #edf0f4;
+  padding-top: 14px;
+  margin-top: 19px;
+  font-size: 12px;
+}
+.timeline summary {
+  cursor: pointer;
+  font-weight: 650;
+  color: #576576;
+}
+.timeline p {
+  font-size: 12px;
+  color: #677687;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.error,
+.success {
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin: 14px 0;
+  font-size: 13px;
+}
+.error {
+  background: #fff0ef;
+  color: #a33730;
+}
+.success {
+  background: #eaf8ef;
+  color: #23704a;
+}
+@media (max-width: 900px) {
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .card {
+    padding: 15px;
+  }
+  .details {
+    grid-template-columns: 1fr;
+  }
+  .filterBar > label,
+  .filterBar select {
+    width: 100%;
+    min-width: 0;
+  }
+  .actions {
+    justify-content: stretch;
+  }
+  .actions button {
+    flex: 1;
+    min-width: 130px;
+  }
+}
