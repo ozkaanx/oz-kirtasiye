@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Package } from 'lucide-react';
 import { getLiveProductBySlug } from '@/lib/real-catalog';
-import { formatPrice } from '@/lib/format';
 import { LivePurchaseButton } from '@/components/product/live-purchase-button';
 import { LiveVariantPicker } from '@/components/product/live-variant-picker';
 import { LiveFavoriteButton } from '@/components/product/live-favorite-button';
+import { CampaignPrice } from '@/components/product/campaign-price';
 
 export const dynamic = 'force-dynamic';
 export async function generateMetadata({
@@ -61,7 +61,13 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
               {product.name}
               <span className="orange-dot">.</span>
             </h1>
-            <div className="real-detail-price">{formatPrice(product.price)}</div>
+            <CampaignPrice
+              price={product.price}
+              compareAtPrice={product.compare_at_price}
+              promotion={product.promotion}
+              campaignNotice={product.campaignNotice}
+              size="detail"
+            />
             <p>{product.description ?? 'Ürün detayları yakında eklenecek.'}</p>
             <p>
               <strong>

@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import { createServerSupabase } from '@/lib/supabase/server';
-import { AdminOrderRequests, type AdminOrderRequest } from '@/components/admin/admin-order-requests';
+import {
+  AdminOrderRequests,
+  type AdminOrderRequest,
+} from '@/components/admin/admin-order-requests';
 
 export const metadata: Metadata = {
   title: 'Sipariş ve Kargo Yönetimi',
@@ -12,14 +15,16 @@ export default async function AdminOrderRequestsPage() {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase
     .from('order_requests')
-    .select(`
+    .select(
+      `
       id, reference, customer_name, phone, city, district, address, note,
       status, payment_status, subtotal, discount_amount, coupon_code, automatic_campaign_name, delivery_method, shipping_fee, total, created_at, carrier, tracking_number,
       shipped_at, delivered_at, inventory_deducted_at, inventory_restored_at,
       cancellation_reason,
       order_request_items(id, product_name, variant_label, unit_price, quantity, line_total),
       order_request_status_history(id, from_status, to_status, note, created_at)
-    `)
+    `,
+    )
     .order('created_at', { ascending: false })
     .limit(100);
 

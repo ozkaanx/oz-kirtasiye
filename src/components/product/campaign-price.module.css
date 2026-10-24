@@ -1,0 +1,120 @@
+.price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+.mainRow {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px 9px;
+}
+.old {
+  color: #8d949e;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: line-through;
+}
+.discounted {
+  color: #eb5230;
+  font-size: 19px;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+.regular {
+  color: #1b2027;
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+.saving {
+  display: inline-flex;
+  color: #116841;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.note {
+  color: #6c7680;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.detail {
+  gap: 7px;
+  margin: 18px 0;
+}
+.detail .old {
+  font-size: 17px;
+}
+.detail .discounted,
+.detail .regular {
+  font-size: clamp(26px, 4vw, 34px);
+}
+.detail .saving {
+  font-size: 13px;
+}
+.detail .note {
+  font-size: 12px;
+}
+.ribbon {
+  position: absolute;
+  z-index: 2;
+  left: 12px;
+  top: 12px;
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: #ed5b36;
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 5px 16px #1a1a1a20;
+}
+
+/* Cart-threshold messaging never changes the displayed single-item price. */
+.basketCondition {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  max-width: 100%;
+  min-width: 0;
+  margin-top: 5px;
+  border: 1px solid #f6d7b6;
+  border-radius: 9px;
+  padding: 8px 10px;
+  background: #fff8ef;
+  color: #854820;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.basketCondition svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #e86632;
+}
+.basketCondition span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.basketCondition strong {
+  font-weight: 800;
+}
+.basketCondition small {
+  display: block;
+  margin-top: 3px;
+  color: #885e40;
+  font-size: 11px;
+}
+.detail .basketCondition {
+  padding: 12px 14px;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.detail .basketCondition small {
+  font-size: 12px;
+}

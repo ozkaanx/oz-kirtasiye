@@ -281,14 +281,12 @@ export function AdminProducts({
           .upload(path, photo, { contentType: photo.type, upsert: false });
         if (uploadError)
           throw new Error('Ürün kaydedildi ancak fotoğraf yüklenemedi: ' + uploadError.message);
-        const { error: imageError } = await supabase
-          .from('product_images')
-          .insert({
-            product_id: productId,
-            storage_path: path,
-            sort_order: 0,
-            alt_text: form.name.trim(),
-          });
+        const { error: imageError } = await supabase.from('product_images').insert({
+          product_id: productId,
+          storage_path: path,
+          sort_order: 0,
+          alt_text: form.name.trim(),
+        });
         if (imageError)
           throw new Error(
             'Ürün kaydedildi ancak görsel kaydı oluşturulamadı: ' + imageError.message,
