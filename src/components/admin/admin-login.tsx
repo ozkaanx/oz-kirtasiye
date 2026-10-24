@@ -34,7 +34,7 @@ export function AdminLogin() {
         setError('Bu hesap için mağaza yöneticisi yetkisi tanımlanmamış.');
         return;
       }
-      router.replace('/admin/urunler');
+      router.replace('/admin/genel-bakis');
       router.refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Giriş yapılamadı.');

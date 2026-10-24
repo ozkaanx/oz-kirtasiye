@@ -21,7 +21,13 @@ import {
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { formatPrice } from '@/lib/format';
-import { flattenCategories, slugifyTurkish, type StoreCategory } from '@/lib/category-utils';
+import filterStyles from './admin-list-filters.module.css';
+import {
+  descendantIds,
+  flattenCategories,
+  slugifyTurkish,
+  type StoreCategory,
+} from '@/lib/category-utils';
 
 type Category = StoreCategory;
 type Product = {
@@ -93,6 +99,12 @@ export function AdminProducts({
 }) {
   const router = useRouter();
   const [query, setQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [stockFilter, setStockFilter] = useState<'all' | 'available' | 'low' | 'out'>('all');
+  const [sortBy, setSortBy] = useState<
+    'name' | 'priceAsc' | 'priceDesc' | 'stockAsc' | 'stockDesc'
+  >('name');
   const [tab, setTab] = useState<'products' | 'history'>('products');
   const [editing, setEditing] = useState<Product | null | 'new'>(null);
   const [form, setForm] = useState<ProductForm>(emptyForm);
@@ -105,15 +117,51 @@ export function AdminProducts({
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
 
-  const filtered = useMemo(
-    () =>
-      products.filter((p) =>
-        `${p.name} ${p.sku ?? ''}`
-          .toLocaleLowerCase('tr-TR')
-          .includes(query.toLocaleLowerCase('tr-TR')),
-      ),
-    [products, query],
+  const visibleCategories = useMemo(
+    () => (categoryFilter === 'all' ? null : descendantIds(categories, categoryFilter)),
+    [categories, categoryFilter],
   );
+  const filtered = useMemo(() => {
+    const text = query.trim().toLocaleLowerCase('tr-TR');
+    const rows = products.filter((p) => {
+      if (text && !`${p.name} ${p.sku ?? ''} ${p.slug}`.toLocaleLowerCase('tr-TR').includes(text))
+        return false;
+      if (visibleCategories && (!p.category_id || !visibleCategories.has(p.category_id)))
+        return false;
+      if (visibilityFilter === 'active' && !p.is_active) return false;
+      if (visibilityFilter === 'inactive' && p.is_active) return false;
+      if (stockFilter === 'out' && p.stock_quantity !== 0) return false;
+      if (
+        stockFilter === 'low' &&
+        !(p.stock_quantity > 0 && p.stock_quantity <= p.low_stock_threshold)
+      )
+        return false;
+      if (stockFilter === 'available' && p.stock_quantity <= p.low_stock_threshold) return false;
+      return true;
+    });
+    return rows.sort((a, b) => {
+      switch (sortBy) {
+        case 'priceAsc':
+          return Number(a.price) - Number(b.price);
+        case 'priceDesc':
+          return Number(b.price) - Number(a.price);
+        case 'stockAsc':
+          return a.stock_quantity - b.stock_quantity;
+        case 'stockDesc':
+          return b.stock_quantity - a.stock_quantity;
+        default:
+          return a.name.localeCompare(b.name, 'tr');
+      }
+    });
+  }, [products, query, visibleCategories, visibilityFilter, stockFilter, sortBy]);
+
+  function clearProductFilters() {
+    setQuery('');
+    setCategoryFilter('all');
+    setVisibilityFilter('all');
+    setStockFilter('all');
+    setSortBy('name');
+  }
   const low = products.filter(
     (p) => p.stock_quantity > 0 && p.stock_quantity <= p.low_stock_threshold,
   ).length;
@@ -369,12 +417,79 @@ export function AdminProducts({
                   <div className="admin-search">
                     <Search size={17} />
                     <input
+                      aria-label="Ürün adı veya stok kodu ara"
                       placeholder="Ürün veya stok kodu ara..."
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                     />
                   </div>
                 </div>
+                <div className={filterStyles.filters}>
+                  <label className={filterStyles.field}>
+                    Kategori
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                    >
+                      <option value="all">Tüm kategoriler</option>
+                      {flattenCategories(categories).map(({ category, depth }) => (
+                        <option key={category.id} value={category.id}>
+                          {'— '.repeat(depth)}
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className={filterStyles.field}>
+                    Yayın durumu
+                    <select
+                      value={visibilityFilter}
+                      onChange={(e) =>
+                        setVisibilityFilter(e.target.value as typeof visibilityFilter)
+                      }
+                    >
+                      <option value="all">Tüm ürünler</option>
+                      <option value="active">Aktif</option>
+                      <option value="inactive">Pasif</option>
+                    </select>
+                  </label>
+                  <label className={filterStyles.field}>
+                    Stok durumu
+                    <select
+                      value={stockFilter}
+                      onChange={(e) => setStockFilter(e.target.value as typeof stockFilter)}
+                    >
+                      <option value="all">Tüm stoklar</option>
+                      <option value="available">Yeterli stok</option>
+                      <option value="low">Düşük stok</option>
+                      <option value="out">Stokta yok</option>
+                    </select>
+                  </label>
+                  <label className={filterStyles.field}>
+                    Sıralama
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                    >
+                      <option value="name">Ürün adı A–Z</option>
+                      <option value="priceAsc">Fiyat artan</option>
+                      <option value="priceDesc">Fiyat azalan</option>
+                      <option value="stockAsc">Stok artan</option>
+                      <option value="stockDesc">Stok azalan</option>
+                    </select>
+                  </label>
+                  <button
+                    className={filterStyles.reset}
+                    type="button"
+                    onClick={clearProductFilters}
+                  >
+                    Filtreleri temizle
+                  </button>
+                </div>
+                <p className={filterStyles.result}>
+                  {filtered.length} / {products.length} ürün gösteriliyor. Kategori seçimi alt
+                  kategorileri de kapsar. Liste en fazla 1000 kayıt yükler.
+                </p>
                 <div className="admin-table-wrap">
                   <table className="admin-table">
                     <thead>
@@ -431,9 +546,7 @@ export function AdminProducts({
                     </tbody>
                   </table>
                   {filtered.length === 0 && (
-                    <div className="admin-no-results">
-                      Henüz kayıtlı ürün yok. İlk ürününü ekleyebilirsin.
-                    </div>
+                    <div className="admin-no-results">Bu filtrelere uygun ürün bulunamadı.</div>
                   )}
                 </div>
               </>

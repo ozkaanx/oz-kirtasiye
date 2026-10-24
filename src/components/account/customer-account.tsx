@@ -545,6 +545,13 @@ export function CustomerAccount({
                       </small>
                       <strong>{formatPrice(Number(order.total))}</strong>
                     </div>
+                    <p style={{ fontSize: 12, color: '#68727e', marginTop: 9 }}>
+                      {order.order_invoice_register?.status === 'issued'
+                        ? `Fatura kaydı: ${order.order_invoice_register.invoice_number ?? '—'} (${order.order_invoice_register.document_type === 'e_fatura' ? 'e-Fatura' : 'e-Arşiv'})`
+                        : order.order_invoice_register?.status === 'pending'
+                          ? 'Fatura: Resmî belge kaydı bekleniyor'
+                          : 'Fatura: Bu sipariş için elektronik belge bilgisi kayıtlı değil'}
+                    </p>
                   </article>
                 ))}
               </div>
