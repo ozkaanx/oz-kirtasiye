@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { CartLine, CartProduct } from '@/lib/cart-types';
+import { cartLineKey, type CartLine, type CartProduct } from '@/lib/cart-types';
 
 type ShopContextValue = {
   cart: CartLine[];
@@ -19,9 +19,9 @@ type ShopContextValue = {
   favorites: string[];
   cartOpen: boolean;
   setCartOpen: (open: boolean) => void;
-  addToCart: (productId: string, amount?: number) => void;
-  setQuantity: (productId: string, quantity: number) => void;
-  removeFromCart: (productId: string) => void;
+  addToCart: (productId: string, amount?: number, variantId?: string | null) => void;
+  setQuantity: (productId: string, quantity: number, variantId?: string | null) => void;
+  removeFromCart: (productId: string, variantId?: string | null) => void;
   clearCart: () => void;
   toggleFavorite: (productId: string) => void;
   cartCount: number;
@@ -31,9 +31,24 @@ type ShopContextValue = {
 };
 
 const ShopContext = createContext<ShopContextValue | null>(null);
+// Keep the original key to preserve non-variant baskets across this upgrade.
 const CART_KEY = 'oz-kirtasiye-real-cart-v1';
 const FAVORITES_KEY = 'oz-kirtasiye-real-favorites-v1';
 const UUID = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i;
+
+function isValidLine(value: unknown): value is CartLine {
+  if (!value || typeof value !== 'object') return false;
+  const line = value as Partial<CartLine>;
+  return (
+    typeof line.productId === 'string' &&
+    UUID.test(line.productId) &&
+    (line.variantId == null || (typeof line.variantId === 'string' && UUID.test(line.variantId))) &&
+    Number.isInteger(line.quantity) &&
+    typeof line.quantity === 'number' &&
+    line.quantity >= 1 &&
+    line.quantity <= 99
+  );
+}
 
 function readCart(): CartLine[] {
   try {
@@ -41,19 +56,11 @@ function readCart(): CartLine[] {
     if (!Array.isArray(parsed)) return [];
     const seen = new Set<string>();
     return parsed
-      .filter((line): line is CartLine => {
-        if (
-          !line ||
-          typeof line !== 'object' ||
-          typeof line.productId !== 'string' ||
-          !UUID.test(line.productId) ||
-          !Number.isInteger(line.quantity) ||
-          line.quantity < 1 ||
-          line.quantity > 99 ||
-          seen.has(line.productId)
-        )
-          return false;
-        seen.add(line.productId);
+      .filter((item): item is CartLine => {
+        if (!isValidLine(item)) return false;
+        const key = cartLineKey(item.productId, item.variantId);
+        if (seen.has(key)) return false;
+        seen.add(key);
         return true;
       })
       .slice(0, 20);
@@ -89,25 +96,23 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     setFavorites(readFavorites());
     setLoaded(true);
   }, []);
-
   useEffect(() => {
     if (loaded) window.localStorage.setItem(CART_KEY, JSON.stringify(cart));
   }, [cart, loaded]);
-
   useEffect(() => {
     if (loaded) window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
   }, [favorites, loaded]);
 
-  const ids = useMemo(
+  const cartIdentity = useMemo(
     () =>
       cart
-        .map((line) => line.productId)
+        .map((line) => cartLineKey(line.productId, line.variantId))
         .sort()
         .join(','),
     [cart],
   );
-  const loadProducts = useCallback(async (productIds: string[], signal?: AbortSignal) => {
-    if (!productIds.length) {
+  const loadProducts = useCallback(async (lines: CartLine[], signal?: AbortSignal) => {
+    if (!lines.length) {
       setProducts({});
       setCartLoading(false);
       setCartError('');
@@ -116,17 +121,18 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     setCartLoading(true);
     setCartError('');
     try {
+      const items = lines.map(({ productId, variantId }) => ({
+        productId,
+        variantId: variantId ?? null,
+      }));
       const response = await fetch(
-        `/api/cart-items?ids=${encodeURIComponent(productIds.join(','))}`,
-        {
-          cache: 'no-store',
-          signal,
-        },
+        `/api/cart-items?items=${encodeURIComponent(JSON.stringify(items))}`,
+        { cache: 'no-store', signal },
       );
       if (!response.ok) throw new Error('Sepet ürünleri yüklenemedi.');
       const body: { products: CartProduct[] } = await response.json();
       if (signal?.aborted) return;
-      setProducts(Object.fromEntries(body.products.map((product) => [product.id, product])));
+      setProducts(Object.fromEntries(body.products.map((product) => [product.key, product])));
     } catch (error) {
       if (signal?.aborted) return;
       setCartError(error instanceof Error ? error.message : 'Sepet ürünleri yüklenemedi.');
@@ -138,43 +144,59 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     const controller = new AbortController();
-    void loadProducts(ids ? ids.split(',') : [], controller.signal);
+    void loadProducts(cart, controller.signal);
     return () => controller.abort();
-  }, [ids, loaded, loadProducts]);
+    // Identity changes only when products/variants are added/removed, not when counts change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartIdentity, loaded, loadProducts]);
 
-  const refreshCart = useCallback(async () => {
-    await loadProducts(cart.map((line) => line.productId));
-  }, [cart, loadProducts]);
-
-  const setQuantity = useCallback((productId: string, quantity: number) => {
-    if (!UUID.test(productId) || !Number.isInteger(quantity)) return;
-    setCart((previous) => {
-      if (quantity <= 0) return previous.filter((line) => line.productId !== productId);
-      return previous.map((line) =>
-        line.productId === productId ? { ...line, quantity: Math.min(99, quantity) } : line,
+  const refreshCart = useCallback(() => loadProducts(cart), [cart, loadProducts]);
+  const setQuantity = useCallback(
+    (productId: string, quantity: number, variantId?: string | null) => {
+      if (!UUID.test(productId) || !Number.isInteger(quantity)) return;
+      const key = cartLineKey(productId, variantId);
+      setCart((previous) =>
+        quantity <= 0
+          ? previous.filter((line) => cartLineKey(line.productId, line.variantId) !== key)
+          : previous.map((line) =>
+              cartLineKey(line.productId, line.variantId) === key
+                ? { ...line, quantity: Math.min(quantity, 99) }
+                : line,
+            ),
       );
-    });
-  }, []);
-
-  const addToCart = useCallback((productId: string, amount = 1) => {
-    if (!UUID.test(productId) || !Number.isInteger(amount) || amount < 1) return;
-    setCart((previous) => {
-      if (previous.some((line) => line.productId === productId)) {
-        return previous.map((line) =>
-          line.productId === productId
-            ? { ...line, quantity: Math.min(99, line.quantity + amount) }
-            : line,
-        );
-      }
-      return previous.length >= 20
-        ? previous
-        : [...previous, { productId, quantity: Math.min(99, amount) }];
-    });
+    },
+    [],
+  );
+  const addToCart = useCallback((productId: string, amount = 1, variantId?: string | null) => {
+    if (
+      !UUID.test(productId) ||
+      (variantId != null && !UUID.test(variantId)) ||
+      !Number.isInteger(amount) ||
+      amount < 1
+    )
+      return;
+    const key = cartLineKey(productId, variantId);
+    setCart((previous) =>
+      previous.some((line) => cartLineKey(line.productId, line.variantId) === key)
+        ? previous.map((line) =>
+            cartLineKey(line.productId, line.variantId) === key
+              ? { ...line, quantity: Math.min(99, line.quantity + amount) }
+              : line,
+          )
+        : previous.length >= 20
+          ? previous
+          : [
+              ...previous,
+              { productId, variantId: variantId ?? null, quantity: Math.min(99, amount) },
+            ],
+    );
     setCartOpen(true);
   }, []);
-
-  const removeFromCart = useCallback((productId: string) => {
-    setCart((previous) => previous.filter((line) => line.productId !== productId));
+  const removeFromCart = useCallback((productId: string, variantId?: string | null) => {
+    const key = cartLineKey(productId, variantId);
+    setCart((previous) =>
+      previous.filter((line) => cartLineKey(line.productId, line.variantId) !== key),
+    );
   }, []);
   const clearCart = useCallback(() => setCart([]), []);
   const toggleFavorite = useCallback((productId: string) => {
@@ -188,18 +210,21 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const cartCount = useMemo(() => cart.reduce((sum, line) => sum + line.quantity, 0), [cart]);
   const cartSubtotal = useMemo(
     () =>
-      cart.reduce((sum, line) => sum + (products[line.productId]?.price ?? 0) * line.quantity, 0),
+      cart.reduce(
+        (sum, line) =>
+          sum + (products[cartLineKey(line.productId, line.variantId)]?.price ?? 0) * line.quantity,
+        0,
+      ),
     [cart, products],
   );
   const cartIsValid =
     !cartLoading &&
     !cartError &&
     cart.length > 0 &&
-    cart.every(
-      (line) =>
-        !!products[line.productId] && line.quantity <= products[line.productId].stock_quantity,
-    );
-
+    cart.every((line) => {
+      const product = products[cartLineKey(line.productId, line.variantId)];
+      return !!product && line.quantity <= product.stock_quantity;
+    });
   return (
     <ShopContext.Provider
       value={{

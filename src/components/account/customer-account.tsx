@@ -530,7 +530,8 @@ export function CustomerAccount({
                       {order.order_request_items?.map((line, index) => (
                         <div key={`${order.id}-${index}`}>
                           <span>
-                            {line.product_name} × {line.quantity}
+                            {line.product_name}
+                            {line.variant_label ? ` — ${line.variant_label}` : ''} × {line.quantity}
                           </span>
                           <b>{formatPrice(Number(line.line_total))}</b>
                         </div>

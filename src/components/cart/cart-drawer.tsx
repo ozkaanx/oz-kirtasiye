@@ -1,5 +1,7 @@
 'use client';
 
+import { cartLineKey } from '@/lib/cart-types';
+
 import Link from 'next/link';
 import { ArrowRight, Minus, Package, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
 import { useEffect } from 'react';
@@ -85,9 +87,9 @@ export function CartDrawer() {
                 </p>
               )}
               {cart.map((line) => {
-                const product = products[line.productId];
+                const product = products[cartLineKey(line.productId, line.variantId)];
                 return (
-                  <div className="cart-line" key={line.productId}>
+                  <div className="cart-line" key={cartLineKey(line.productId, line.variantId)}>
                     <div className="cart-line-image">
                       {product?.imageUrl ? (
                         <img src={product.imageUrl} alt="" />
@@ -106,6 +108,7 @@ export function CartDrawer() {
                       ) : (
                         <strong>Ürün bulunamadı</strong>
                       )}
+                      {product && <small>{product.variantLabel}</small>}
                       {product && (
                         <span className="cart-line-price">{formatPrice(product.price)}</span>
                       )}
@@ -118,7 +121,9 @@ export function CartDrawer() {
                         <div className="quantity-picker">
                           <button
                             aria-label="Adedi azalt"
-                            onClick={() => setQuantity(line.productId, line.quantity - 1)}
+                            onClick={() =>
+                              setQuantity(line.productId, line.quantity - 1, line.variantId)
+                            }
                           >
                             <Minus size={14} />
                           </button>
@@ -129,7 +134,9 @@ export function CartDrawer() {
                               line.quantity >= 99 ||
                               (product ? line.quantity >= product.stock_quantity : true)
                             }
-                            onClick={() => setQuantity(line.productId, line.quantity + 1)}
+                            onClick={() =>
+                              setQuantity(line.productId, line.quantity + 1, line.variantId)
+                            }
                           >
                             <Plus size={14} />
                           </button>
@@ -137,7 +144,7 @@ export function CartDrawer() {
                         <button
                           className="remove-line"
                           aria-label="Ürünü sepetten çıkar"
-                          onClick={() => removeFromCart(line.productId)}
+                          onClick={() => removeFromCart(line.productId, line.variantId)}
                         >
                           <Trash2 size={17} />
                         </button>

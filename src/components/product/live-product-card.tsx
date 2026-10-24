@@ -45,7 +45,13 @@ export function LiveProductCard({ product }: { product: LiveProduct }) {
             <Link href={`/magaza/urun/${product.slug}`} className="live-view-link">
               İncele →
             </Link>
-            <LivePurchaseButton productId={product.id} stock={product.stock_quantity} />
+            {product.has_variants ? (
+              <Link className="button button-primary" href={`/magaza/urun/${product.slug}`}>
+                Seçenekleri gör
+              </Link>
+            ) : (
+              <LivePurchaseButton productId={product.id} stock={product.stock_quantity} />
+            )}
           </div>
         </div>
       </div>
