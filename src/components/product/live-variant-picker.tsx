@@ -15,6 +15,7 @@ export function LiveVariantPicker({
   galleryUrls,
   name,
   description,
+  initialVariantId,
 }: {
   productId: string;
   variants: LiveVariant[];
@@ -22,13 +23,15 @@ export function LiveVariantPicker({
   galleryUrls: string[];
   name: string;
   description: string | null;
+  initialVariantId?: string;
 }) {
   const active = variants.filter((variant) => variant.is_active);
   const [selectedId, setSelectedId] = useState<string>(() => {
+    const requested = active.find((variant) => variant.id === initialVariantId);
+    if (requested) return requested.id;
     const available = active.filter((variant) => variant.stock_quantity > 0);
-    const best = [...(available.length ? available : active)].sort(
-      (a, b) =>
-        (a.promotion?.discountedPrice ?? a.price) - (b.promotion?.discountedPrice ?? b.price),
+    const best = [...(available.length ? available : active)].sort((a, b) =>
+      (a.promotion?.discountedPrice ?? a.price) - (b.promotion?.discountedPrice ?? b.price),
     )[0];
     return best?.id ?? '';
   });
