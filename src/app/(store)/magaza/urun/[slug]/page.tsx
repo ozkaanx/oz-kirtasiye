@@ -21,8 +21,15 @@ export async function generateMetadata({
     description: product?.description ?? undefined,
   };
 }
-export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ variant?: string | string[] }>;
+}) {
   const { slug } = await params;
+  const { variant } = await searchParams;
   const product = await getLiveProductBySlug(slug);
   if (!product) notFound();
   return (
@@ -35,10 +42,12 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
       {product.has_variants ? (
         <section className="variant-detail-page">
           <LiveVariantPicker
+            key={typeof variant === 'string' ? variant : product.id}
             productId={product.id}
             name={product.name}
             description={product.description}
             variants={product.variants}
+            initialVariantId={typeof variant === 'string' ? variant : undefined}
             imageUrl={product.imageUrl}
             galleryUrls={product.galleryUrls}
           />

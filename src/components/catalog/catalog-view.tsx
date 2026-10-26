@@ -1,137 +1,181 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, ChevronRight, Search, SlidersHorizontal, X } from 'lucide-react';
+import {
+  BadgePercent,
+  Check,
+  ChevronRight,
+  RotateCcw,
+  Search,
+  SlidersHorizontal,
+  X,
+} from 'lucide-react';
 import { LiveProductCard } from '@/components/product/live-product-card';
-import { descendantIds, flattenCategories, type StoreCategory } from '@/lib/category-utils';
+import { flattenCategories, type StoreCategory } from '@/lib/category-utils';
+import {
+  catalogFacets,
+  DEFAULT_CATALOG_FILTERS,
+  filterCatalogProducts,
+  parseCatalogFilters,
+  serializeCatalogFilters,
+  type CatalogFilters,
+  type CatalogSort,
+} from '@/lib/catalog-filters';
 import type { LiveProduct } from '@/lib/real-catalog';
+import styles from './catalog-filters.module.css';
 
 type Props = {
-  initialCategory: string;
-  initialSearch: string;
+  initialFilters: CatalogFilters;
   liveProducts: LiveProduct[];
   categories: StoreCategory[];
 };
 
-type SortType = 'featured' | 'newest' | 'price-asc' | 'price-desc' | 'name';
+type Chip = { label: string; key: keyof CatalogFilters };
 
-function effectivePrice(product: LiveProduct) {
-  return product.promotion?.discountedPrice ?? product.price;
-}
-
-export function CatalogView({ initialCategory, initialSearch, liveProducts, categories }: Props) {
-  const router = useRouter();
-  const [categorySlug, setCategorySlug] = useState(initialCategory);
-  const [query, setQuery] = useState(initialSearch);
-  const [sort, setSort] = useState<SortType>('featured');
-  const [maxPrice, setMaxPrice] = useState('all');
-  const [inStock, setInStock] = useState(false);
+export function CatalogView({ initialFilters, liveProducts, categories }: Props) {
+  const [filters, setFilters] = useState<CatalogFilters>(initialFilters);
   const [mobileFilters, setMobileFilters] = useState(false);
 
-  const selectedCategory = categories.find((cat) => cat.slug === categorySlug);
-  const visibleCategoryIds = useMemo(
-    () => (selectedCategory ? descendantIds(categories, selectedCategory.id) : null),
-    [categories, selectedCategory],
+  // Native History API: update shareable URLs without re-fetching the 500-item catalogue,
+  // navigating away, or dropping focus while the customer types a search term.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const encoded = serializeCatalogFilters(filters);
+      const href = `/urunler${encoded ? `?${encoded}` : ''}${window.location.hash}`;
+      if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== href) {
+        window.history.replaceState(window.history.state, '', href);
+      }
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [filters]);
+
+  // If users return via browser Back/Forward, restore the visible controls.
+  useEffect(() => {
+    const sync = () => setFilters(parseCatalogFilters(new URLSearchParams(window.location.search)));
+    window.addEventListener('popstate', sync);
+    return () => window.removeEventListener('popstate', sync);
+  }, []);
+
+  useEffect(() => {
+    if (!mobileFilters) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileFilters(false);
+    };
+    document.addEventListener('keydown', onEscape);
+    return () => {
+      document.body.style.overflow = previous;
+      document.removeEventListener('keydown', onEscape);
+    };
+  }, [mobileFilters]);
+
+  const selectedCategory = categories.find((cat) => cat.slug === filters.category);
+  const facets = useMemo(
+    () => catalogFacets(liveProducts, categories, filters.category),
+    [liveProducts, categories, filters.category],
   );
-  const filtered = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase('tr-TR');
-    const result = liveProducts.filter((product) => {
-      if (
-        visibleCategoryIds &&
-        (!product.category_id || !visibleCategoryIds.has(product.category_id))
-      ) {
-        return false;
-      }
-      if (
-        normalized &&
-        !`${product.name} ${product.description ?? ''}`
-          .toLocaleLowerCase('tr-TR')
-          .includes(normalized)
-      ) {
-        return false;
-      }
-      if (maxPrice !== 'all' && effectivePrice(product) > Number(maxPrice)) return false;
-      if (inStock && product.stock_quantity === 0) return false;
-      return true;
-    });
-    switch (sort) {
-      case 'price-asc':
-        return result.sort((a, b) => effectivePrice(a) - effectivePrice(b));
-      case 'price-desc':
-        return result.sort((a, b) => effectivePrice(b) - effectivePrice(a));
-      case 'name':
-        return result.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
-      case 'newest':
-        return result.sort((a, b) => b.created_at.localeCompare(a.created_at));
-      default:
-        return result.sort(
-          (a, b) =>
-            Number(b.is_featured) - Number(a.is_featured) ||
-            b.created_at.localeCompare(a.created_at),
-        );
-    }
-  }, [liveProducts, visibleCategoryIds, query, maxPrice, inStock, sort]);
+  const filtered = useMemo(
+    () => filterCatalogProducts(liveProducts, categories, filters),
+    [liveProducts, categories, filters],
+  );
+  const activeChips = useMemo<Chip[]>(() => {
+    const chips: Chip[] = [];
+    if (filters.category !== 'all') chips.push({ key: 'category', label: selectedCategory?.name ?? filters.category });
+    if (filters.q.trim()) chips.push({ key: 'q', label: `Arama: ${filters.q.trim()}` });
+    if (filters.min) chips.push({ key: 'min', label: `En az ${filters.min} TL` });
+    if (filters.max) chips.push({ key: 'max', label: `En çok ${filters.max} TL` });
+    if (filters.color) chips.push({ key: 'color', label: `Renk: ${filters.color}` });
+    if (filters.size) chips.push({ key: 'size', label: `Ölçü: ${filters.size}` });
+    if (filters.stock) chips.push({ key: 'stock', label: 'Stokta olanlar' });
+    if (filters.campaign) chips.push({ key: 'campaign', label: 'Kampanyalı ürünler' });
+    return chips;
+  }, [filters, selectedCategory]);
 
-  function navigateCategory(slug: string) {
-    setCategorySlug(slug);
-    const params = new URLSearchParams();
-    if (slug !== 'all') params.set('category', slug);
-    if (query.trim()) params.set('q', query.trim());
-    router.replace(`/urunler${params.toString() ? `?${params.toString()}` : ''}`, {
-      scroll: false,
-    });
-    setMobileFilters(false);
+  function update(patch: Partial<CatalogFilters>) {
+    setFilters((previous) => ({ ...previous, ...patch }));
   }
 
-  function resetFilters() {
-    setQuery('');
-    setMaxPrice('all');
-    setInStock(false);
-    setSort('featured');
-    setCategorySlug('all');
-    router.replace('/urunler', { scroll: false });
+  function removeChip(key: keyof CatalogFilters) {
+    if (key === 'category') update({ category: 'all' });
+    else if (key === 'stock') update({ stock: false });
+    else if (key === 'campaign') update({ campaign: false });
+    else if (key === 'sort') update({ sort: 'featured' });
+    else update({ [key]: '' });
   }
+
+  function clearFilters() {
+    setFilters({ ...DEFAULT_CATALOG_FILTERS });
+  }
+
+  const priceInvalid = filters.min !== '' && filters.max !== '' &&
+    Number(filters.min) > Number(filters.max);
 
   return (
     <div className="container-wide catalog-page">
       <div className="breadcrumbs">
         <Link href="/">Ana Sayfa</Link>
-        <ChevronRight size={14} />
+        <ChevronRight size={14} aria-hidden="true" />
         <Link href="/urunler">Ürünler</Link>
         {selectedCategory && (
           <>
-            <ChevronRight size={14} />
-            {selectedCategory.name}
+            <ChevronRight size={14} aria-hidden="true" />
+            <span>{selectedCategory.name}</span>
           </>
         )}
       </div>
+
       <div className="catalog-title-row">
         <div>
           <span className="section-eyebrow">ÖZ KIRTASİYE KOLEKSİYONU</span>
           <h1>
-            {selectedCategory?.name ?? (query ? 'Arama sonuçları' : 'Tüm ürünler')}
+            {selectedCategory?.name ?? (filters.q ? 'Arama sonuçları' : 'Tüm ürünler')}
             <span className="orange-dot">.</span>
           </h1>
-          <p>
-            Mağazamızın güncel ürünleri. <b>{filtered.length} ürün</b> listeleniyor.
-          </p>
+          <p>İhtiyacın olan ürünleri ara, filtrele ve kolayca keşfet.</p>
         </div>
       </div>
 
-      <div className="catalog-toolbar">
+      <div className={styles.toolbar}>
+        <div className={styles.searchBox}>
+          <Search size={20} aria-hidden="true" />
+          <input
+            type="search"
+            aria-label="Ürün, kategori, renk veya ölçü ara"
+            placeholder="Ürün, kategori, renk veya ölçü ara..."
+            value={filters.q}
+            maxLength={120}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => update({ q: event.target.value })}
+            autoComplete="off"
+          />
+          {filters.q && (
+            <button
+              type="button"
+              aria-label="Aramayı temizle"
+              onClick={() => update({ q: '' })}
+            >
+              <X size={17} aria-hidden="true" />
+            </button>
+          )}
+        </div>
         <button
           type="button"
-          className="mobile-filter-button"
+          className={styles.mobileToggle}
           onClick={() => setMobileFilters(true)}
+          aria-controls="catalog-filters"
+          aria-expanded={mobileFilters}
         >
-          <SlidersHorizontal size={17} /> Filtrele
+          <SlidersHorizontal size={18} aria-hidden="true" />
+          Filtrele
+          {activeChips.length > 0 && <span className={styles.count}>{activeChips.length}</span>}
         </button>
-        <span className="results-count">{filtered.length} ürün</span>
-        <label>
-          Sırala:{' '}
-          <select value={sort} onChange={(event) => setSort(event.target.value as SortType)}>
+        <label className={styles.sortControl}>
+          Sırala
+          <select
+            value={filters.sort}
+            onChange={(event: ChangeEvent<HTMLSelectElement>) => update({ sort: event.target.value as CatalogSort })}
+          >
             <option value="featured">Öne çıkanlar</option>
             <option value="newest">En yeniler</option>
             <option value="price-asc">Fiyat: Artan</option>
@@ -141,128 +185,202 @@ export function CatalogView({ initialCategory, initialSearch, liveProducts, cate
         </label>
       </div>
 
-      <div className="catalog-layout">
-        <aside className={`catalog-sidebar ${mobileFilters ? 'show-filter' : ''}`}>
-          <div className="filter-head">
+      <div className={styles.summary} aria-live="polite">
+        <span><strong>{filtered.length}</strong> / {liveProducts.length} ürün gösteriliyor</span>
+        {activeChips.length > 0 && (
+          <button type="button" className={styles.resetInline} onClick={clearFilters}>
+            <RotateCcw size={13} aria-hidden="true" /> Tümünü temizle
+          </button>
+        )}
+      </div>
+
+      {activeChips.length > 0 && (
+        <div className={styles.chips} aria-label="Uygulanan filtreler">
+          {activeChips.map((chip) => (
+            <button
+              type="button"
+              key={chip.key}
+              className={styles.chip}
+              onClick={() => removeChip(chip.key)}
+              aria-label={`${chip.label} filtresini kaldır`}
+            >
+              {chip.label}<X size={13} aria-hidden="true" />
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className={styles.layout}>
+        {mobileFilters && (
+          <button
+            type="button"
+            className={styles.backdrop}
+            aria-label="Filtre penceresini kapat"
+            onClick={() => setMobileFilters(false)}
+          />
+        )}
+        <aside
+          id="catalog-filters"
+          className={`${styles.sidebar} ${mobileFilters ? styles.open : ''}`}
+          aria-label="Ürün filtreleri"
+        >
+          <div className={styles.sidebarHead}>
             <h2>Filtreler</h2>
             <button
               type="button"
-              className="mobile-close"
-              aria-label="Filtreleri kapat"
+              className={styles.closeMobile}
               onClick={() => setMobileFilters(false)}
+              aria-label="Filtreleri kapat"
             >
-              <X size={22} />
+              <X size={20} aria-hidden="true" />
             </button>
           </div>
-          <div className="filter-group">
+
+          <section className={styles.group}>
             <h3>Kategoriler</h3>
-            <div className="filter-categories">
+            <div className={styles.categories}>
               <button
                 type="button"
-                className={!selectedCategory ? 'selected' : ''}
-                onClick={() => navigateCategory('all')}
+                className={`${styles.category} ${filters.category === 'all' ? styles.selected : ''}`}
+                onClick={() => update({ category: 'all', color: '', size: '' })}
               >
                 Tüm kategoriler
+                {filters.category === 'all' && <Check size={15} aria-hidden="true" />}
               </button>
               {flattenCategories(categories).map(({ category, depth }) => (
                 <button
                   type="button"
                   key={category.id}
-                  className={selectedCategory?.id === category.id ? 'selected' : ''}
-                  style={{ paddingLeft: `${12 + depth * 16}px` }}
-                  onClick={() => navigateCategory(category.slug)}
+                  className={`${styles.category} ${filters.category === category.slug ? styles.selected : ''}`}
+                  style={{ paddingLeft: `${14 + depth * 14}px` }}
+                  onClick={() => update({ category: category.slug, color: '', size: '' })}
                 >
-                  {depth > 0 ? '↳ ' : ''}
-                  {category.name}
+                  <span>{depth > 0 ? '↳ ' : ''}{category.name}</span>
+                  {filters.category === category.slug && <Check size={15} aria-hidden="true" />}
                 </button>
               ))}
             </div>
-          </div>
-          <div className="filter-group">
-            <h3>Ürün ara</h3>
-            <div className="filter-search">
-              <Search size={16} />
-              <input
-                aria-label="Liste içinde ara"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Ürün adı..."
-              />
-            </div>
-          </div>
-          <div className="filter-group">
+          </section>
+
+          {facets.colors.length > 0 && (
+            <section className={styles.group}>
+              <label className={styles.groupLabel} htmlFor="catalog-color">Renk</label>
+              <select
+                id="catalog-color"
+                className={styles.select}
+                value={filters.color}
+                onChange={(event: ChangeEvent<HTMLSelectElement>) => update({ color: event.target.value })}
+              >
+                <option value="">Tüm renkler</option>
+                {facets.colors.map((color) => <option key={color} value={color}>{color}</option>)}
+              </select>
+            </section>
+          )}
+
+          {facets.sizes.length > 0 && (
+            <section className={styles.group}>
+              <label className={styles.groupLabel} htmlFor="catalog-size">Boyut / Ölçü</label>
+              <select
+                id="catalog-size"
+                className={styles.select}
+                value={filters.size}
+                onChange={(event: ChangeEvent<HTMLSelectElement>) => update({ size: event.target.value })}
+              >
+                <option value="">Tüm ölçüler</option>
+                {facets.sizes.map((size) => <option key={size} value={size}>{size}</option>)}
+              </select>
+            </section>
+          )}
+
+          <section className={styles.group}>
             <h3>Fiyat aralığı</h3>
-            <div className="filter-prices">
-              {[
-                ['all', 'Tüm fiyatlar'],
-                ['100', '100 TL ve altı'],
-                ['250', '250 TL ve altı'],
-                ['500', '500 TL ve altı'],
-                ['1000', '1.000 TL ve altı'],
-              ].map(([value, label]) => (
-                <label key={value}>
-                  <input
-                    type="radio"
-                    name="max-price"
-                    checked={maxPrice === value}
-                    onChange={() => setMaxPrice(value)}
-                  />
-                  {label}
-                </label>
-              ))}
+            <p className={styles.groupHint}>Ürünlerin güncel kampanyalı fiyatları esas alınır.</p>
+            <div className={styles.priceInputs}>
+              <label>
+                En az (TL)
+                <input
+                  aria-label="Minimum fiyat (TL)"
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  max="10000000"
+                  step="0.01"
+                  placeholder="0"
+                  value={filters.min}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => update({ min: event.target.value })}
+                />
+              </label>
+              <label>
+                En çok (TL)
+                <input
+                  aria-label="Maksimum fiyat (TL)"
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  max="10000000"
+                  step="0.01"
+                  placeholder="Örn. 500"
+                  value={filters.max}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => update({ max: event.target.value })}
+                />
+              </label>
             </div>
-          </div>
-          <div className="filter-group">
-            <label className="catalog-stock-toggle">
+            {priceInvalid && <p className={styles.validation} role="alert">Minimum fiyat, maksimum fiyattan büyük olamaz.</p>}
+          </section>
+
+          <section className={styles.group}>
+            <h3>Diğer seçenekler</h3>
+            <label className={styles.checkbox}>
               <input
                 type="checkbox"
-                checked={inStock}
-                onChange={(event) => setInStock(event.target.checked)}
+                checked={filters.stock}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => update({ stock: event.target.checked })}
               />
               Sadece stokta olanlar
             </label>
-          </div>
-          <button
-            type="button"
-            className="button button-outline catalog-reset"
-            onClick={resetFilters}
-          >
-            Filtreleri temizle
+            <label className={styles.checkbox}>
+              <input
+                type="checkbox"
+                checked={filters.campaign}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => update({ campaign: event.target.checked })}
+              />
+              <BadgePercent size={17} aria-hidden="true" /> Kampanyalı ürünler
+            </label>
+            <p className={styles.groupHint}>Anında indirim ve koşullu sepet kampanyaları dahildir.</p>
+          </section>
+
+          <button type="button" className={styles.resetButton} onClick={clearFilters}>
+            <RotateCcw size={15} aria-hidden="true" /> Filtreleri temizle
           </button>
           <button
             type="button"
-            className="button button-primary mobile-filter-apply"
+            className={styles.applyMobile}
             onClick={() => setMobileFilters(false)}
           >
-            Ürünleri göster <ArrowLeft size={17} />
+            {filtered.length} ürünü göster
           </button>
         </aside>
-        <div className="catalog-results">
-          {filtered.length ? (
+
+        <div className={styles.results}>
+          {filtered.length > 0 ? (
             <div className="products-grid">
-              {filtered.map((product) => (
-                <LiveProductCard key={product.id} product={product} />
-              ))}
+              {filtered.map((product) => <LiveProductCard key={product.id} product={product} />)}
             </div>
           ) : (
-            <div className="empty-result">
-              <Search size={38} />
-              <h2>Henüz ürün bulamadık</h2>
-              <p>
-                {liveProducts.length === 0
-                  ? 'Mağaza ürünleri eklendikçe burada görünecek.'
-                  : 'Farklı bir arama veya kategori deneyebilirsin.'}
-              </p>
-              <button type="button" className="button button-outline" onClick={resetFilters}>
-                Filtreleri temizle
+            <div className={styles.empty}>
+              <Search size={39} color="#a1a8b1" aria-hidden="true" />
+              <h2>Aradığın özelliklerde ürün bulunamadı</h2>
+              <p>Fiyat aralığını genişletmeyi veya filtrelerden bazılarını kaldırmayı deneyebilirsin.</p>
+              <button type="button" onClick={clearFilters}>
+                <RotateCcw size={16} aria-hidden="true" /> Filtreleri temizle
               </button>
             </div>
           )}
         </div>
       </div>
       <p className="demo-disclaimer">
-        Fiyat ve stok bilgileri mağaza veritabanından gelir. Online sipariş ve ödeme henüz etkin
-        değildir.
+        Ürün ve stok bilgileri mağaza veritabanından gelir. Kampanyalı fiyatlar bilgilendirme amaçlıdır;
+        sipariş sırasında indirim ve stok yeniden doğrulanır. Online ödeme henüz aktif değildir.
       </p>
     </div>
   );

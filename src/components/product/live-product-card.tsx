@@ -6,12 +6,15 @@ import { LiveFavoriteButton } from '@/components/product/live-favorite-button';
 import { CampaignPrice } from './campaign-price';
 import styles from './campaign-price.module.css';
 
-export function LiveProductCard({ product }: { product: LiveProduct }) {
+export function LiveProductCard({ product }: { product: LiveProduct & { filterVariantId?: string } }) {
+  const detailHref = `/magaza/urun/${product.slug}${
+    product.filterVariantId ? `?variant=${encodeURIComponent(product.filterVariantId)}` : ''
+  }`;
   return (
     <article className="product-card">
       <div className="product-photo">
         <Link
-          href={`/magaza/urun/${product.slug}`}
+          href={detailHref}
           className="product-image-link"
           aria-label={`${product.name} ürün detayları`}
         >
@@ -30,7 +33,7 @@ export function LiveProductCard({ product }: { product: LiveProduct }) {
         ) : null}
       </div>
       <div className="product-information">
-        <Link href={`/magaza/urun/${product.slug}`} className="product-title">
+        <Link href={detailHref} className="product-title">
           {product.name}
         </Link>
         <div className="product-buy-row">
@@ -47,11 +50,11 @@ export function LiveProductCard({ product }: { product: LiveProduct }) {
           </div>
           <div className="live-card-actions">
             <LiveFavoriteButton productId={product.id} />
-            <Link href={`/magaza/urun/${product.slug}`} className="live-view-link">
+            <Link href={detailHref} className="live-view-link">
               İncele →
             </Link>
             {product.has_variants ? (
-              <Link className="button button-primary" href={`/magaza/urun/${product.slug}`}>
+              <Link className="button button-primary" href={detailHref}>
                 Seçenekleri gör
               </Link>
             ) : (
