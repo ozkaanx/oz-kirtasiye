@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { Package } from 'lucide-react';
 import type { LiveProduct } from '@/lib/real-catalog';
@@ -6,20 +7,16 @@ import { LiveFavoriteButton } from '@/components/product/live-favorite-button';
 import { CampaignPrice } from './campaign-price';
 import styles from './campaign-price.module.css';
 
-export function LiveProductCard({ product }: { product: LiveProduct & { filterVariantId?: string } }) {
-  const detailHref = `/magaza/urun/${product.slug}${
-    product.filterVariantId ? `?variant=${encodeURIComponent(product.filterVariantId)}` : ''
-  }`;
+export function LiveProductCard({ product }: { product: LiveProduct }) {
   return (
     <article className="product-card">
       <div className="product-photo">
-        <Link
-          href={detailHref}
-          className="product-image-link"
-          aria-label={`${product.name} ürün detayları`}
-        >
+        <Link href={`/magaza/urun/${product.slug}`} className="product-image-link" aria-label={`${product.name} ürün detayları`}>
           {product.imageUrl ? (
-            <img className="product-art" src={product.imageUrl} alt={product.name} loading="lazy" />
+            <Image
+              className="product-art" src={product.imageUrl} alt={product.name}
+              width={520} height={540} sizes="(max-width: 550px) 46vw, (max-width: 1000px) 30vw, 23vw"
+            />
           ) : (
             <Package size={72} color="#b8bbc3" />
           )}
@@ -33,30 +30,20 @@ export function LiveProductCard({ product }: { product: LiveProduct & { filterVa
         ) : null}
       </div>
       <div className="product-information">
-        <Link href={detailHref} className="product-title">
-          {product.name}
-        </Link>
+        <Link href={`/magaza/urun/${product.slug}`} className="product-title">{product.name}</Link>
         <div className="product-buy-row">
           <div className="product-prices">
             <CampaignPrice
-              price={product.price}
-              compareAtPrice={product.compare_at_price}
-              promotion={product.promotion}
-              campaignNotice={product.campaignNotice}
+              price={product.price} compareAtPrice={product.compare_at_price}
+              promotion={product.promotion} campaignNotice={product.campaignNotice}
             />
-            <small className="live-stock">
-              {product.stock_quantity > 0 ? `${product.stock_quantity} adet stokta` : 'Stokta yok'}
-            </small>
+            <small className="live-stock">{product.stock_quantity > 0 ? `${product.stock_quantity} adet stokta` : 'Stokta yok'}</small>
           </div>
           <div className="live-card-actions">
             <LiveFavoriteButton productId={product.id} />
-            <Link href={detailHref} className="live-view-link">
-              İncele →
-            </Link>
+            <Link href={`/magaza/urun/${product.slug}`} className="live-view-link">İncele →</Link>
             {product.has_variants ? (
-              <Link className="button button-primary" href={detailHref}>
-                Seçenekleri gör
-              </Link>
+              <Link className="button button-primary" href={`/magaza/urun/${product.slug}`}>Seçenekleri gör</Link>
             ) : (
               <LivePurchaseButton productId={product.id} stock={product.stock_quantity} />
             )}

@@ -1,10 +1,10 @@
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { CartDrawer } from '@/components/cart/cart-drawer';
-import { getLiveCategories } from '@/lib/real-catalog';
+import { getCachedLiveCategories } from '@/lib/cached-catalog';
 
 export default async function StoreLayout({ children }: { children: React.ReactNode }) {
-  const categories = await getLiveCategories();
+  const categories = await getCachedLiveCategories();
   return (
     <>
       <Header categories={categories} />
