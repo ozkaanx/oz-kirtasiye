@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useState, useTransition, type ChangeEvent } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   BadgePercent,
   Check,
@@ -14,10 +15,7 @@ import {
 import { LiveProductCard } from '@/components/product/live-product-card';
 import { flattenCategories, type StoreCategory } from '@/lib/category-utils';
 import {
-  catalogFacets,
   DEFAULT_CATALOG_FILTERS,
-  filterCatalogProducts,
-  parseCatalogFilters,
   serializeCatalogFilters,
   type CatalogFilters,
   type CatalogSort,
@@ -29,33 +27,29 @@ type Props = {
   initialFilters: CatalogFilters;
   liveProducts: LiveProduct[];
   categories: StoreCategory[];
+  total: number;
+  currentPage: number;
+  pageCount: number;
+  facets: { colors: string[]; sizes: string[] };
 };
 
 type Chip = { label: string; key: keyof CatalogFilters };
 
-export function CatalogView({ initialFilters, liveProducts, categories }: Props) {
+export function CatalogView({ initialFilters, liveProducts, categories, total, currentPage, pageCount, facets }: Props) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [filters, setFilters] = useState<CatalogFilters>(initialFilters);
   const [mobileFilters, setMobileFilters] = useState(false);
 
-  // Native History API: update shareable URLs without re-fetching the 500-item catalogue,
-  // navigating away, or dropping focus while the customer types a search term.
+  // Navigation refreshes the server component; search input remains responsive while typing.
   useEffect(() => {
+    if (JSON.stringify(filters) === JSON.stringify(initialFilters)) return;
     const timer = window.setTimeout(() => {
       const encoded = serializeCatalogFilters(filters);
-      const href = `/urunler${encoded ? `?${encoded}` : ''}${window.location.hash}`;
-      if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== href) {
-        window.history.replaceState(window.history.state, '', href);
-      }
-    }, 250);
+      startTransition(() => router.replace(`/urunler${encoded ? `?${encoded}` : ''}`, { scroll: false }));
+    }, 400);
     return () => window.clearTimeout(timer);
-  }, [filters]);
-
-  // If users return via browser Back/Forward, restore the visible controls.
-  useEffect(() => {
-    const sync = () => setFilters(parseCatalogFilters(new URLSearchParams(window.location.search)));
-    window.addEventListener('popstate', sync);
-    return () => window.removeEventListener('popstate', sync);
-  }, []);
+  }, [filters, initialFilters, router]);
 
   useEffect(() => {
     if (!mobileFilters) return;
@@ -72,14 +66,7 @@ export function CatalogView({ initialFilters, liveProducts, categories }: Props)
   }, [mobileFilters]);
 
   const selectedCategory = categories.find((cat) => cat.slug === filters.category);
-  const facets = useMemo(
-    () => catalogFacets(liveProducts, categories, filters.category),
-    [liveProducts, categories, filters.category],
-  );
-  const filtered = useMemo(
-    () => filterCatalogProducts(liveProducts, categories, filters),
-    [liveProducts, categories, filters],
-  );
+  const filtered = liveProducts;
   const activeChips = useMemo<Chip[]>(() => {
     const chips: Chip[] = [];
     if (filters.category !== 'all') chips.push({ key: 'category', label: selectedCategory?.name ?? filters.category });
@@ -107,6 +94,14 @@ export function CatalogView({ initialFilters, liveProducts, categories }: Props)
 
   function clearFilters() {
     setFilters({ ...DEFAULT_CATALOG_FILTERS });
+  }
+
+  function navigatePage(nextPage: number) {
+    const encoded = serializeCatalogFilters(filters);
+    const params = new URLSearchParams(encoded);
+    if (nextPage > 1) params.set('page', String(nextPage));
+    const query = params.toString();
+    startTransition(() => router.push(`/urunler${query ? `?${query}` : ''}`, { scroll: true }));
   }
 
   const priceInvalid = filters.min !== '' && filters.max !== '' &&
@@ -186,7 +181,7 @@ export function CatalogView({ initialFilters, liveProducts, categories }: Props)
       </div>
 
       <div className={styles.summary} aria-live="polite">
-        <span><strong>{filtered.length}</strong> / {liveProducts.length} ürün gösteriliyor</span>
+        <span><strong>{total}</strong> ürün bulundu · Sayfa {currentPage}/{pageCount}{isPending ? " · Yükleniyor…" : ""}</span>
         {activeChips.length > 0 && (
           <button type="button" className={styles.resetInline} onClick={clearFilters}>
             <RotateCcw size={13} aria-hidden="true" /> Tümünü temizle
@@ -357,7 +352,7 @@ export function CatalogView({ initialFilters, liveProducts, categories }: Props)
             className={styles.applyMobile}
             onClick={() => setMobileFilters(false)}
           >
-            {filtered.length} ürünü göster
+            {total} ürünü göster
           </button>
         </aside>
 
@@ -378,6 +373,13 @@ export function CatalogView({ initialFilters, liveProducts, categories }: Props)
           )}
         </div>
       </div>
+      {pageCount > 1 && (
+        <nav className={styles.pagination} aria-label="Ürün sayfaları">
+          <button type="button" disabled={currentPage <= 1 || isPending} onClick={() => navigatePage(currentPage - 1)}>Önceki</button>
+          <span>Sayfa {currentPage} / {pageCount}</span>
+          <button type="button" disabled={currentPage >= pageCount || isPending} onClick={() => navigatePage(currentPage + 1)}>Sonraki</button>
+        </nav>
+      )}
       <p className="demo-disclaimer">
         Ürün ve stok bilgileri mağaza veritabanından gelir. Kampanyalı fiyatlar bilgilendirme amaçlıdır;
         sipariş sırasında indirim ve stok yeniden doğrulanır. Online ödeme henüz aktif değildir.

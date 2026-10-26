@@ -295,6 +295,34 @@ async function transformRows(rows: ProductRow[]) {
   });
 }
 
+/** Read every active catalog row in bounded batches for server-only filtering.
+ * Unlike getLiveProducts(), this function is never passed to a Client Component.
+ * Once the catalog grows substantially, replace this scan with a database-side search RPC.
+ */
+export async function getAllCatalogProducts(): Promise<LiveProduct[]> {
+  if (!hasSupabaseConfig()) return [];
+  const supabase = await createServerSupabase();
+  const batchSize = 250;
+  const result: LiveProduct[] = [];
+  for (let offset = 0; ; offset += batchSize) {
+    const { data, error } = await supabase
+      .from('products')
+      .select(PRODUCT_FIELDS)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(offset, offset + batchSize - 1);
+    if (error) {
+      console.error('Sayfalı katalog okunamadı:', error.message);
+      throw new Error('Ürünler şu anda yüklenemiyor.');
+    }
+    const rows = (data ?? []) as ProductRow[];
+    result.push(...(await transformRows(rows)));
+    if (rows.length < batchSize) break;
+  }
+  return result;
+}
+
 /** The catalogue is intentionally capped for this MVP. Add server pagination above 500 products. */
 export async function getLiveProducts(): Promise<LiveProduct[]> {
   if (!hasSupabaseConfig()) return [];

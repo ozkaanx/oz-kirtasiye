@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { CatalogView } from '@/components/catalog/catalog-view';
-import { getCachedLiveCategories, getCachedLiveProducts } from '@/lib/cached-catalog';
+import { getCachedLiveCategories } from '@/lib/cached-catalog';
 import { parseCatalogFilters, serializeCatalogFilters } from '@/lib/catalog-filters';
+import { getPagedCatalog, parseCatalogPage } from '@/lib/paged-catalog';
 import { absoluteStoreUrl, isSeoPublic, seoDescription } from '@/lib/seo';
 
 type Query = Record<string, string | string[] | undefined>;
@@ -35,12 +36,17 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     else if (typeof value === 'string') params.set(key, value);
   }
   const initialFilters = parseCatalogFilters(params);
-  const [liveProducts, categories] = await Promise.all([getCachedLiveProducts(), getCachedLiveCategories()]);
+  const categories = await getCachedLiveCategories();
+  const paged = await getPagedCatalog(initialFilters, parseCatalogPage(params.get('page')), categories);
   return (
     <CatalogView
-      key={serializeCatalogFilters(initialFilters)}
+      key={`${serializeCatalogFilters(initialFilters)}:${paged.currentPage}`}
       initialFilters={initialFilters}
-      liveProducts={liveProducts}
+      liveProducts={paged.products}
+      total={paged.total}
+      currentPage={paged.currentPage}
+      pageCount={paged.pageCount}
+      facets={paged.facets}
       categories={categories}
     />
   );
