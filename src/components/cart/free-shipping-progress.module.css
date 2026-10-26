@@ -1,0 +1,9 @@
+.card { display: flex; flex-direction: column; gap: 10px; padding: 15px; margin: 12px 0; background: #fff8f3; border: 1px solid #f6dac9; border-radius: 12px; }
+.message { display: flex; gap: 9px; align-items: center; color: #9c451e; font-size: 13px; line-height: 1.4; font-weight: 650; }
+.message svg { flex: none; }
+.track { width: 100%; height: 9px; border-radius: 999px; background: #f1ded0; overflow: hidden; }
+.fill { height: 100%; border-radius: inherit; background: #f36b48; transition: width 200ms ease; }
+.meta { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: #805b46; }
+.link { font-size: 12px; font-weight: 750; color: #b84a25; text-decoration: underline; text-underline-offset: 3px; }
+.note { margin: 0; font-size: 11px; line-height: 1.5; color: #866e61; }
+@media (prefers-reduced-motion: reduce) { .fill { transition: none; } }
