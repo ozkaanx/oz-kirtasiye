@@ -17,6 +17,7 @@ import { useShop } from '@/context/shop-context';
 import { formatPrice } from '@/lib/format';
 import { deliveryQuote, type DeliverySettings } from '@/lib/delivery';
 import { CouponBox } from '@/components/coupons/coupon-box';
+import { FreeShippingProgress } from '@/components/cart/free-shipping-progress';
 import { useCouponQuote } from '@/components/coupons/use-coupon-quote';
 
 export function CartPage({ settings }: { settings: DeliverySettings }) {
@@ -156,6 +157,12 @@ export function CartPage({ settings }: { settings: DeliverySettings }) {
                 <b>Ücretsiz</b>
               </div>
             )}
+            <FreeShippingProgress
+              subtotal={cartSubtotal}
+              threshold={settings.free_shipping_threshold}
+              shippingAvailable={shipping.available}
+              shippingFee={shipping.fee}
+            />
             <CouponBox {...promo} />
             {promo.quote && promo.quote.discountAmount > 0 && (
               <div>
