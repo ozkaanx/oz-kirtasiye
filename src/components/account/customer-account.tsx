@@ -21,6 +21,7 @@ import { formatPrice } from '@/lib/format';
 import type { CustomerAddress, CustomerOrder, CustomerProfile } from '@/lib/customer';
 import { NotificationUnreadBadge } from '@/components/notifications/unread-badge';
 import styles from './customer-account.module.css';
+import { OrderJourney } from './order-journey';
 
 type AddressFields = Pick<
   CustomerAddress,
@@ -537,6 +538,7 @@ export function CustomerAccount({
                         {statusLabels[order.status] ?? order.status}
                       </span>
                     </div>
+                    <OrderJourney order={order} />
                     <div className={styles.orderItems}>
                       {order.order_request_items?.map((line, index) => (
                         <div key={`${order.id}-${index}`}>
