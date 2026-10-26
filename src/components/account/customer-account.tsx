@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { type FormEvent, useMemo, useState } from 'react';
 import {
   ArrowRight,
+  Bell,
   Check,
   Home,
   LogOut,
@@ -18,6 +19,7 @@ import {
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 import { formatPrice } from '@/lib/format';
 import type { CustomerAddress, CustomerOrder, CustomerProfile } from '@/lib/customer';
+import { NotificationUnreadBadge } from '@/components/notifications/unread-badge';
 import styles from './customer-account.module.css';
 
 type AddressFields = Pick<
@@ -252,6 +254,11 @@ export function CustomerAccount({
           <Link href="/hesabim/iade" className={styles.tab}>
             <Package size={18} />
             İade ve değişim
+          </Link>
+          <Link href="/hesabim/bildirimler" className={styles.tab}>
+            <Bell size={18} />
+            Bildirimler
+            <NotificationUnreadBadge audience="customer" />
           </Link>
           <Link href="/urunler" className={styles.shopLink}>
             Alışverişe dön <ArrowRight size={16} />
