@@ -1,0 +1,6 @@
+.section { margin: 42px 0 45px; }
+.heading { margin-bottom: 18px; }
+.heading h2 { margin: 6px 0 0; font-size: clamp(21px, 2.5vw, 28px); }
+.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media(max-width:1000px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:560px){.grid{gap:9px;}}

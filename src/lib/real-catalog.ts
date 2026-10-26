@@ -53,10 +53,10 @@ export type LiveProduct = {
   campaignNotice: CatalogCampaignNotice | null;
 };
 
-const PRODUCT_FIELDS =
+export const PRODUCT_FIELDS =
   'id,slug,name,description,category_id,price,compare_at_price,stock_quantity,has_variants,is_featured,created_at,product_images(storage_path,sort_order),product_variants(id,color,size,price,compare_at_price,stock_quantity,image_path,is_active,sort_order)';
 
-type ProductRow = {
+export type ProductRow = {
   id: string;
   slug: string;
   name: string;
@@ -217,7 +217,7 @@ async function loadCatalogNotices(rows: ProductRow[]) {
   return result;
 }
 
-async function transformRows(rows: ProductRow[]) {
+export async function transformRows(rows: ProductRow[]) {
   if (!rows.length) return [];
   const [supabase, promotions, notices] = await Promise.all([
     createServerSupabase(),

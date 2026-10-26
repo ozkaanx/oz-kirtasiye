@@ -10,6 +10,8 @@ import { LivePurchaseButton } from '@/components/product/live-purchase-button';
 import { LiveVariantPicker } from '@/components/product/live-variant-picker';
 import { LiveFavoriteButton } from '@/components/product/live-favorite-button';
 import { CampaignPrice } from '@/components/product/campaign-price';
+import { getProductRecommendations } from '@/lib/product-recommendations';
+import { RecommendationSection } from '@/components/product/recommendation-section';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,6 +45,7 @@ export default async function Page({
   const { variant } = await searchParams;
   const product = await getCachedLiveProductBySlug(slug);
   if (!product) notFound();
+  const relatedProducts = await getProductRecommendations([product.id], 4);
   const jsonLd = isSeoPublic() ? [
     productJsonLd(product), breadcrumbJsonLd(product.name, product.slug),
   ].filter((entry): entry is Record<string, unknown> => entry !== null) : [];
@@ -96,6 +99,7 @@ export default async function Page({
           </div>
         </section>
       )}
+      <RecommendationSection title="Benzer ürünler" products={relatedProducts} />
     </main>
   );
 }
