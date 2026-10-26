@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   BarChart3,
+  ChartNoAxesCombined,
   BadgePercent,
   Bell,
   Megaphone,
@@ -24,6 +25,7 @@ import { NotificationUnreadBadge } from '@/components/notifications/unread-badge
 
 const navigation = [
   { href: '/admin/genel-bakis', label: 'Genel bakış', icon: BarChart3 },
+  { href: '/admin/raporlar', label: 'Raporlar', icon: ChartNoAxesCombined },
   { href: '/admin/bildirimler', label: 'Bildirimler', icon: Bell },
   { href: '/admin/urunler', label: 'Ürün ve stok', icon: Boxes },
   { href: '/admin/kategoriler', label: 'Kategoriler', icon: FolderTree },
