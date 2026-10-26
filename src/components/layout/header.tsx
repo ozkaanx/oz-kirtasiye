@@ -17,16 +17,20 @@ import {
 import type { StoreCategory } from '@/lib/category-utils';
 import { useShop } from '@/context/shop-context';
 import { Logo } from './logo';
+import { SearchSuggestions, saveRecentSearch } from '@/components/search/search-suggestions';
 
 export function Header({ categories }: { categories: StoreCategory[] }) {
   const router = useRouter();
   const [search, setSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { cartCount, favorites, setCartOpen } = useShop();
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const q = search.trim();
+    saveRecentSearch(q);
+    setSearchOpen(false);
     router.push(q ? `/urunler?q=${encodeURIComponent(q)}` : '/urunler');
     setMobileMenuOpen(false);
   }
@@ -53,7 +57,7 @@ export function Header({ categories }: { categories: StoreCategory[] }) {
             {mobileMenuOpen ? <X size={23} /> : <Menu size={23} />}
           </button>
           <Logo />
-          <form className="searchbar" onSubmit={handleSearch} role="search">
+          <form className="searchbar" style={{ position: 'relative' }} onSubmit={handleSearch} role="search">
             <Search size={20} className="searchbar-icon" />
             <input
               aria-label="Ürün ara"
@@ -61,10 +65,12 @@ export function Header({ categories }: { categories: StoreCategory[] }) {
               placeholder="Defter, kalem, oyuncak... Ne aramıştın?"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
+              onFocus={() => setSearchOpen(true)}
             />
             <button type="submit">
               Ara <ChevronRight size={16} />
             </button>
+            {searchOpen && <SearchSuggestions query={search} onChoose={() => setSearchOpen(false)} />}
           </form>
           <div className="header-actions">
             <Link href="/hesabim" className="header-action user-action" aria-label="Hesabım">
@@ -96,7 +102,7 @@ export function Header({ categories }: { categories: StoreCategory[] }) {
           </div>
         </div>
         <div className="mobile-search-wrap container-wide">
-          <form className="searchbar mobile-search" onSubmit={handleSearch} role="search">
+          <form className="searchbar mobile-search" style={{ position: 'relative' }} onSubmit={handleSearch} role="search">
             <Search size={19} className="searchbar-icon" />
             <input
               aria-label="Mobil ürün ara"
@@ -104,10 +110,12 @@ export function Header({ categories }: { categories: StoreCategory[] }) {
               placeholder="Hadi bir şeyler bulalım..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
+              onFocus={() => setSearchOpen(true)}
             />
             <button type="submit" aria-label="Ara">
               <ChevronRight size={18} />
             </button>
+            {searchOpen && <SearchSuggestions query={search} onChoose={() => setSearchOpen(false)} />}
           </form>
         </div>
         <nav
