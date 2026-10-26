@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   BarChart3,
   BadgePercent,
+  Bell,
   Megaphone,
   ReceiptText,
   Boxes,
@@ -19,9 +20,11 @@ import {
   X,
 } from 'lucide-react';
 import styles from './admin-sidebar.module.css';
+import { NotificationUnreadBadge } from '@/components/notifications/unread-badge';
 
 const navigation = [
   { href: '/admin/genel-bakis', label: 'Genel bakış', icon: BarChart3 },
+  { href: '/admin/bildirimler', label: 'Bildirimler', icon: Bell },
   { href: '/admin/urunler', label: 'Ürün ve stok', icon: Boxes },
   { href: '/admin/kategoriler', label: 'Kategoriler', icon: FolderTree },
   { href: '/admin/kuponlar', label: 'Kuponlar', icon: BadgePercent },
@@ -81,7 +84,10 @@ export function AdminSidebar() {
                 className={styles.navLink}
               >
                 <Icon className={styles.navIcon} size={19} aria-hidden="true" />
-                <span className={styles.navLabel}>{label}</span>
+                <span className={styles.navLabel}>
+                  {label}
+                  {href === '/admin/bildirimler' && <NotificationUnreadBadge audience="admin" />}
+                </span>
               </Link>
             );
           })}

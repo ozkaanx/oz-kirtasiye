@@ -1,0 +1,262 @@
+.center {
+  min-width: 0;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 22px;
+}
+.filters {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.filters button,
+.markAll {
+  cursor: pointer;
+  padding: 10px 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #e0e4e9;
+  border-radius: 10px;
+  font: inherit;
+  color: #424956;
+  font-size: 13px;
+  font-weight: 750;
+  background: #fff;
+}
+.filters .selected {
+  color: #df5839;
+  background: #fff1e9;
+  border-color: #ffd3c4;
+}
+.markAll:disabled,
+.noticeActions button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 19px 18px;
+  border: 1px solid #e7e9ee;
+  background: #fff;
+  border-radius: 15px;
+  min-width: 0;
+}
+.notRead {
+  border-color: #ffceb9;
+  background: #fffaf6;
+}
+.noticeIcon {
+  background: #f5f6f8;
+  color: #777e89;
+  flex: 0 0 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+.notRead .noticeIcon {
+  background: #ffebe0;
+  color: #db592f;
+}
+.noticeContent {
+  min-width: 0;
+  flex: 1;
+}
+.noticeMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.noticeMeta time {
+  color: #858b97;
+  font-size: 12px;
+}
+.unreadMarker {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  background: #ffe3d5;
+  color: #b64b2b;
+  border-radius: 99px;
+}
+.noticeContent h3 {
+  color: #232a34;
+  font-size: 16px;
+  font-weight: 850;
+  margin: 9px 0 5px;
+}
+.noticeContent p {
+  color: #596372;
+  font-size: 13px;
+  line-height: 1.65;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.noticeActions {
+  display: flex;
+  gap: 10px 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 13px;
+}
+.noticeActions a,
+.noticeActions button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+.noticeActions a {
+  color: #d94c2c;
+  text-decoration: none;
+}
+.noticeActions a:hover {
+  text-decoration: underline;
+}
+.noticeActions button {
+  color: #515d6b;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px 0;
+}
+.noticeActions button:hover {
+  color: #e25839;
+}
+.empty {
+  text-align: center;
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 255px;
+  border: 1px dashed #dce1e8;
+  border-radius: 16px;
+  color: #8b929d;
+  padding: 30px;
+}
+.empty h3 {
+  font-size: 18px;
+  margin: 3px 0;
+  color: #29313a;
+}
+.empty p {
+  font-size: 13px;
+  margin: 0;
+  line-height: 1.6;
+}
+.error,
+.success {
+  padding: 12px 15px;
+  border-radius: 9px;
+  margin-bottom: 15px;
+  font-size: 13px;
+}
+.error {
+  color: #a82e2e;
+  background: #fff0ef;
+}
+.success {
+  color: #23684e;
+  background: #eaf9f2;
+}
+.limitNotice {
+  color: #87909b;
+  font-size: 11px;
+  line-height: 1.5;
+  margin-top: 20px;
+}
+.unreadBadge {
+  display: inline-flex;
+  flex: none;
+  justify-content: center;
+  align-items: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 99px;
+  padding: 0 5px;
+  color: #fff;
+  background: #ef6747;
+  font-size: 10px;
+  line-height: 20px;
+  font-weight: 850;
+  vertical-align: middle;
+  margin-left: auto;
+}
+.customerPage {
+  padding-top: 46px;
+  padding-bottom: 85px;
+}
+.customerHeader {
+  margin-bottom: 24px;
+}
+.customerHeader h1 {
+  font-weight: 900;
+  font-size: clamp(27px, 4vw, 40px);
+  margin: 10px 0;
+}
+.customerHeader p {
+  font-size: 14px;
+  color: #737d88;
+}
+.backLink {
+  font-size: 13px;
+  font-weight: 750;
+  text-decoration: none;
+  color: #cf5835;
+}
+.customerCard {
+  max-width: 900px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid #e7ebef;
+  padding: 25px;
+}
+.adminHeading {
+  margin-bottom: 22px;
+}
+.adminHeading h1 {
+  font-size: clamp(27px, 4vw, 38px);
+  font-weight: 900;
+  margin: 7px 0 6px;
+}
+.adminHeading p {
+  font-size: 14px;
+  color: #77808a;
+}
+@media (max-width: 650px) {
+  .notice {
+    padding: 14px 13px;
+    gap: 10px;
+  }
+  .noticeIcon {
+    flex-basis: 32px;
+    height: 32px;
+  }
+  .toolbar {
+    align-items: stretch;
+  }
+  .markAll {
+    justify-content: center;
+  }
+  .customerCard {
+    padding: 14px;
+  }
+}
