@@ -33,6 +33,10 @@ export type CustomerOrder = {
   delivery_method: string;
   total: number;
   shipping_fee: number;
+  carrier: string | null;
+  tracking_number: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
   discount_amount: number;
   coupon_code: string | null;
   automatic_campaign_name: string | null;
