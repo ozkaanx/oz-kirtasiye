@@ -12,6 +12,8 @@ import { LiveFavoriteButton } from '@/components/product/live-favorite-button';
 import { CampaignPrice } from '@/components/product/campaign-price';
 import { getProductRecommendations } from '@/lib/product-recommendations';
 import { RecommendationSection } from '@/components/product/recommendation-section';
+import { ProductReviews } from '@/components/product/product-reviews';
+import { createServerSupabase } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,6 +48,10 @@ export default async function Page({
   const product = await getCachedLiveProductBySlug(slug);
   if (!product) notFound();
   const relatedProducts = await getProductRecommendations([product.id], 4);
+  const reviewDb = await createServerSupabase();
+  const { data: reviewRows } = await reviewDb.from('product_reviews').select('id,rating,body,created_at').eq('product_id', product.id).eq('status','approved').order('created_at', {ascending:false}).limit(50);
+  const reviews = reviewRows ?? [];
+  const reviewAverage = reviews.length ? reviews.reduce((sum, item) => sum + item.rating, 0) / reviews.length : 0;
   const jsonLd = isSeoPublic() ? [
     productJsonLd(product), breadcrumbJsonLd(product.name, product.slug),
   ].filter((entry): entry is Record<string, unknown> => entry !== null) : [];
@@ -99,6 +105,7 @@ export default async function Page({
           </div>
         </section>
       )}
+      <ProductReviews productId={product.id} reviews={reviews} average={reviewAverage} />
       <RecommendationSection title="Benzer ürünler" products={relatedProducts} />
     </main>
   );
