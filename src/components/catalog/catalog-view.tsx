@@ -57,6 +57,8 @@ export function CatalogView({
   const [filters, setFilters] = useState<CatalogFilters>(initialFilters);
   const [mobileFilters, setMobileFilters] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
+  const filterWasOpen = useRef(false);
   const priceInvalid =
     filters.min !== '' && filters.max !== '' && Number(filters.min) > Number(filters.max);
 
@@ -74,9 +76,13 @@ export function CatalogView({
   }, [filters, initialFilters, router, mobileFilters, priceInvalid]);
 
   useLayoutEffect(() => {
-    if (!mobileFilters) return;
+    if (!mobileFilters) {
+      if (filterWasOpen.current) filterButtonRef.current?.focus({ preventScroll: true });
+      filterWasOpen.current = false;
+      return;
+    }
+    filterWasOpen.current = true;
     const previous = document.body.style.overflow;
-    const previousFocus = document.activeElement as HTMLElement | null;
     document.body.style.overflow = 'hidden';
     const focusable = () =>
       Array.from(
@@ -117,7 +123,6 @@ export function CatalogView({
       document.body.style.overflow = previous;
       document.removeEventListener('keydown', onEscape);
       desktop.removeEventListener('change', onDesktop);
-      previousFocus?.focus();
     };
   }, [mobileFilters, initialFilters]);
 
@@ -212,6 +217,7 @@ export function CatalogView({
         <button
           type="button"
           className={styles.mobileToggle}
+          ref={filterButtonRef}
           onClick={() => setMobileFilters(true)}
           aria-controls="catalog-filters"
           aria-expanded={mobileFilters}
