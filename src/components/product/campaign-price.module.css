@@ -31,6 +31,12 @@
   font-weight: 900;
   letter-spacing: -0.5px;
 }
+.price:not(.detail) > .regular,
+.price:not(.detail) .discounted {
+  color: #111;
+  font-size: 27px;
+  font-weight: 800;
+}
 .saving {
   display: inline-flex;
   color: #116841;
@@ -52,7 +58,14 @@
 }
 .detail .discounted,
 .detail .regular {
-  font-size: clamp(26px, 4vw, 34px);
+  color: #111;
+  font-size: 28px;
+}
+@media (max-width: 600px) {
+  .price:not(.detail) > .regular,
+  .price:not(.detail) .discounted {
+    font-size: 22px;
+  }
 }
 .detail .saving {
   font-size: 13px;

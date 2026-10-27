@@ -11,6 +11,7 @@ export function LiveProductCard({ product }: { product: LiveProduct }) {
   return (
     <article className="product-card live-product-card">
       <div className="product-photo">
+        <LiveFavoriteButton productId={product.id} />
         <Link href={`/magaza/urun/${product.slug}`} className="product-image-link" aria-label={`${product.name} ürün detayları`}>
           {product.imageUrl ? (
             <Image
@@ -37,10 +38,8 @@ export function LiveProductCard({ product }: { product: LiveProduct }) {
               price={product.price} compareAtPrice={product.compare_at_price}
               promotion={product.promotion} campaignNotice={product.campaignNotice}
             />
-            <small className="live-stock">{product.stock_quantity > 0 ? `${product.stock_quantity} adet stokta` : 'Stokta yok'}</small>
           </div>
           <div className="live-card-actions">
-            <LiveFavoriteButton productId={product.id} />
             {product.has_variants ? (
               <Link className="button button-primary" href={`/magaza/urun/${product.slug}`}>Seçenekleri gör</Link>
             ) : (

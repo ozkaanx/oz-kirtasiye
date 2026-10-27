@@ -1,4 +1,4 @@
-import { formatPrice } from '@/lib/format';
+import { formatProductPrice as formatPrice } from '@/lib/format';
 import { BadgePercent } from 'lucide-react';
 import type { CatalogCampaignNotice, CatalogPromotion } from '@/lib/real-catalog';
 import styles from './campaign-price.module.css';
