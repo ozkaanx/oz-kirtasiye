@@ -18,6 +18,8 @@ export type CustomerAddress = {
 };
 
 export type CustomerOrderItem = {
+  product_id: string;
+  variant_id: string | null;
   product_name: string;
   variant_label?: string | null;
   quantity: number;
