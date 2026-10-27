@@ -1,6 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useState, useTransition, type ChangeEvent } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+  type ChangeEvent,
+} from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -35,41 +43,95 @@ type Props = {
 
 type Chip = { label: string; key: keyof CatalogFilters };
 
-export function CatalogView({ initialFilters, liveProducts, categories, total, currentPage, pageCount, facets }: Props) {
+export function CatalogView({
+  initialFilters,
+  liveProducts,
+  categories,
+  total,
+  currentPage,
+  pageCount,
+  facets,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [filters, setFilters] = useState<CatalogFilters>(initialFilters);
   const [mobileFilters, setMobileFilters] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const priceInvalid =
+    filters.min !== '' && filters.max !== '' && Number(filters.min) > Number(filters.max);
 
   // Navigation refreshes the server component; search input remains responsive while typing.
   useEffect(() => {
-    if (JSON.stringify(filters) === JSON.stringify(initialFilters)) return;
+    if (mobileFilters || priceInvalid || JSON.stringify(filters) === JSON.stringify(initialFilters))
+      return;
     const timer = window.setTimeout(() => {
       const encoded = serializeCatalogFilters(filters);
-      startTransition(() => router.replace(`/urunler${encoded ? `?${encoded}` : ''}`, { scroll: false }));
+      startTransition(() =>
+        router.replace(`/urunler${encoded ? `?${encoded}` : ''}`, { scroll: false }),
+      );
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [filters, initialFilters, router]);
+  }, [filters, initialFilters, router, mobileFilters, priceInvalid]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!mobileFilters) return;
     const previous = document.body.style.overflow;
+    const previousFocus = document.activeElement as HTMLElement | null;
     document.body.style.overflow = 'hidden';
+    const focusable = () =>
+      Array.from(
+        sidebarRef.current?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href]',
+        ) ?? [],
+      ).filter((element) => element.getClientRects().length > 0);
+    focusable()[0]?.focus();
     const onEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMobileFilters(false);
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setFilters(initialFilters);
+        setMobileFilters(false);
+      }
+      if (event.key === 'Tab') {
+        const elements = focusable();
+        const first = elements[0];
+        const last = elements[elements.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
     };
+    const desktop = window.matchMedia('(min-width: 951px)');
+    const onDesktop = () => {
+      if (desktop.matches) {
+        setFilters(initialFilters);
+        setMobileFilters(false);
+      }
+    };
+    desktop.addEventListener('change', onDesktop);
     document.addEventListener('keydown', onEscape);
     return () => {
       document.body.style.overflow = previous;
       document.removeEventListener('keydown', onEscape);
+      desktop.removeEventListener('change', onDesktop);
+      previousFocus?.focus();
     };
-  }, [mobileFilters]);
+  }, [mobileFilters, initialFilters]);
+
+  function dismissMobileFilters() {
+    setFilters(initialFilters);
+    setMobileFilters(false);
+  }
 
   const selectedCategory = categories.find((cat) => cat.slug === filters.category);
   const filtered = liveProducts;
   const activeChips = useMemo<Chip[]>(() => {
     const chips: Chip[] = [];
-    if (filters.category !== 'all') chips.push({ key: 'category', label: selectedCategory?.name ?? filters.category });
+    if (filters.category !== 'all')
+      chips.push({ key: 'category', label: selectedCategory?.name ?? filters.category });
     if (filters.q.trim()) chips.push({ key: 'q', label: `Arama: ${filters.q.trim()}` });
     if (filters.min) chips.push({ key: 'min', label: `En az ${filters.min} TL` });
     if (filters.max) chips.push({ key: 'max', label: `En çok ${filters.max} TL` });
@@ -103,9 +165,6 @@ export function CatalogView({ initialFilters, liveProducts, categories, total, c
     const query = params.toString();
     startTransition(() => router.push(`/urunler${query ? `?${query}` : ''}`, { scroll: true }));
   }
-
-  const priceInvalid = filters.min !== '' && filters.max !== '' &&
-    Number(filters.min) > Number(filters.max);
 
   return (
     <div className="container-wide catalog-page">
@@ -145,11 +204,7 @@ export function CatalogView({ initialFilters, liveProducts, categories, total, c
             autoComplete="off"
           />
           {filters.q && (
-            <button
-              type="button"
-              aria-label="Aramayı temizle"
-              onClick={() => update({ q: '' })}
-            >
+            <button type="button" aria-label="Aramayı temizle" onClick={() => update({ q: '' })}>
               <X size={17} aria-hidden="true" />
             </button>
           )}
@@ -169,7 +224,9 @@ export function CatalogView({ initialFilters, liveProducts, categories, total, c
           Sırala
           <select
             value={filters.sort}
-            onChange={(event: ChangeEvent<HTMLSelectElement>) => update({ sort: event.target.value as CatalogSort })}
+            onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+              update({ sort: event.target.value as CatalogSort })
+            }
           >
             <option value="featured">Öne çıkanlar</option>
             <option value="newest">En yeniler</option>
@@ -181,7 +238,10 @@ export function CatalogView({ initialFilters, liveProducts, categories, total, c
       </div>
 
       <div className={styles.summary} aria-live="polite">
-        <span><strong>{total}</strong> ürün bulundu · Sayfa {currentPage}/{pageCount}{isPending ? " · Yükleniyor…" : ""}</span>
+        <span>
+          <strong>{total}</strong> ürün bulundu · Sayfa {currentPage}/{pageCount}
+          {isPending ? ' · Yükleniyor…' : ''}
+        </span>
         {activeChips.length > 0 && (
           <button type="button" className={styles.resetInline} onClick={clearFilters}>
             <RotateCcw size={13} aria-hidden="true" /> Tümünü temizle
@@ -199,7 +259,8 @@ export function CatalogView({ initialFilters, liveProducts, categories, total, c
               onClick={() => removeChip(chip.key)}
               aria-label={`${chip.label} filtresini kaldır`}
             >
-              {chip.label}<X size={13} aria-hidden="true" />
+              {chip.label}
+              <X size={13} aria-hidden="true" />
             </button>
           ))}
         </div>
@@ -211,10 +272,13 @@ export function CatalogView({ initialFilters, liveProducts, categories, total, c
             type="button"
             className={styles.backdrop}
             aria-label="Filtre penceresini kapat"
-            onClick={() => setMobileFilters(false)}
+            onClick={dismissMobileFilters}
           />
         )}
         <aside
+          ref={sidebarRef}
+          role={mobileFilters ? 'dialog' : undefined}
+          aria-modal={mobileFilters || undefined}
           id="catalog-filters"
           className={`${styles.sidebar} ${mobileFilters ? styles.open : ''}`}
           aria-label="Ürün filtreleri"
@@ -224,7 +288,7 @@ export function CatalogView({ initialFilters, liveProducts, categories, total, c
             <button
               type="button"
               className={styles.closeMobile}
-              onClick={() => setMobileFilters(false)}
+              onClick={dismissMobileFilters}
               aria-label="Filtreleri kapat"
             >
               <X size={20} aria-hidden="true" />
@@ -250,7 +314,10 @@ export function CatalogView({ initialFilters, liveProducts, categories, total, c
                   style={{ paddingLeft: `${14 + depth * 14}px` }}
                   onClick={() => update({ category: category.slug, color: '', size: '' })}
                 >
-                  <span>{depth > 0 ? '↳ ' : ''}{category.name}</span>
+                  <span>
+                    {depth > 0 ? '↳ ' : ''}
+                    {category.name}
+                  </span>
                   {filters.category === category.slug && <Check size={15} aria-hidden="true" />}
                 </button>
               ))}
@@ -259,30 +326,46 @@ export function CatalogView({ initialFilters, liveProducts, categories, total, c
 
           {facets.colors.length > 0 && (
             <section className={styles.group}>
-              <label className={styles.groupLabel} htmlFor="catalog-color">Renk</label>
+              <label className={styles.groupLabel} htmlFor="catalog-color">
+                Renk
+              </label>
               <select
                 id="catalog-color"
                 className={styles.select}
                 value={filters.color}
-                onChange={(event: ChangeEvent<HTMLSelectElement>) => update({ color: event.target.value })}
+                onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                  update({ color: event.target.value })
+                }
               >
                 <option value="">Tüm renkler</option>
-                {facets.colors.map((color) => <option key={color} value={color}>{color}</option>)}
+                {facets.colors.map((color) => (
+                  <option key={color} value={color}>
+                    {color}
+                  </option>
+                ))}
               </select>
             </section>
           )}
 
           {facets.sizes.length > 0 && (
             <section className={styles.group}>
-              <label className={styles.groupLabel} htmlFor="catalog-size">Boyut / Ölçü</label>
+              <label className={styles.groupLabel} htmlFor="catalog-size">
+                Boyut / Ölçü
+              </label>
               <select
                 id="catalog-size"
                 className={styles.select}
                 value={filters.size}
-                onChange={(event: ChangeEvent<HTMLSelectElement>) => update({ size: event.target.value })}
+                onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                  update({ size: event.target.value })
+                }
               >
                 <option value="">Tüm ölçüler</option>
-                {facets.sizes.map((size) => <option key={size} value={size}>{size}</option>)}
+                {facets.sizes.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
               </select>
             </section>
           )}
@@ -302,7 +385,9 @@ export function CatalogView({ initialFilters, liveProducts, categories, total, c
                   step="0.01"
                   placeholder="0"
                   value={filters.min}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) => update({ min: event.target.value })}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                    update({ min: event.target.value })
+                  }
                 />
               </label>
               <label>
@@ -316,11 +401,17 @@ export function CatalogView({ initialFilters, liveProducts, categories, total, c
                   step="0.01"
                   placeholder="Örn. 500"
                   value={filters.max}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) => update({ max: event.target.value })}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                    update({ max: event.target.value })
+                  }
                 />
               </label>
             </div>
-            {priceInvalid && <p className={styles.validation} role="alert">Minimum fiyat, maksimum fiyattan büyük olamaz.</p>}
+            {priceInvalid && (
+              <p className={styles.validation} role="alert">
+                Minimum fiyat, maksimum fiyattan büyük olamaz.
+              </p>
+            )}
           </section>
 
           <section className={styles.group}>
@@ -329,7 +420,9 @@ export function CatalogView({ initialFilters, liveProducts, categories, total, c
               <input
                 type="checkbox"
                 checked={filters.stock}
-                onChange={(event: ChangeEvent<HTMLInputElement>) => update({ stock: event.target.checked })}
+                onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  update({ stock: event.target.checked })
+                }
               />
               Sadece stokta olanlar
             </label>
@@ -337,11 +430,15 @@ export function CatalogView({ initialFilters, liveProducts, categories, total, c
               <input
                 type="checkbox"
                 checked={filters.campaign}
-                onChange={(event: ChangeEvent<HTMLInputElement>) => update({ campaign: event.target.checked })}
+                onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  update({ campaign: event.target.checked })
+                }
               />
               <BadgePercent size={17} aria-hidden="true" /> Kampanyalı ürünler
             </label>
-            <p className={styles.groupHint}>Anında indirim ve koşullu sepet kampanyaları dahildir.</p>
+            <p className={styles.groupHint}>
+              Anında indirim ve koşullu sepet kampanyaları dahildir.
+            </p>
           </section>
 
           <button type="button" className={styles.resetButton} onClick={clearFilters}>
@@ -350,22 +447,27 @@ export function CatalogView({ initialFilters, liveProducts, categories, total, c
           <button
             type="button"
             className={styles.applyMobile}
+            disabled={priceInvalid}
             onClick={() => setMobileFilters(false)}
           >
-            {total} ürünü göster
+            Filtreleri uygula
           </button>
         </aside>
 
         <div className={styles.results}>
           {filtered.length > 0 ? (
             <div className="products-grid">
-              {filtered.map((product) => <LiveProductCard key={product.id} product={product} />)}
+              {filtered.map((product) => (
+                <LiveProductCard key={product.id} product={product} />
+              ))}
             </div>
           ) : (
             <div className={styles.empty}>
               <Search size={39} color="#a1a8b1" aria-hidden="true" />
               <h2>Aradığın özelliklerde ürün bulunamadı</h2>
-              <p>Fiyat aralığını genişletmeyi veya filtrelerden bazılarını kaldırmayı deneyebilirsin.</p>
+              <p>
+                Fiyat aralığını genişletmeyi veya filtrelerden bazılarını kaldırmayı deneyebilirsin.
+              </p>
               <button type="button" onClick={clearFilters}>
                 <RotateCcw size={16} aria-hidden="true" /> Filtreleri temizle
               </button>
@@ -375,14 +477,28 @@ export function CatalogView({ initialFilters, liveProducts, categories, total, c
       </div>
       {pageCount > 1 && (
         <nav className={styles.pagination} aria-label="Ürün sayfaları">
-          <button type="button" disabled={currentPage <= 1 || isPending} onClick={() => navigatePage(currentPage - 1)}>Önceki</button>
-          <span>Sayfa {currentPage} / {pageCount}</span>
-          <button type="button" disabled={currentPage >= pageCount || isPending} onClick={() => navigatePage(currentPage + 1)}>Sonraki</button>
+          <button
+            type="button"
+            disabled={currentPage <= 1 || isPending}
+            onClick={() => navigatePage(currentPage - 1)}
+          >
+            Önceki
+          </button>
+          <span>
+            Sayfa {currentPage} / {pageCount}
+          </span>
+          <button
+            type="button"
+            disabled={currentPage >= pageCount || isPending}
+            onClick={() => navigatePage(currentPage + 1)}
+          >
+            Sonraki
+          </button>
         </nav>
       )}
       <p className="demo-disclaimer">
-        Ürün ve stok bilgileri mağaza veritabanından gelir. Kampanyalı fiyatlar bilgilendirme amaçlıdır;
-        sipariş sırasında indirim ve stok yeniden doğrulanır. Online ödeme henüz aktif değildir.
+        Fiyat, indirim ve stok bilgileri sipariş talebi sırasında doğrulanır. Online ödeme henüz
+        aktif değildir.
       </p>
     </div>
   );

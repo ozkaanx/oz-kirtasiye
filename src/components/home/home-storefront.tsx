@@ -204,7 +204,7 @@ export function HomeStorefront({ liveProducts, categories }: Props) {
             <h2>
               Çok sevilen ürünler<span className="orange-dot">.</span>
             </h2>
-            <p>Fiyat ve stok bilgileri mağazamızın gerçek kataloğundan gelir.</p>
+            <p>Okul, ofis ve yaratıcılık için seçtiklerimiz.</p>
           </div>
           <Link href="/urunler" className="text-link">
             Tüm ürünler <ArrowRight size={17} />
@@ -278,7 +278,7 @@ export function HomeStorefront({ liveProducts, categories }: Props) {
               <h2>
                 Yeni gelenler<span className="orange-dot">.</span>
               </h2>
-              <p>Koleksiyonumuza en son eklenen gerçek ürünler.</p>
+              <p>Mağazamıza yeni gelen ürünleri keşfet.</p>
             </div>
             <Link href="/urunler" className="text-link">
               Hepsini keşfet <ArrowRight size={17} />

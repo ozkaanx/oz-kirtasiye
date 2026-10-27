@@ -117,3 +117,4 @@
 .pagination { display:flex; justify-content:center; align-items:center; gap:16px; padding:28px 0 12px; font-size:13px; color:#505864; }
 .pagination button { min-height:40px; padding:0 15px; background:white; border:1px solid #e1e5eb; border-radius:9px; cursor:pointer; font-weight:700; }
 .pagination button:disabled { opacity:.45; cursor:not-allowed; }
+.applyMobile:disabled { opacity: .55; cursor: not-allowed; }

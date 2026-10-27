@@ -7,8 +7,13 @@ export default async function StoreLayout({ children }: { children: React.ReactN
   const categories = await getCachedLiveCategories();
   return (
     <>
+      <a className="skip-to-content" href="#main-content">
+        İçeriğe geç
+      </a>
       <Header categories={categories} />
-      <main id="main-content">{children}</main>
+      <main id="main-content" tabIndex={-1}>
+        {children}
+      </main>
       <Footer categories={categories} />
       <CartDrawer />
     </>

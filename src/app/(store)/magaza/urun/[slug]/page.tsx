@@ -56,7 +56,7 @@ export default async function Page({
     productJsonLd(product), breadcrumbJsonLd(product.name, product.slug),
   ].filter((entry): entry is Record<string, unknown> => entry !== null) : [];
   return (
-    <main className="container-wide">
+    <div className="container-wide">
       {jsonLd.length > 0 && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({ '@context': 'https://schema.org', '@graph': jsonLd }) }} />
       )}
@@ -107,6 +107,6 @@ export default async function Page({
       )}
       <ProductReviews productId={product.id} reviews={reviews} average={reviewAverage} />
       <RecommendationSection title="Benzer ürünler" products={relatedProducts} />
-    </main>
+    </div>
   );
 }

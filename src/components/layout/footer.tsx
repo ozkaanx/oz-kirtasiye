@@ -60,7 +60,7 @@ export function Footer({ categories }: { categories: StoreCategory[] }) {
             © {new Date().getFullYear()} Öz Kırtasiye. Sevgiyle hazırlandı{' '}
             <Heart size={13} fill="#ff7897" color="#ff7897" />
           </span>
-          <span>Ürünler ve stok bilgileri mağaza veritabanından gelir.</span>
+          <span>Renkli fikirlerin buluşma noktası.</span>
         </div>
       </div>
     </footer>
