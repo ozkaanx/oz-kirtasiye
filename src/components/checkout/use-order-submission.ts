@@ -36,7 +36,11 @@ export function useOrderSubmission({
         body: raw,
       });
       const result: OrderRequestResult & { message?: string } = await response.json();
-      if (!response.ok) throw new Error(result.message || 'Sipariş talebi oluşturulamadı.');
+      if (!response.ok) {
+        const traceId = response.headers.get('x-request-id');
+        const support = response.status >= 500 && traceId ? ` Takip kodu: ${traceId}` : '';
+        throw new Error((result.message || 'Sipariş talebi oluşturulamadı.') + support);
+      }
       setCompleted(result);
       clearCheckoutAttempt(attemptRef.current);
       attemptRef.current = null;

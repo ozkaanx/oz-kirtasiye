@@ -19,6 +19,7 @@ type OrderResult = {
   replayed: boolean;
 };
 export type OrderRequestDependencies = {
+  requestId?: string;
   enabled: boolean;
   configured: boolean;
   secret: string | undefined;
@@ -38,7 +39,7 @@ export type OrderRequestDependencies = {
   onError?: (event: string, code?: string) => void;
 };
 
-class RequestError extends Error {
+export class RequestError extends Error {
   status: number;
   constructor(message: string, status = 400) {
     super(message);
@@ -92,7 +93,7 @@ export function orderRequestIdentity(
 }
 
 /** Bound streamed bodies before buffering; count bytes rather than JS characters. */
-async function readBody(request: Request): Promise<unknown> {
+export async function readBody(request: Request): Promise<unknown> {
   if (Number(request.headers.get('content-length')) > MAX_BYTES)
     throw new RequestError('İstek fazla büyük.', 413);
   if (!request.body) throw new RequestError('İstek okunamadı.');
@@ -202,14 +203,20 @@ export async function handleOrderRequest(
   const json = (body: unknown, status: number, extra: Record<string, string> = {}) => {
     const response = Response.json(body, {
       status,
-      headers: { 'Cache-Control': 'no-store', ...extra },
+      headers: {
+        'Cache-Control': 'no-store',
+        ...(deps.requestId ? { 'X-Request-Id': deps.requestId } : {}),
+        ...extra,
+      },
     });
     if (responseCookie) response.headers.set('Set-Cookie', responseCookie);
     return response;
   };
   try {
-    if (!deps.enabled || !deps.secret || !deps.configured)
+    if (!deps.enabled || !deps.secret || !deps.configured) {
+      deps.onError?.('order_service_unavailable');
       return json({ message: 'Sipariş talepleri henüz aktif değil.' }, 503);
+    }
     if (request.headers.get('origin') !== new URL(request.url).origin)
       return json({ message: 'Geçersiz kaynak.' }, 403);
     if (
@@ -262,7 +269,10 @@ export async function handleOrderRequest(
       );
     }
     const result = data?.[0];
-    if (!result) return json({ message: 'Talep sonucu alınamadı. Aynı talebi tekrar dene.' }, 503);
+    if (!result) {
+      deps.onError?.('order_submission_empty');
+      return json({ message: 'Talep sonucu alınamadı. Aynı talebi tekrar dene.' }, 503);
+    }
     return json(
       {
         id: result.id,

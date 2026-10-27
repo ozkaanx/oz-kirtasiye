@@ -3,14 +3,17 @@ import { createOrderServerClient } from '@/lib/supabase/order-server';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { LEGAL_DOCUMENT_VERSION } from '@/lib/store-profile';
 import { handleOrderRequest } from '@/lib/order-request-handler';
+import { operationTrace } from '@/lib/operation-trace';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
+  const trace = operationTrace('order_submission');
   let client: ReturnType<typeof createOrderServerClient> | undefined;
   const service = () => (client ??= createOrderServerClient());
   return handleOrderRequest(request, {
+    requestId: trace.requestId,
     enabled: process.env.ORDER_REQUESTS_ENABLED === 'true',
     configured: hasSupabaseConfig(),
     secret: process.env.SUPABASE_SECRET_KEY,
@@ -29,6 +32,16 @@ export async function POST(request: Request) {
     consumeLimits: (args) => service().rpc('consume_order_request_limits', args),
     submit: (args) => service().rpc('submit_order_request_idempotent', args),
     // Log event/code only; never request bodies, phones, tokens or IPs.
-    onError: (event, code) => console.error(JSON.stringify({ event, code })),
+    onError: (event, code) =>
+      trace.error(
+        event === 'order_service_unavailable' || event === 'order_rate_limit_unavailable'
+          ? 'unavailable'
+          : event === 'order_submission_empty'
+            ? 'empty_result'
+            : event === 'order_submission_failed'
+              ? 'database_error'
+              : 'unexpected',
+        code,
+      ),
   });
 }

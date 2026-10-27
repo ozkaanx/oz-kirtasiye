@@ -1,51 +1,46 @@
 import type { Metadata } from 'next';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { AdminOrderRequests } from '@/components/admin/admin-order-requests';
 import {
-  AdminOrderRequests,
-  type AdminOrderRequest,
-} from '@/components/admin/admin-order-requests';
-
+  orderSearchArgs,
+  parseOrderSearch,
+  type OrderSearchResult,
+} from '@/lib/admin-order-search';
+import { operationTrace } from '@/lib/operation-trace';
 export const metadata: Metadata = {
   title: 'Sipariş ve Kargo Yönetimi',
   robots: { index: false, follow: false },
 };
 export const dynamic = 'force-dynamic';
-
-export default async function AdminOrderRequestsPage() {
-  const supabase = await createServerSupabase();
-  const { data, error } = await supabase
-    .from('order_requests')
-    .select(
-      `
-      id, reference, customer_name, phone, city, district, address, note,
-      status, payment_status, subtotal, discount_amount, coupon_code, automatic_campaign_name, delivery_method, shipping_fee, total, created_at, carrier, tracking_number,
-      shipped_at, delivered_at, inventory_deducted_at, inventory_restored_at,
-      cancellation_reason,
-      order_request_items(id, product_name, variant_label, unit_price, quantity, line_total),
-      order_request_status_history(id, from_status, to_status, note, created_at)
-    `,
-    )
-    .order('created_at', { ascending: false })
-    .limit(100);
-
-  const requests: AdminOrderRequest[] = (data ?? []).map((row) => ({
-    ...row,
-    status: row.status as AdminOrderRequest['status'],
-    payment_status: row.payment_status as AdminOrderRequest['payment_status'],
-    subtotal: Number(row.subtotal),
-    discount_amount: Number(row.discount_amount),
-    shipping_fee: Number(row.shipping_fee),
-    total: Number(row.total),
-    delivery_method: row.delivery_method as AdminOrderRequest['delivery_method'],
-    order_request_items: (row.order_request_items ?? []).map((item) => ({
-      ...item,
-      unit_price: Number(item.unit_price),
-      line_total: Number(item.line_total),
-    })),
-    order_request_status_history: (row.order_request_status_history ?? [])
-      .slice()
-      .sort((a, b) => a.created_at.localeCompare(b.created_at)),
-  }));
-
-  return <AdminOrderRequests requests={requests} loadError={error?.message ?? null} />;
+export default async function AdminOrderRequestsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const search = parseOrderSearch(await searchParams);
+  const trace = operationTrace('admin_order_search');
+  let result: OrderSearchResult | null = null;
+  let loadError: string | null = null;
+  try {
+    const supabase = await createServerSupabase();
+    const { data, error } = await supabase.rpc('admin_search_orders', orderSearchArgs(search));
+    if (error) {
+      trace.error('database_error', error.code);
+      loadError = 'Siparişler yüklenemedi. Tekrar dene. Takip kodu: ' + trace.requestId;
+    } else if (!data || !Array.isArray(data.rows)) {
+      trace.error('empty_result');
+      loadError = 'Sipariş sonucu alınamadı. Takip kodu: ' + trace.requestId;
+    } else result = data as OrderSearchResult;
+  } catch {
+    trace.error('unexpected');
+    loadError = 'Sipariş servisine ulaşılamadı. Takip kodu: ' + trace.requestId;
+  }
+  return (
+    <AdminOrderRequests
+      key={JSON.stringify(search)}
+      result={result}
+      search={search}
+      loadError={loadError}
+    />
+  );
 }
