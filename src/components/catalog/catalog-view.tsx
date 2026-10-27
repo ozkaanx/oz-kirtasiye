@@ -197,23 +197,6 @@ export function CatalogView({
       </div>
 
       <div className={styles.toolbar}>
-        <div className={styles.searchBox}>
-          <Search size={20} aria-hidden="true" />
-          <input
-            type="search"
-            aria-label="Ürün, kategori, renk veya ölçü ara"
-            placeholder="Ürün, kategori, renk veya ölçü ara..."
-            value={filters.q}
-            maxLength={120}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => update({ q: event.target.value })}
-            autoComplete="off"
-          />
-          {filters.q && (
-            <button type="button" aria-label="Aramayı temizle" onClick={() => update({ q: '' })}>
-              <X size={17} aria-hidden="true" />
-            </button>
-          )}
-        </div>
         <button
           type="button"
           className={styles.mobileToggle}
