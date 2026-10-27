@@ -22,7 +22,7 @@ export default async function PreInformationPage() {
       </LegalSection>
       <LegalSection title="Mevcut sipariş talebi akışı">
         <p>
-          Öz Kırtasiye'nin mevcut formu henüz online ödeme veya kesin satış işlemi değildir. Sipariş
+          Öz Kırtasiye&apos;nin mevcut formu henüz online ödeme veya kesin satış işlemi değildir. Sipariş
           talebinde bulunulduğunda ödeme alınmaz, stok ayrılmaz. İşletme müşteriyle iletişime
           geçerek teslimat ve ödeme koşullarını ayrıca netleştirir.
         </p>

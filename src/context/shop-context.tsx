@@ -96,6 +96,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const [cartError, setCartError] = useState('');
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Hydrate validated browser storage after SSR.
     setCart(readCart());
     setFavorites(readFavorites());
     const storedCoupon = window.localStorage.getItem(COUPON_KEY) ?? '';
@@ -153,6 +154,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     const controller = new AbortController();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronize the external catalog when cart identity changes.
     void loadProducts(cart, controller.signal);
     return () => controller.abort();
     // Identity changes only when products/variants are added/removed, not when counts change.

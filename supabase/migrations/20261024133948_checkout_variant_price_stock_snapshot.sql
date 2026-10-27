@@ -1,4 +1,5 @@
--- Checkout validates current product/variant pricing and stock inside one transaction.
+-- Recovered from the hosted migration ledger; original version retained.
+
 create or replace function public.submit_order_request(
  p_customer_name text,p_phone text,p_city text,p_district text,p_address text,p_note text,p_items jsonb
 )
@@ -51,7 +52,8 @@ begin
   v_product_id:=(v_row->>'productId')::uuid;
   v_quantity:=(v_row->>'quantity')::integer;
   v_variant_raw:=nullif(v_row->>'variantId','');
-  if v_variant_raw is not null and v_variant_raw !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+  if v_variant_raw is not null
+     and v_variant_raw !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
   then raise exception 'Geçersiz varyant kimliği.' using errcode='22023'; end if;
   v_variant_id:=case when v_variant_raw is null then null else v_variant_raw::uuid end;
   v_line_key:=v_product_id::text||':'||coalesce(v_variant_id::text,'standard');
@@ -62,12 +64,16 @@ begin
    from public.products p where p.id=v_product_id and p.is_active=true for share;
   if not found then raise exception 'Ürün artık satışta değil.' using errcode='22023'; end if;
   if v_has_variants and v_variant_id is null then
-   raise exception 'Bu ürün için renk veya boyut seçmelisin.' using errcode='22023'; end if;
+   raise exception 'Bu ürün için renk veya boyut seçmelisin.' using errcode='22023';
+  end if;
   if not v_has_variants and v_variant_id is not null then
-   raise exception 'Bu ürüne ait varyant bulunamadı.' using errcode='22023'; end if;
+   raise exception 'Bu ürüne ait varyant bulunamadı.' using errcode='22023';
+  end if;
   if v_variant_id is not null then
-   select pv.price,pv.stock_quantity,concat_ws(' / ',nullif(pv.color,''),nullif(pv.size,''))
-   into v_price,v_stock,v_label from public.product_variants pv
+   select pv.price,pv.stock_quantity,
+    concat_ws(' / ',nullif(pv.color,''),nullif(pv.size,''))
+   into v_price,v_stock,v_label
+   from public.product_variants pv
    where pv.id=v_variant_id and pv.product_id=v_product_id and pv.is_active=true for share;
    if not found then raise exception 'Seçilen varyant artık satışta değil.' using errcode='22023'; end if;
   end if;
@@ -86,7 +92,7 @@ begin
   v_label:=null;
   if v_variant_id is not null then
    select pv.price,concat_ws(' / ',nullif(pv.color,''),nullif(pv.size,''))
-   into v_price,v_label from public.product_variants pv where pv.id=v_variant_id;
+    into v_price,v_label from public.product_variants pv where pv.id=v_variant_id;
   end if;
   insert into public.order_request_items(
    order_request_id,product_id,variant_id,variant_label,product_name,unit_price,quantity,line_total

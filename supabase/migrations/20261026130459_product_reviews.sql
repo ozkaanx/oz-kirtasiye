@@ -1,4 +1,5 @@
--- Aşama 22: verified purchaser reviews and admin moderation.
+-- Recovered from the hosted migration ledger; original version retained.
+-- Product reviews / verified purchasers
 create table public.product_reviews (
   id uuid primary key default gen_random_uuid(),
   product_id uuid not null references public.products(id) on delete cascade,
@@ -24,7 +25,6 @@ create policy reviews_verified_insert on public.product_reviews for insert to au
   exists (select 1 from public.order_requests o join public.order_request_items i on i.order_request_id=o.id
     where o.customer_user_id=(select auth.uid()) and o.status in ('delivered','completed') and i.product_id=product_id)
  );
--- Update operations are exclusively controlled through SECURITY DEFINER functions below.
 create or replace function public.submit_product_review(p_product_id uuid,p_rating integer,p_body text)
 returns uuid language plpgsql security definer set search_path='' as $$
 declare v_user uuid := (select auth.uid()); v_id uuid;

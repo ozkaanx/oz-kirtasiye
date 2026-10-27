@@ -1,4 +1,5 @@
--- Legacy request function inserts subtotal without a total; populate it before the CHECK fires.
+-- Recovered from the hosted migration ledger; original version retained.
+
 create or replace function private.order_request_default_total()
 returns trigger language plpgsql set search_path=''
 as $function$

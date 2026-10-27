@@ -226,7 +226,7 @@ export function InvoiceDetails({
       )}
       <p className={css.note}>
         Bireysel satışlarda T.C. kimlik numarası bu formda zorunlu tutulmaz. Resmî fatura için ek
-        bilgi gerekirse mağaza seninle iletişime geçer. Fatura PDF'si bu ekranda oluşturulmaz.
+        bilgi gerekirse mağaza seninle iletişime geçer. Fatura PDF&apos;si bu ekranda oluşturulmaz.
       </p>
     </section>
   );

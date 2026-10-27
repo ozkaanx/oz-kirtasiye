@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -47,10 +47,7 @@ const campaignCards = [
 
 type Props = { liveProducts: LiveProduct[]; categories: StoreCategory[] };
 
-export function HomeStorefront({ liveProducts, categories }: Props) {
-  const [activeCategory, setActiveCategory] = useState('all');
-  const topCategories = categories.filter((category) => !category.parent_id).slice(0, 6);
-  const featuredProducts = useMemo(() => {
+function getFeaturedProducts(activeCategory: string, categories: StoreCategory[], liveProducts: LiveProduct[]) {
     const category = categories.find((item) => item.slug === activeCategory);
     const ids = category ? descendantIds(categories, category.id) : null;
     const list = liveProducts.filter(
@@ -62,7 +59,14 @@ export function HomeStorefront({ liveProducts, categories }: Props) {
           Number(b.is_featured) - Number(a.is_featured) || b.created_at.localeCompare(a.created_at),
       )
       .slice(0, 8);
-  }, [activeCategory, categories, liveProducts]);
+
+}
+
+export function HomeStorefront({ liveProducts, categories }: Props) {
+  const [activeCategory, setActiveCategory] = useState('all');
+  const topCategories = categories.filter((category) => !category.parent_id).slice(0, 6);
+  const featuredProducts = getFeaturedProducts(activeCategory, categories, liveProducts);
+
   const newestProducts = [...liveProducts]
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
     .slice(0, 4);

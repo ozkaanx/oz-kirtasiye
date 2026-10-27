@@ -1,3 +1,5 @@
+-- Recovered from the hosted migration ledger; original version retained.
+
 create or replace function public.quote_order_savings(
  p_items jsonb,p_delivery_method text,p_coupon_code text default null,
  p_phone text default null,p_customer_user_id uuid default null

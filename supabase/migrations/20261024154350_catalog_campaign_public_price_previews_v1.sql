@@ -1,6 +1,5 @@
--- Read-only, service-role-only per-unit preview for product/category campaigns.
--- Basket-scoped campaigns and coupon codes are intentionally not included.
--- Final payable amount is always recalculated by the checkout RPC.
+-- Recovered from the hosted migration ledger; original version retained.
+
 create or replace function public.catalog_campaign_previews(p_product_id uuid default null)
 returns table(
  product_id uuid, variant_id uuid, campaign_id uuid, campaign_name text,

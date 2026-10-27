@@ -1,4 +1,5 @@
--- Already applied to hosted Supabase project.
+-- Recovered from the hosted migration ledger; original version retained.
+
 do $m$
 declare src text;
 begin

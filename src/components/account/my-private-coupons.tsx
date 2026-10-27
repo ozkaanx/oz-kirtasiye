@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useClock } from '@/lib/use-clock';
 import { BadgePercent, CalendarClock, Check, ShoppingBag, TicketPercent } from 'lucide-react';
 import { useShop } from '@/context/shop-context';
 import { formatPrice } from '@/lib/format';
@@ -23,7 +24,7 @@ export type PrivateCoupon = {
 
 export function MyPrivateCoupons({ coupons, loadError }: { coupons: PrivateCoupon[]; loadError: string | null }) {
   const { couponCode, setCouponCode } = useShop();
-  const now = Date.now();
+  const now = useClock();
   return (
     <section style={{ marginBottom: 24 }} aria-label="Bana özel kuponlarım">
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>

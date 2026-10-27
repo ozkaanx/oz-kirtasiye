@@ -1,10 +1,11 @@
 import type { NextConfig } from 'next';
+import { isAllowedSupabaseUrl } from './src/lib/supabase/config';
 
 /** Restrict Next Image optimizer to this project's public Supabase product bucket. */
-const storageHost = (() => {
+const storageUrl = (() => {
   try {
     const parsed = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? '');
-    return parsed.protocol === 'https:' ? parsed.hostname : null;
+    return isAllowedSupabaseUrl(parsed.href) ? parsed : null;
   } catch {
     return null;
   }
@@ -13,12 +14,17 @@ const storageHost = (() => {
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
-    remotePatterns: storageHost ? [{
-      protocol: 'https',
-      hostname: storageHost,
-      pathname: '/storage/v1/object/public/product-images/**',
-      search: '',
-    }] : [],
+    remotePatterns: storageUrl
+      ? [
+          {
+            protocol: storageUrl.protocol === 'https:' ? 'https' : 'http',
+            hostname: storageUrl.hostname,
+            port: storageUrl.port,
+            pathname: '/storage/v1/object/public/product-images/**',
+            search: '',
+          },
+        ]
+      : [],
     minimumCacheTTL: 3600,
   },
 };

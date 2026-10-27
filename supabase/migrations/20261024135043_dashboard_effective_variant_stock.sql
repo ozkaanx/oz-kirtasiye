@@ -1,4 +1,5 @@
--- Preserve all dashboard metrics while aggregating active variant stock for variant products.
+-- Recovered from the hosted migration ledger; original version retained.
+
 do $do$
 declare src text; changed text;
 begin

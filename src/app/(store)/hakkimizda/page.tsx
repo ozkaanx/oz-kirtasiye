@@ -16,7 +16,7 @@ export default async function AboutPage() {
       </h1>
       <p className="business-lead">
         Okuldan ofise, yazmaktan üretmeye, oyundan hayal kurmaya… {settings.brand_name} olarak
-        İstanbul Bağcılar Güneşli'de kırtasiye ve oyuncak ihtiyaçlarını bir araya getiriyoruz.
+        İstanbul Bağcılar Güneşli&apos;de kırtasiye ve oyuncak ihtiyaçlarını bir araya getiriyoruz.
       </p>
       <div className="business-value-grid">
         <article>
@@ -31,8 +31,8 @@ export default async function AboutPage() {
         </article>
         <article>
           <MapPin size={27} />
-          <h2>Güneşli'deyiz</h2>
-          <p>Mağazamızı Bağcılar / Güneşli'de ziyaret edebilir, bizimle iletişime geçebilirsin.</p>
+          <h2>Güneşli&apos;deyiz</h2>
+          <p>Mağazamızı Bağcılar / Güneşli&apos;de ziyaret edebilir, bizimle iletişime geçebilirsin.</p>
         </article>
       </div>
       <div className="business-seller-note">

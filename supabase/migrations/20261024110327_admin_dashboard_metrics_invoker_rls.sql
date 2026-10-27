@@ -1,7 +1,10 @@
--- Already deployed to Öz Kırtasiye's Supabase project.
--- This file version-controls the admin-only reporting function; do not manually rerun on production.
+-- Recovered from the hosted migration ledger; original version retained.
+
 create or replace function public.admin_dashboard_summary(p_days integer default 30)
-returns jsonb language plpgsql security invoker set search_path = ''
+returns jsonb
+language plpgsql
+security invoker
+set search_path = ''
 as $function$
 declare
   v_since timestamptz;
@@ -10,9 +13,11 @@ declare
 begin
   if (select auth.uid()) is null or not exists (
     select 1 from public.store_admins a where a.user_id = (select auth.uid())
-  ) then raise exception 'Yönetici yetkisi gerekli.' using errcode = '42501'; end if;
+  ) then
+    raise exception 'Yönetici yetkisi gerekli.' using errcode='42501';
+  end if;
   if p_days not between 7 and 90 then
-    raise exception 'Rapor dönemi 7–90 gün arasında olmalı.' using errcode = '22023';
+    raise exception 'Rapor dönemi 7–90 gün arasında olmalı.' using errcode='22023';
   end if;
   v_since := now() - pg_catalog.make_interval(days => p_days);
   v_today := (now() at time zone 'Europe/Istanbul')::date;
@@ -35,27 +40,30 @@ begin
     'dailyRequests', (
       select coalesce(pg_catalog.jsonb_agg(
         pg_catalog.jsonb_build_object(
-          'date', d.day::date::text,
+          'date', d.day::text,
           'count', coalesce(orders.request_count,0),
           'amount', coalesce(orders.requested_total,0)
         ) order by d.day
-      ), '[]'::jsonb)
-      from pg_catalog.generate_series((v_today-13)::timestamp,v_today::timestamp,interval '1 day') as d(day)
+      ),'[]'::jsonb)
+      from pg_catalog.generate_series(v_today-13,v_today,1) as d(day)
       left join lateral (
         select count(*) as request_count,
           coalesce(sum(o.total) filter (where o.status <> 'cancelled'),0) as requested_total
         from public.order_requests o
-        where (o.created_at at time zone 'Europe/Istanbul')::date = d.day::date
+        where (o.created_at at time zone 'Europe/Istanbul')::date = d.day
       ) orders on true
     ),
     'topRequestedProducts', (
       select coalesce(pg_catalog.jsonb_agg(
-        pg_catalog.jsonb_build_object('name', ranked.product_name,'quantity', ranked.total_quantity)
-        order by ranked.total_quantity desc, ranked.product_name), '[]'::jsonb)
+        pg_catalog.jsonb_build_object(
+          'name', ranked.product_name,
+          'quantity', ranked.total_quantity
+        ) order by ranked.total_quantity desc, ranked.product_name
+      ),'[]'::jsonb)
       from (
         select i.product_name, sum(i.quantity)::integer as total_quantity
         from public.order_request_items i
-        join public.order_requests o on o.id = i.order_request_id
+        join public.order_requests o on o.id=i.order_request_id
         where o.created_at >= v_since and o.status <> 'cancelled'
         group by i.product_name
         order by sum(i.quantity) desc, i.product_name

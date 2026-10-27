@@ -1,5 +1,5 @@
--- Already applied to the connected Öz Kırtasiye Supabase project.
--- Do not execute this migration manually on the same project a second time.
+-- Recovered from the hosted migration ledger; original version retained.
+
 create table if not exists public.customer_profiles (
  user_id uuid primary key references auth.users(id) on delete cascade,
  full_name text not null default '' check (char_length(full_name)<=100),
@@ -22,8 +22,10 @@ create table if not exists public.customer_addresses (
 );
 create index if not exists customer_addresses_owner_created_idx on public.customer_addresses(user_id,created_at desc);
 create unique index if not exists customer_addresses_one_default_idx on public.customer_addresses(user_id) where is_default;
-create trigger customer_profiles_updated_at before update on public.customer_profiles for each row execute function private.touch_updated_at();
-create trigger customer_addresses_updated_at before update on public.customer_addresses for each row execute function private.touch_updated_at();
+create trigger customer_profiles_updated_at before update on public.customer_profiles
+ for each row execute function private.touch_updated_at();
+create trigger customer_addresses_updated_at before update on public.customer_addresses
+ for each row execute function private.touch_updated_at();
 alter table public.customer_profiles enable row level security;
 alter table public.customer_addresses enable row level security;
 revoke all on public.customer_profiles,public.customer_addresses from public,anon,authenticated;
@@ -36,12 +38,12 @@ create policy "customer_address_select_self" on public.customer_addresses for se
 create policy "customer_address_insert_self" on public.customer_addresses for insert to authenticated with check(user_id=(select auth.uid()) and is_default=false);
 create policy "customer_address_update_self" on public.customer_addresses for update to authenticated using(user_id=(select auth.uid())) with check(user_id=(select auth.uid()));
 create policy "customer_address_delete_self" on public.customer_addresses for delete to authenticated using(user_id=(select auth.uid()));
--- The next migration replaces this function with the advisory-lock version.
 create or replace function public.set_default_customer_address(p_address_id uuid)
 returns void language plpgsql security invoker set search_path=''
 as $function$
 begin
  if (select auth.uid()) is null then raise exception 'Giriş gerekli.' using errcode='42501'; end if;
+ -- Same customer serialized via auth.users row; prevents two concurrent default switches.
  perform 1 from auth.users where id=(select auth.uid()) for update;
  if not exists(select 1 from public.customer_addresses where id=p_address_id and user_id=(select auth.uid())) then
    raise exception 'Adres bulunamadı.' using errcode='22023';

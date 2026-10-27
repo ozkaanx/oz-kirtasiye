@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
@@ -9,7 +9,8 @@ type Customer={id:string;name:string;email:string};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function CouponAssignments({coupons,assignments,initialUser='',customers=[]}:{coupons:Coupon[];assignments:Assignment[];initialUser?:string;customers?:Customer[]}) {
  const router=useRouter(); const [coupon,setCoupon]=useState(coupons[0]?.id??''); const [user,setUser]=useState(initialUser); const [busy,setBusy]=useState(false);const [message,setMessage]=useState('');
- useEffect(()=>{setUser(initialUser)},[initialUser]);
+ const [previousUser,setPreviousUser]=useState(initialUser);
+ if(initialUser!==previousUser){setPreviousUser(initialUser);setUser(initialUser);}
  const selected=assignments.find(a=>a.coupon_id===coupon);
  async function save(e:FormEvent<HTMLFormElement>){e.preventDefault();if(!coupon||!uuid.test(user)||!customers.some(c=>c.id===user)){setMessage('Listeden geçerli bir müşteri seçin.');return;}setBusy(true);setMessage('');
   const {error}=await createBrowserSupabase().from('coupon_private_assignments').upsert({coupon_id:coupon,user_id:user},{onConflict:'coupon_id'});setBusy(false);setMessage(error?error.message:'Atama kaydedildi.');if(!error)router.refresh(); }

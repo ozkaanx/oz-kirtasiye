@@ -1,4 +1,5 @@
--- Uses the authoritative product/category snapshot; includes category descendants.
+-- Recovered from the hosted migration ledger; original version retained.
+
 create or replace function private.best_automatic_campaign(p_lines jsonb,p_subtotal numeric)
 returns table(campaign_id uuid,campaign_name text,discount_amount numeric)
 language sql stable security invoker set search_path=''
@@ -6,7 +7,8 @@ as $function$
 with recursive descendant as (
  select c.id as root_id,c.id as descendant_id from public.categories c
  union all
- select d.root_id,child.id from public.categories child join descendant d on child.parent_id=d.descendant_id
+ select d.root_id,child.id from public.categories child
+ join descendant d on child.parent_id=d.descendant_id
 ),
 lines as (
  select (item->>'productId')::uuid as product_id,

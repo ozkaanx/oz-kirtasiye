@@ -1,5 +1,6 @@
--- Already applied to the Oz Kirtasiye Supabase project.
--- This file tracks the installed migration in git; DO NOT rerun it on that project.
+-- Recovered from the hosted migration ledger; original version retained.
+
+-- Notifications are user-scoped and cannot be created/edited by browser clients.
 create table public.user_notifications (
   id uuid primary key default gen_random_uuid(),
   recipient_user_id uuid not null references auth.users(id) on delete cascade,
@@ -37,7 +38,7 @@ as $fn$
 begin
  if p_user is null then return; end if;
  insert into public.user_notifications (
-  recipient_user_id,audience,event_type,event_key,title,body,href
+   recipient_user_id,audience,event_type,event_key,title,body,href
  ) values (p_user,p_audience,p_type,p_key,p_title,p_body,p_href)
  on conflict(recipient_user_id,audience,event_key) do nothing;
 end;
@@ -47,47 +48,50 @@ revoke all on function notifications_private.insert_notification(uuid,text,text,
 create or replace function notifications_private.order_notifications()
 returns trigger language plpgsql security definer set search_path=''
 as $fn$
-declare v_label text; v_admin record;
+declare
+ v_label text;
+ v_admin record;
 begin
  if tg_op='INSERT' then
-  for v_admin in select user_id from public.store_admins loop
-   perform notifications_private.insert_notification(
-    v_admin.user_id,'admin','order_created',
-    'order:'||new.id::text||':created','Yeni sipariş talebi',
-    new.reference||' numaralı sipariş talebi alındı.','/admin/siparisler'
-   );
-  end loop;
-  if new.customer_user_id is not null then
-   perform notifications_private.insert_notification(
-    new.customer_user_id,'customer','order_created',
-    'order:'||new.id::text||':created','Sipariş talebiniz alındı',
-    new.reference||' numaralı talebiniz kaydedildi.','/hesabim'
-   );
-  end if;
+   for v_admin in select user_id from public.store_admins loop
+     perform notifications_private.insert_notification(
+       v_admin.user_id,'admin','order_created',
+       'order:'||new.id::text||':created',
+       'Yeni sipariş talebi',
+       new.reference||' numaralı sipariş talebi alındı.','/admin/siparisler'
+     );
+   end loop;
+   if new.customer_user_id is not null then
+     perform notifications_private.insert_notification(
+       new.customer_user_id,'customer','order_created',
+       'order:'||new.id::text||':created','Sipariş talebiniz alındı',
+       new.reference||' numaralı talebiniz kaydedildi.','/hesabim'
+     );
+   end if;
  elsif tg_op='UPDATE' then
-  if old.customer_user_id is null and new.customer_user_id is not null then
-   perform notifications_private.insert_notification(
-    new.customer_user_id,'customer','order_created',
-    'order:'||new.id::text||':created','Sipariş talebiniz alındı',
-    new.reference||' numaralı talebiniz kaydedildi.','/hesabim'
-   );
-  end if;
-  if new.status is distinct from old.status and new.customer_user_id is not null then
-   v_label:=case new.status
-    when 'contacted' then 'Müşteriyle görüşüldü'
-    when 'processing' then 'Sipariş hazırlanıyor'
-    when 'shipped' then 'Sipariş kargoya verildi'
-    when 'delivered' then 'Sipariş teslim edildi'
-    when 'completed' then 'Sipariş tamamlandı'
-    when 'cancelled' then 'Sipariş iptal edildi'
-    else 'Sipariş durumu güncellendi'
-   end;
-   perform notifications_private.insert_notification(
-    new.customer_user_id,'customer','order_updated',
-    'order:'||new.id::text||':status:'||new.status,
-    v_label,new.reference||' numaralı siparişiniz: '||v_label||'.','/hesabim'
-   );
-  end if;
+   if old.customer_user_id is null and new.customer_user_id is not null then
+     perform notifications_private.insert_notification(
+       new.customer_user_id,'customer','order_created',
+       'order:'||new.id::text||':created','Sipariş talebiniz alındı',
+       new.reference||' numaralı talebiniz kaydedildi.','/hesabim'
+     );
+   end if;
+   if new.status is distinct from old.status and new.customer_user_id is not null then
+     v_label:=case new.status
+       when 'contacted' then 'Müşteriyle görüşüldü'
+       when 'processing' then 'Sipariş hazırlanıyor'
+       when 'shipped' then 'Sipariş kargoya verildi'
+       when 'delivered' then 'Sipariş teslim edildi'
+       when 'completed' then 'Sipariş tamamlandı'
+       when 'cancelled' then 'Sipariş iptal edildi'
+       else 'Sipariş durumu güncellendi'
+     end;
+     perform notifications_private.insert_notification(
+       new.customer_user_id,'customer','order_updated',
+       'order:'||new.id::text||':status:'||new.status,
+       v_label,new.reference||' numaralı siparişiniz: '||v_label||'.','/hesabim'
+     );
+   end if;
  end if;
  return new;
 exception when others then
@@ -104,33 +108,38 @@ create trigger store_notify_order_changes after update of status,customer_user_i
 create or replace function notifications_private.return_notifications()
 returns trigger language plpgsql security definer set search_path=''
 as $fn$
-declare v_reference text; v_kind text; v_status_label text; v_admin record;
+declare
+ v_reference text;
+ v_kind text;
+ v_status_label text;
+ v_admin record;
 begin
  select reference into v_reference from public.order_requests where id=new.order_request_id;
  v_kind:=case new.request_type when 'exchange' then 'Değişim' else 'İade' end;
  if tg_op='INSERT' then
-  for v_admin in select user_id from public.store_admins loop
-   perform notifications_private.insert_notification(
-    v_admin.user_id,'admin','return_created',
-    'return:'||new.id::text||':created','Yeni '||lower(v_kind)||' talebi',
-    coalesce(v_reference,'Sipariş')||' için '||lower(v_kind)||' talebi oluşturuldu.','/admin/iadeler'
-   );
-  end loop;
+   for v_admin in select user_id from public.store_admins loop
+     perform notifications_private.insert_notification(
+       v_admin.user_id,'admin','return_created',
+       'return:'||new.id::text||':created',
+       'Yeni '||lower(v_kind)||' talebi',
+       coalesce(v_reference,'Sipariş')||' için '||lower(v_kind)||' talebi oluşturuldu.','/admin/iadeler'
+     );
+   end loop;
  elsif tg_op='UPDATE' and new.status is distinct from old.status then
-  v_status_label:=case new.status
-   when 'approved' then 'onaylandı'
-   when 'rejected' then 'reddedildi'
-   when 'received' then 'mağazaya ulaştı'
-   when 'closed' then 'sonuçlandırıldı'
-   else 'güncellendi'
-  end;
-  perform notifications_private.insert_notification(
-   new.customer_user_id,'customer','return_updated',
-   'return:'||new.id::text||':status:'||new.status,
-   v_kind||' talebiniz '||v_status_label,
-   coalesce(v_reference,'Sipariş')||' için '||lower(v_kind)||' talebiniz '||v_status_label||'.',
-   '/hesabim/iade'
-  );
+   v_status_label:=case new.status
+     when 'approved' then 'onaylandı'
+     when 'rejected' then 'reddedildi'
+     when 'received' then 'mağazaya ulaştı'
+     when 'closed' then 'sonuçlandırıldı'
+     else 'güncellendi'
+   end;
+   perform notifications_private.insert_notification(
+     new.customer_user_id,'customer','return_updated',
+     'return:'||new.id::text||':status:'||new.status,
+     v_kind||' talebiniz '||v_status_label,
+     coalesce(v_reference,'Sipariş')||' için '||lower(v_kind)||' talebiniz '||v_status_label||'.',
+     '/hesabim/iade'
+   );
  end if;
  return new;
 exception when others then

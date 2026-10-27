@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import { useClock } from '@/lib/use-clock';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, LogOut, Megaphone, PlusCircle, ShieldCheck } from 'lucide-react';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
@@ -48,6 +49,7 @@ export function AdminAutoCampaigns({
   loadError: string | null;
 }) {
   const router = useRouter();
+  const now = useClock();
   const [name, setName] = useState('');
   const [scope, setScope] = useState<Scope>('category');
   const [target, setTarget] = useState('');
@@ -353,8 +355,8 @@ export function AdminAutoCampaigns({
               <div className={styles.stack}>
                 {visible.length === 0 && <p className={styles.empty}>Kampanya bulunamadı.</p>}
                 {visible.map((c) => {
-                  const expired = !!c.expires_at && new Date(c.expires_at).getTime() <= Date.now();
-                  const future = new Date(c.starts_at).getTime() > Date.now();
+                  const expired = !!c.expires_at && new Date(c.expires_at).getTime() <= now;
+                  const future = new Date(c.starts_at).getTime() > now;
                   const active = c.is_active && !expired && !future;
                   return (
                     <article key={c.id} className={styles.card}>

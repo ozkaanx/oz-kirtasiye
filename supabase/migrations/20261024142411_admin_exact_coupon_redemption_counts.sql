@@ -1,4 +1,5 @@
--- Already applied to hosted database. Administrator-only exact usage count for all coupons.
+-- Recovered from the hosted migration ledger; original version retained.
+
 create or replace function public.admin_coupon_usage()
 returns table(coupon_id uuid, used_count bigint)
 language sql security invoker set search_path=''

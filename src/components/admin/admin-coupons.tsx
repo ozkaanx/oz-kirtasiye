@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import { useClock } from '@/lib/use-clock';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, BadgePercent, LogOut, PlusCircle, ShieldCheck } from 'lucide-react';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
@@ -44,6 +45,7 @@ export function AdminCoupons({
   loadError: string | null;
 }) {
   const router = useRouter();
+  const now = useClock();
   const [code, setCode] = useState('');
   const [label, setLabel] = useState('');
   const [type, setType] = useState<'percent' | 'fixed'>('percent');
@@ -329,8 +331,8 @@ export function AdminCoupons({
               <div className={styles.stack}>
                 {!filtered.length && <p className={styles.empty}>Henüz kupon bulunamadı.</p>}
                 {filtered.map((c) => {
-                  const expired = !!c.expires_at && new Date(c.expires_at).getTime() <= Date.now();
-                  const upcoming = new Date(c.starts_at).getTime() > Date.now();
+                  const expired = !!c.expires_at && new Date(c.expires_at).getTime() <= now;
+                  const upcoming = new Date(c.starts_at).getTime() > now;
                   const usedUp = c.max_uses !== null && c.used_count >= c.max_uses;
                   return (
                     <article key={c.id} className={styles.card}>

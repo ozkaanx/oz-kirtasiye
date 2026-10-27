@@ -279,7 +279,7 @@ export function CheckoutRequestForm({
                 </span>
                 <span className={styles.content}>
                   <strong className={styles.title}>Mağazadan teslim</strong>
-                  <small className={styles.subtitle}>Öz Kırtasiye'ye gelip al</small>
+                  <small className={styles.subtitle}>Öz Kırtasiye&apos;ye gelip al</small>
                 </span>
                 <span className={styles.price}>Ücretsiz</span>
               </label>

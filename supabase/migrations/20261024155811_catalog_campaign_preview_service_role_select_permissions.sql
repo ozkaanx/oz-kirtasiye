@@ -1,9 +1,10 @@
--- Catalog campaign previews are called only through the Next.js server.
--- SECURITY INVOKER executes with service_role privileges and needs SELECT on referenced tables.
--- Do not grant access to anon or authenticated users here.
+-- Recovered from the hosted migration ledger; original version retained.
+
+-- Server-only catalogue promotion preview: invoker RPC needs explicit table SELECT.
+-- This does not grant campaign read access to anon or authenticated users.
 grant select on table
   public.automatic_campaigns,
   public.products,
   public.product_variants,
   public.categories
-  to service_role;
+to service_role;

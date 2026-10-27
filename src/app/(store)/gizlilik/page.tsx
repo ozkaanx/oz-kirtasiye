@@ -43,7 +43,7 @@ export default async function PrivacyPage() {
         <p>
           Veriler, gerekli olduğu ölçüde barındırma/altyapı hizmet sağlayıcıları ve sipariş
           tamamlanırsa lojistik veya mevzuat gerektiren resmî makamlarla paylaşılabilir. PayTR henüz
-          aktif olmadığından bu sürümde PayTR'a kart bilgisi aktarılmamaktadır. Yurt dışına aktarım
+          aktif olmadığından bu sürümde PayTR&apos;a kart bilgisi aktarılmamaktadır. Yurt dışına aktarım
           durumları ve gerekli tedbirler canlıya çıkmadan incelenmelidir.
         </p>
       </LegalSection>
