@@ -6,9 +6,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useReducer,
   useState,
   type ReactNode,
 } from 'react';
+import { cartReducer, initialCartState, type CartFeedback } from '@/lib/cart-state';
 import { cartLineKey, type CartLine, type CartProduct } from '@/lib/cart-types';
 
 type ShopContextValue = {
@@ -19,8 +21,8 @@ type ShopContextValue = {
   favorites: string[];
   couponCode: string;
   setCouponCode: (code: string) => void;
-  cartOpen: boolean;
-  setCartOpen: (open: boolean) => void;
+  cartFeedback: CartFeedback | null;
+  dismissCartFeedback: () => void;
   addToCart: (productId: string, amount?: number, variantId?: string | null) => void;
   setQuantity: (productId: string, quantity: number, variantId?: string | null) => void;
   removeFromCart: (productId: string, variantId?: string | null) => void;
@@ -86,18 +88,21 @@ function readFavorites(): string[] {
 }
 
 export function ShopProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<CartLine[]>([]);
+  const [{ lines: cart, feedback: cartFeedback }, dispatchCart] = useReducer(
+    cartReducer,
+    initialCartState,
+  );
+  const dismissCartFeedback = useCallback(() => dispatchCart({ type: 'dismiss' }), []);
   const [products, setProducts] = useState<Record<string, CartProduct>>({});
   const [favorites, setFavorites] = useState<string[]>([]);
   const [couponCode, setCouponCode] = useState('');
-  const [cartOpen, setCartOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [cartLoading, setCartLoading] = useState(true);
   const [cartError, setCartError] = useState('');
 
   useEffect(() => {
+    dispatchCart({ type: 'hydrate', lines: readCart() });
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Hydrate validated browser storage after SSR.
-    setCart(readCart());
     setFavorites(readFavorites());
     const storedCoupon = window.localStorage.getItem(COUPON_KEY) ?? '';
     if (/^[A-Z0-9_-]{4,32}$/.test(storedCoupon)) setCouponCode(storedCoupon);
@@ -164,53 +169,18 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const refreshCart = useCallback(() => loadProducts(cart), [cart, loadProducts]);
   const setQuantity = useCallback(
     (productId: string, quantity: number, variantId?: string | null) => {
-      if (!UUID.test(productId) || !Number.isInteger(quantity)) return;
-      const key = cartLineKey(productId, variantId);
-      setCart((previous) =>
-        quantity <= 0
-          ? previous.filter((line) => cartLineKey(line.productId, line.variantId) !== key)
-          : previous.map((line) =>
-              cartLineKey(line.productId, line.variantId) === key
-                ? { ...line, quantity: Math.min(quantity, 99) }
-                : line,
-            ),
-      );
+      dispatchCart({ type: 'quantity', productId, quantity, variantId });
     },
     [],
   );
   const addToCart = useCallback((productId: string, amount = 1, variantId?: string | null) => {
-    if (
-      !UUID.test(productId) ||
-      (variantId != null && !UUID.test(variantId)) ||
-      !Number.isInteger(amount) ||
-      amount < 1
-    )
-      return;
-    const key = cartLineKey(productId, variantId);
-    setCart((previous) =>
-      previous.some((line) => cartLineKey(line.productId, line.variantId) === key)
-        ? previous.map((line) =>
-            cartLineKey(line.productId, line.variantId) === key
-              ? { ...line, quantity: Math.min(99, line.quantity + amount) }
-              : line,
-          )
-        : previous.length >= 20
-          ? previous
-          : [
-              ...previous,
-              { productId, variantId: variantId ?? null, quantity: Math.min(99, amount) },
-            ],
-    );
-    setCartOpen(true);
+    dispatchCart({ type: 'add', productId, amount, variantId });
   }, []);
   const removeFromCart = useCallback((productId: string, variantId?: string | null) => {
-    const key = cartLineKey(productId, variantId);
-    setCart((previous) =>
-      previous.filter((line) => cartLineKey(line.productId, line.variantId) !== key),
-    );
+    dispatchCart({ type: 'remove', productId, variantId });
   }, []);
   const clearCart = useCallback(() => {
-    setCart([]);
+    dispatchCart({ type: 'clear' });
     setCouponCode('');
   }, []);
   const toggleFavorite = useCallback((productId: string) => {
@@ -249,8 +219,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         favorites,
         couponCode,
         setCouponCode,
-        cartOpen,
-        setCartOpen,
+        cartFeedback,
+        dismissCartFeedback,
         addToCart,
         setQuantity,
         removeFromCart,
