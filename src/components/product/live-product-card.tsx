@@ -9,7 +9,7 @@ import styles from './campaign-price.module.css';
 
 export function LiveProductCard({ product }: { product: LiveProduct }) {
   return (
-    <article className="product-card">
+    <article className="product-card live-product-card">
       <div className="product-photo">
         <Link href={`/magaza/urun/${product.slug}`} className="product-image-link" aria-label={`${product.name} ürün detayları`}>
           {product.imageUrl ? (
@@ -41,7 +41,6 @@ export function LiveProductCard({ product }: { product: LiveProduct }) {
           </div>
           <div className="live-card-actions">
             <LiveFavoriteButton productId={product.id} />
-            <Link href={`/magaza/urun/${product.slug}`} className="live-view-link">İncele →</Link>
             {product.has_variants ? (
               <Link className="button button-primary" href={`/magaza/urun/${product.slug}`}>Seçenekleri gör</Link>
             ) : (

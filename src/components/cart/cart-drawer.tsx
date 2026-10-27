@@ -4,11 +4,12 @@ import { cartLineKey } from '@/lib/cart-types';
 
 import Link from 'next/link';
 import { ArrowRight, Minus, Package, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
-import { useEffect } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { useShop } from '@/context/shop-context';
 import { formatPrice } from '@/lib/format';
 
 export function CartDrawer() {
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const {
     cart,
     products,
@@ -23,30 +24,35 @@ export function CartDrawer() {
     refreshCart,
   } = useShop();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!cartOpen) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setCartOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
+    const dialog = dialogRef.current;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    dialog?.showModal();
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      window.removeEventListener('keydown', onKey);
+      dialog?.close();
       document.body.style.overflow = previousOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
     };
   }, [cartOpen, setCartOpen]);
   if (!cartOpen) return null;
 
   return (
-    <div
+    <dialog
+      ref={dialogRef}
       className="cart-overlay"
-      role="presentation"
+      aria-label="Alışveriş sepeti"
+      onCancel={(event) => {
+        event.preventDefault();
+        setCartOpen(false);
+      }}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) setCartOpen(false);
       }}
     >
-      <aside className="cart-drawer" role="dialog" aria-modal="true" aria-label="Alışveriş sepeti">
+      <aside className="cart-drawer">
         <div className="drawer-header">
           <div>
             <span className="eyebrow">GÜZEL SEÇİMLER!</span>
@@ -106,7 +112,9 @@ export function CartDrawer() {
                           {product.name}
                         </Link>
                       ) : (
-                        <strong>Ürün bulunamadı</strong>
+                        <strong>
+                          {cartLoading ? 'Ürün bilgileri yükleniyor…' : 'Ürün bulunamadı'}
+                        </strong>
                       )}
                       {product && <small>{product.variantLabel}</small>}
                       {product && (
@@ -157,7 +165,13 @@ export function CartDrawer() {
             <div className="cart-checkout">
               <div className="cart-total">
                 <span>Tahmini ara toplam</span>
-                <strong>{formatPrice(cartSubtotal)}</strong>
+                <strong>
+                  {cartLoading
+                    ? 'Hesaplanıyor…'
+                    : cartError
+                      ? 'Kontrol edilemedi'
+                      : formatPrice(cartSubtotal)}
+                </strong>
               </div>
               <p className="checkout-notice">
                 Ödeme henüz açık değil. Sonraki adımda sipariş talebi bırakabilirsiniz; stok ve
@@ -181,6 +195,6 @@ export function CartDrawer() {
           </>
         )}
       </aside>
-    </div>
+    </dialog>
   );
 }
