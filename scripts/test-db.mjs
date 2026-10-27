@@ -12,10 +12,9 @@ for (const file of readdirSync('supabase/tests')
   .sort()) {
   const result = spawnSync(
     'psql',
-    ['-X', '--set', 'ON_ERROR_STOP=1', '--file', `supabase/tests/${file}`],
+    ['-X', '--dbname', databaseUrl, '--set', 'ON_ERROR_STOP=1', '--file', `supabase/tests/${file}`],
     {
       stdio: 'inherit',
-      env: { ...process.env, PGDATABASE: databaseUrl },
     },
   );
   if (result.error) throw result.error;
