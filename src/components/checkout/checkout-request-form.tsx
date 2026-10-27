@@ -3,7 +3,8 @@
 import { cartLineKey } from '@/lib/cart-types';
 
 import Link from 'next/link';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useRef, useState } from 'react';
+import { checkoutAttempt, clearCheckoutAttempt, type CheckoutAttempt } from '@/lib/checkout-attempt';
 import {
   ArrowLeft,
   ArrowRight,
@@ -87,6 +88,8 @@ export function CheckoutRequestForm({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [completed, setCompleted] = useState<OrderRequestResult | null>(null);
+  const attemptRef = useRef<CheckoutAttempt | null>(null);
+  const submitting = useRef(false);
   const quote = deliveryQuote(settings, cartSubtotal, method);
   const promo = useCouponQuote(cart, method);
   const couponBlocked = !!couponCode && (promo.loading || !!promo.error || !promo.quote);
@@ -107,6 +110,7 @@ export function CheckoutRequestForm({
       !privacyRead ||
       !preInformationRead ||
       pending ||
+      submitting.current ||
       !cartIsValid ||
       couponBlocked
     )
@@ -148,14 +152,12 @@ export function CheckoutRequestForm({
       setError(cause instanceof Error ? cause.message : 'Fatura bilgilerini kontrol et.');
       return;
     }
+    submitting.current = true;
     setPending(true);
     try {
       // Browser estimates can be stale. The Postgres function validates final prices, stock and fee atomically.
       await refreshCart();
-      const response = await fetch('/api/order-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const payload = JSON.stringify({
           ...orderFields,
           website,
           items: cart,
@@ -165,15 +167,23 @@ export function CheckoutRequestForm({
           privacyNoticeRead: privacyRead,
           preInformationRead,
           noticeVersion: LEGAL_DOCUMENT_VERSION,
-        }),
+        });
+      attemptRef.current = await checkoutAttempt(payload, attemptRef.current);
+      const response = await fetch('/api/order-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': attemptRef.current.key },
+        body: payload,
       });
       const result: OrderRequestResult & { message?: string } = await response.json();
       if (!response.ok) throw new Error(result.message || 'Sipariş talebi oluşturulamadı.');
       setCompleted(result);
+      clearCheckoutAttempt(attemptRef.current);
+      attemptRef.current = null;
       clearCart();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Beklenmeyen hata oluştu.');
     } finally {
+      submitting.current = false;
       setPending(false);
     }
   }
