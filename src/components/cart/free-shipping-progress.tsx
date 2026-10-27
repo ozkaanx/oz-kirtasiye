@@ -53,7 +53,7 @@ export function FreeShippingProgress({ subtotal, threshold, shippingAvailable, s
         </Link>
       )}
       {achieved && shippingFee === 0 && <p className={styles.note}>Tahmini kargo ücreti: ücretsiz</p>}
-      <p className={styles.note}>Bu bilgi ürün ara toplamına göre tahminidir. Kampanyalar ve kesin teslimat tutarı sipariş aşamasında doğrulanır.</p>
+      <p className={styles.note}>Bu bilgi indirim sonrası ürün toplamına göre tahminidir. Kesin teslimat tutarı sipariş aşamasında doğrulanır.</p>
     </section>
   );
 }

@@ -18,7 +18,7 @@ import { formatPrice } from '@/lib/format';
 import { deliveryQuote, type DeliverySettings } from '@/lib/delivery';
 import { CouponBox } from '@/components/coupons/coupon-box';
 import { FreeShippingProgress } from '@/components/cart/free-shipping-progress';
-import { useCouponQuote } from '@/components/coupons/use-coupon-quote';
+import { useCartPricing } from '@/components/coupons/use-cart-pricing';
 
 export function CartPage({ settings }: { settings: DeliverySettings }) {
   const {
@@ -30,14 +30,16 @@ export function CartPage({ settings }: { settings: DeliverySettings }) {
     setQuantity,
     removeFromCart,
     cartSubtotal,
-    couponCode,
     refreshCart,
   } = useShop();
-  const shipping = deliveryQuote(settings, cartSubtotal, 'shipping');
-  const pickup = deliveryQuote(settings, cartSubtotal, 'pickup');
+  const method = deliveryQuote(settings, cartSubtotal, 'shipping').available
+    ? 'shipping'
+    : 'pickup';
+  const { promo, pricing } = useCartPricing(settings, method);
+  const shipping = deliveryQuote(settings, pricing.netSubtotal, 'shipping');
+  const pickup = deliveryQuote(settings, pricing.netSubtotal, 'pickup');
   const anyDelivery = shipping.available || pickup.available;
-  const promo = useCouponQuote(cart, shipping.available ? 'shipping' : 'pickup');
-  const couponBlocked = !!couponCode && (promo.loading || !!promo.error || !promo.quote);
+  const couponBlocked = pricing.couponBlocked;
   return (
     <div className="container-wide basket-page">
       <div className="breadcrumbs">
@@ -141,13 +143,13 @@ export function CartPage({ settings }: { settings: DeliverySettings }) {
             <h2>Sipariş özeti</h2>
             <div>
               <span>Ürünler toplamı</span>
-              <b>{formatPrice(cartSubtotal)}</b>
+              <b>{formatPrice(pricing.subtotal)}</b>
             </div>
             <div>
               <span>Kargo ile gönderim</span>
               <span>
                 {shipping.available && shipping.fee !== null
-                  ? formatPrice(shipping.fee)
+                  ? formatPrice(pricing.shippingFee ?? shipping.fee)
                   : 'Henüz aktif değil'}
               </span>
             </div>
@@ -158,36 +160,30 @@ export function CartPage({ settings }: { settings: DeliverySettings }) {
               </div>
             )}
             <FreeShippingProgress
-              subtotal={cartSubtotal}
+              subtotal={pricing.netSubtotal}
               threshold={settings.free_shipping_threshold}
               shippingAvailable={shipping.available}
-              shippingFee={shipping.fee}
+              shippingFee={pricing.shippingFee}
             />
             <CouponBox {...promo} />
-            {promo.quote && promo.quote.discountAmount > 0 && (
+            {promo.quote && pricing.discountAmount > 0 && (
               <div>
                 <span>
                   {promo.quote.code
                     ? `Kupon (${promo.quote.code})`
                     : `Kampanya (${promo.quote.campaignName})`}
                 </span>
-                <b>−{formatPrice(promo.quote.discountAmount)}</b>
+                <b>−{formatPrice(pricing.discountAmount)}</b>
               </div>
             )}
             <div className="basket-total">
               <span>{promo.quote ? 'İndirimli ürünler' : 'Ürünler toplamı'}</span>
-              <strong>
-                {formatPrice(
-                  promo.quote ? promo.quote.subtotal - promo.quote.discountAmount : cartSubtotal,
-                )}
-              </strong>
+              <strong>{formatPrice(pricing.netSubtotal)}</strong>
             </div>
             {shipping.available && shipping.total !== null && (
               <p className="delivery-cart-footnote">
-                Kargo ile toplam:{' '}
-                <strong>{formatPrice(promo.quote ? promo.quote.total : shipping.total)}</strong>
-                {!promo.quote &&
-                  shipping.freeShippingRemaining !== null &&
+                Kargo ile toplam: <strong>{formatPrice(pricing.total ?? shipping.total)}</strong>
+                {shipping.freeShippingRemaining !== null &&
                   ` · Ücretsiz kargoya ${formatPrice(shipping.freeShippingRemaining)} kaldı.`}
               </p>
             )}

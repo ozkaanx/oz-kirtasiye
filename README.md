@@ -85,3 +85,9 @@ Yönetim: /admin/giris. Normal kullanıcı kaydı yönetici yetkisi vermez.
 - product-images herkese açık görseller içindir; gizli dosya yüklemeyin.
 
 GitHub Actions temiz Supabase kurulumunu, SQL regresyonlarını, TypeScript, lint ve build kontrollerini çalıştırır.
+
+## Ortak sepet fiyatlandırması
+
+20261027112249_shared_checkout_pricing_core.sql migration'ı aktif fiyat önizleme ve sipariş akışını aynı private katalog, indirim ve kargo yardımcılarında birleştirir. Sipariş satırları kilitlenmiş katalog görüntüsünden kaydedilir; kupon ve otomatik kampanya birlikte uygulanmaz. Eşit indirimde otomatik kampanya tercih edilir. Ücretsiz kargo eşiği indirim sonrası ürün toplamına göre hesaplanır. Stok rezervasyonu davranışı değişmez.
+
+Sepet ve ödeme sayfası useCartPricing üzerinden aynı gösterim modelini kullanır. Checkout teslimat alanları, özet ve gönderim durumu; yönetici sipariş kartı ve aksiyon formu ayrı bileşenlerdir. Eski quote_order_coupon uyumluluk için korunur; aktif akış quote_order_savings kullanır. pricing_parity.sql önizleme ile kaydedilen sipariş tutarlarının eşitliğini varyant, kupon, kampanya ve kargo senaryolarında doğrular.
