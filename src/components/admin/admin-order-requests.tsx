@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -8,7 +8,6 @@ import {
   ClipboardList,
   Clock3,
   LogOut,
-  Search,
   PhoneCall,
   PackageCheck,
   Truck,
@@ -18,75 +17,45 @@ import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import filterStyles from './admin-list-filters.module.css';
 
 import {
-  ORDER_STATUS_LABELS as STATUS,
   type AdminOrderRequest,
   type OrderAction as Action,
   type OrderActionDetails,
-  type OrderStatus,
 } from '@/lib/admin-orders';
+import { OrderSearchFilters } from './order-search-filters';
+import {
+  orderCursor,
+  orderSearchHref,
+  type OrderSearch,
+  type OrderSearchResult,
+} from '@/lib/admin-order-search';
 import { OrderRequestCard } from './order-request-card';
 export type { AdminOrderRequest } from '@/lib/admin-orders';
 
 export function AdminOrderRequests({
-  requests,
+  result,
+  search,
   loadError,
 }: {
-  requests: AdminOrderRequest[];
+  result: OrderSearchResult | null;
+  search: OrderSearch;
   loadError: string | null;
 }) {
   const router = useRouter();
-  const [filter, setFilter] = useState<'all' | OrderStatus>('all');
-  const [query, setQuery] = useState('');
-  const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'shipping' | 'pickup' | 'legacy'>(
-    'all',
-  );
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const requests = result?.rows ?? [];
   const [pending, setPending] = useState<string | null>(null);
+  const submitting = useRef(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activeForm, setActiveForm] = useState<{ orderId: string; kind: 'ship' | 'cancel' } | null>(
     null,
   );
 
-  const filtered = useMemo(() => {
-    const text = query.trim().toLocaleLowerCase('tr-TR');
-    return requests.filter((order) => {
-      if (filter !== 'all' && order.status !== filter) return false;
-      if (deliveryFilter !== 'all' && order.delivery_method !== deliveryFilter) return false;
-      if (
-        text &&
-        !`${order.reference} ${order.customer_name} ${order.phone} ${order.city} ${order.district} ${order.coupon_code ?? ''} ${order.automatic_campaign_name ?? ''}`
-          .toLocaleLowerCase('tr-TR')
-          .includes(text)
-      )
-        return false;
-      const orderDay = new Intl.DateTimeFormat('sv-SE', {
-        timeZone: 'Europe/Istanbul',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      }).format(new Date(order.created_at));
-      if (dateFrom && orderDay < dateFrom) return false;
-      if (dateTo && orderDay > dateTo) return false;
-      return true;
-    });
-  }, [requests, filter, query, deliveryFilter, dateFrom, dateTo]);
-
-  function clearOrderFilters() {
-    setFilter('all');
-    setQuery('');
-    setDeliveryFilter('all');
-    setDateFrom('');
-    setDateTo('');
-  }
-
   async function updateOrder(
     order: AdminOrderRequest,
     action: Action,
     details: OrderActionDetails,
   ): Promise<boolean> {
-    if (pending) return false;
+    if (submitting.current) return false;
     if (
       action === 'prepare' &&
       !window.confirm(
@@ -107,21 +76,18 @@ export function AdminOrderRequests({
     )
       return false;
 
+    submitting.current = true;
     setPending(order.id);
     setError('');
     setSuccess('');
     try {
-      const { error: dbError } =
-        action === 'pickup_collect'
-          ? await createBrowserSupabase().rpc('complete_pickup_order', { p_order_id: order.id })
-          : await createBrowserSupabase().rpc('manage_order_request', {
-              p_order_id: order.id,
-              p_action: action,
-              p_carrier: action === 'ship' ? details.carrier.trim() : null,
-              p_tracking_number: action === 'ship' ? details.trackingNumber.trim() : null,
-              p_reason: action === 'cancel' ? details.cancelReason.trim() || null : null,
-            });
-      if (dbError) throw dbError;
+      const response = await fetch('/api/admin/order-actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.id, action, ...details }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'İşlem gerçekleştirilemedi.');
       setSuccess(`${order.reference}: Sipariş durumu güncellendi.`);
       router.refresh();
       return true;
@@ -129,6 +95,7 @@ export function AdminOrderRequests({
       setError(cause instanceof Error ? cause.message : 'İşlem gerçekleştirilemedi.');
       return false;
     } finally {
+      submitting.current = false;
       setPending(null);
     }
   }
@@ -172,7 +139,7 @@ export function AdminOrderRequests({
           </div>
           {loadError && (
             <p className="admin-form-error" role="alert">
-              Siparişler yüklenemedi: {loadError}
+              {loadError}
             </p>
           )}
           {error && (
@@ -186,105 +153,53 @@ export function AdminOrderRequests({
             </p>
           )}
 
-          <div className="admin-stats">
-            <div>
-              <ClipboardList size={22} />
-              <span>Son 100 talep</span>
-              <strong>{requests.length}</strong>
+          {result && (
+            <div className="admin-stats">
+              <div>
+                <ClipboardList size={22} />
+                <span>Toplam talep</span>
+                <strong>{result.stats.total}</strong>
+              </div>
+              <div>
+                <PhoneCall size={22} />
+                <span>Görüşme bekleyen</span>
+                <strong>{result.stats.new}</strong>
+              </div>
+              <div>
+                <PackageCheck size={22} />
+                <span>Hazırlanıyor</span>
+                <strong>{result.stats.processing}</strong>
+              </div>
+              <div>
+                <Truck size={22} />
+                <span>Kargoda</span>
+                <strong>{result.stats.shipped}</strong>
+              </div>
             </div>
-            <div>
-              <PhoneCall size={22} />
-              <span>Görüşme bekleyen</span>
-              <strong>{requests.filter((o) => o.status === 'new').length}</strong>
-            </div>
-            <div>
-              <PackageCheck size={22} />
-              <span>Hazırlanıyor</span>
-              <strong>{requests.filter((o) => o.status === 'processing').length}</strong>
-            </div>
-            <div>
-              <Truck size={22} />
-              <span>Kargoda</span>
-              <strong>{requests.filter((o) => o.status === 'shipped').length}</strong>
-            </div>
-          </div>
+          )}
 
           <div className="admin-content-box">
-            <div className="order-filter-bar">
-              <label className="admin-filter-label">
-                Durum
-                <select
-                  value={filter}
-                  onChange={(event) => setFilter(event.target.value as typeof filter)}
-                >
-                  <option value="all">Tüm siparişler</option>
-                  {(Object.keys(STATUS) as OrderStatus[]).map((key) => (
-                    <option key={key} value={key}>
-                      {STATUS[key]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="order-search">
-                <Search size={16} />
-                <input
-                  aria-label="Sipariş numarası, müşteri veya telefon ara"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Sipariş no, müşteri veya telefon"
-                />
-              </label>
-            </div>
-            <div className={filterStyles.filters}>
-              <label className={filterStyles.field}>
-                Teslimat şekli
-                <select
-                  value={deliveryFilter}
-                  onChange={(event) =>
-                    setDeliveryFilter(event.target.value as typeof deliveryFilter)
-                  }
-                >
-                  <option value="all">Tüm teslimatlar</option>
-                  <option value="shipping">Kargo ile</option>
-                  <option value="pickup">Mağazadan teslim</option>
-                  <option value="legacy">Eski kayıtlar</option>
-                </select>
-              </label>
-              <label className={filterStyles.field}>
-                Başlangıç tarihi
-                <input
-                  type="date"
-                  value={dateFrom}
-                  max={dateTo || undefined}
-                  onChange={(event) => setDateFrom(event.target.value)}
-                />
-              </label>
-              <label className={filterStyles.field}>
-                Bitiş tarihi
-                <input
-                  type="date"
-                  value={dateTo}
-                  min={dateFrom || undefined}
-                  onChange={(event) => setDateTo(event.target.value)}
-                />
-              </label>
-              <button type="button" className={filterStyles.reset} onClick={clearOrderFilters}>
-                Filtreleri temizle
+            <OrderSearchFilters search={search} />
+            {result && (
+              <p className={filterStyles.result}>
+                Bu sayfada {requests.length} sipariş · Filtrelere uyan toplam {result.total} kayıt.
+                Tarihler İstanbul saatine göredir.
+              </p>
+            )}
+            {loadError && (
+              <button className="button button-secondary" onClick={() => router.refresh()}>
+                Tekrar dene
               </button>
-            </div>
-            <p className={filterStyles.result}>
-              {filtered.length} / {requests.length} sipariş görüntüleniyor. Filtreler yüklenen son
-              100 kayıt üzerinde çalışır.
-            </p>
-
-            {!filtered.length && (
+            )}
+            {result && !requests.length && (
               <div className="admin-no-results">
                 <ClipboardList size={38} />
-                <h3>Bu filtrede sipariş bulunamadı.</h3>
+                <h3>Bu sayfada sipariş bulunamadı.</h3>
+                <Link href={orderSearchHref(search)}>İlk sayfaya dön</Link>
               </div>
             )}
             <div className="order-request-list">
-              {filtered.map((order) => (
+              {requests.map((order) => (
                 <OrderRequestCard
                   key={order.id}
                   order={order}
@@ -296,6 +211,32 @@ export function AdminOrderRequests({
                 />
               ))}
             </div>
+            {result && requests.length > 0 && (
+              <nav aria-label="Sipariş sayfaları" className={filterStyles.pagination}>
+                {result.hasPrevious && (
+                  <Link
+                    className="button button-secondary"
+                    href={orderSearchHref(search, {
+                      direction: 'before',
+                      value: orderCursor(requests[0]),
+                    })}
+                  >
+                    Önceki sayfa
+                  </Link>
+                )}
+                {result.hasNext && (
+                  <Link
+                    className="button button-secondary"
+                    href={orderSearchHref(search, {
+                      direction: 'after',
+                      value: orderCursor(requests[requests.length - 1]),
+                    })}
+                  >
+                    Sonraki sayfa
+                  </Link>
+                )}
+              </nav>
+            )}
           </div>
           <p className="admin-category-help">
             Stok yalnızca “Hazırlığa al” adımında düşer. Hazırlık aşamasındaki sipariş iptal

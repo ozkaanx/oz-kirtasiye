@@ -37,6 +37,11 @@
   border-color: #ff865d;
 }
 .reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  text-decoration: none;
   height: 41px;
   padding: 0 13px;
   border: 1px solid #e2e5ea;
@@ -48,6 +53,13 @@
   color: #586371;
   white-space: nowrap;
   flex: 0 0 auto;
+}
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 24px;
 }
 .reset:hover {
   border-color: #ffad92;
