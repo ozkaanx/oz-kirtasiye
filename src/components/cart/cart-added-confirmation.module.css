@@ -1,0 +1,87 @@
+.dialog {
+  border: 0;
+  background: #fff;
+  color: var(--black);
+  width: min(500px, calc(100% - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 56px 48px 48px;
+  overflow-y: auto;
+  text-align: center;
+  box-shadow: 0 20px 70px #0002;
+}
+.dialog::backdrop {
+  background: #0007;
+}
+.close {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: 0;
+  color: var(--black);
+}
+.dialog h2 {
+  font-size: 34px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -1px;
+  margin: 0 0 14px;
+}
+.dialog p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+.actions {
+  display: grid;
+  gap: 16px;
+}
+.continue,
+.cart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 60px;
+  border-radius: 999px;
+  padding: 14px 20px;
+  font-size: 16px;
+  text-align: center;
+}
+.continue {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--black);
+}
+.continue:hover {
+  background: var(--soft);
+}
+.cart {
+  background: var(--orange);
+  border: 1px solid var(--orange);
+  color: #fff;
+}
+.cart:hover {
+  background: var(--orange-dark);
+  border-color: var(--orange-dark);
+}
+@media (max-width: 480px) {
+  .dialog {
+    padding: 56px 24px 32px;
+  }
+  .dialog h2 {
+    font-size: 28px;
+  }
+  .continue,
+  .cart {
+    min-height: 52px;
+    font-size: 14px;
+  }
+}

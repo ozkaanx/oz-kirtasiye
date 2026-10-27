@@ -26,7 +26,7 @@ export function Header({ categories }: { categories: StoreCategory[] }) {
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState<'desktop' | 'mobile' | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { cartCount, favorites, setCartOpen } = useShop();
+  const { cartCount, favorites } = useShop();
 
   useEffect(() => {
     if (!searchOpen && !mobileMenuOpen) return;
@@ -146,21 +146,13 @@ export function Header({ categories }: { categories: StoreCategory[] }) {
               </span>
               <span>Favorilerim</span>
             </Link>
-            <button
-              className="header-action"
-              aria-label={`Sepetim, ${cartCount} ürün`}
-              onClick={() => {
-                setSearchOpen(null);
-                setMobileMenuOpen(false);
-                setCartOpen(true);
-              }}
-            >
+            <Link href="/sepet" className="header-action" aria-label={`Sepetim, ${cartCount} ürün`}>
               <span className="action-icon">
                 <ShoppingBag size={22} />
                 <span className="action-count">{cartCount}</span>
               </span>
               <span>Sepetim</span>
-            </button>
+            </Link>
           </div>
         </div>
         <div className="mobile-search-wrap container-wide">

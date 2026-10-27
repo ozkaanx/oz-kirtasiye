@@ -1,6 +1,6 @@
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
-import { CartDrawer } from '@/components/cart/cart-drawer';
+import { CartAddedConfirmation } from '@/components/cart/cart-added-confirmation';
 import { getCachedLiveCategories } from '@/lib/cached-catalog';
 import '@/components/layout/store-reference.css';
 
@@ -16,7 +16,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
         {children}
       </main>
       <Footer categories={categories} />
-      <CartDrawer />
+      <CartAddedConfirmation />
     </>
   );
 }
