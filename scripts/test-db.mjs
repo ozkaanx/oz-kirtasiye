@@ -7,6 +7,9 @@ if (!databaseUrl) {
     'Set TEST_DATABASE_URL to an isolated local/test database. Never use production.',
   );
 }
+if (!['localhost', '127.0.0.1', '[::1]'].includes(new URL(databaseUrl).hostname)) {
+  throw new Error('Database regressions may only run on an isolated local database.');
+}
 for (const file of readdirSync('supabase/tests')
   .filter((name) => name.endsWith('.sql'))
   .sort()) {
@@ -20,3 +23,8 @@ for (const file of readdirSync('supabase/tests')
   if (result.error) throw result.error;
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
+const concurrency = spawnSync(process.execPath, ['supabase/tests/order-concurrency.mjs'], {
+  stdio: 'inherit',
+});
+if (concurrency.error) throw concurrency.error;
+if (concurrency.status !== 0) process.exit(concurrency.status ?? 1);

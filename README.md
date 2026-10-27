@@ -8,6 +8,18 @@ Sepet gerçek ürünlere bağlıdır. Checkout çevrimiçi ödeme almaz: müşte
 
 PayTR henüz entegre değildir. Ödeme, rezervasyon ve callback işlemleri ayrıca geliştirilecektir.
 
+## Sipariş tekrar güvenliği ve istek sınırları
+
+- Checkout her talep için rastgele `Idempotency-Key` üretir. Aynı içerikle yeniden deneme ve sekme yenilemede anahtar korunur. Tarayıcıdaki sessionStorage yalnızca içerik özeti ve anahtar tutar; adres/fatura bilgisi saklamaz. Başarıdan sonra temizlenir. Form içeriği değişirse yeni anahtar üretilir.
+- PostgreSQL aynı anahtardaki eşzamanlı istekleri kilitler. Sipariş ve orijinal cevap aynı transaction içinde kaydedilir. Aynı anahtar/içerik/müşteri tekrarında orijinal cevap döner: ilk cevap 201, tekrar cevabı 200 ve `Idempotency-Replayed: true`. Kupon, fatura ve stok işlemleri tekrarlanmaz. Sonraki katalog değişiklikleri önceki başarılı cevabı değiştirmez.
+- Aynı anahtar farklı içerik veya müşteriyle kullanılırsa 409 döner. Başarısız transaction anahtarı tüketmez. Anahtar kaydı siparişle tutulur; otomatik süre sonuyla tekrar sipariş oluşmasına izin verilmez.
+- Dağıtık PostgreSQL sayaçları dakikada hesap/imzalı tarayıcı oturumu başına 20, güvenilir IP başına 40 ve mağaza genelinde 200 girişime izin verir. Pencere ilk girişimden itibaren bir dakikadır. Sınırda 429 ve `Retry-After` gelir. Limiter erişilemezse sipariş oluşturulmaz (503). Eski telefon başına saatte üç talep kuralı da korunur.
+- Misafirler için HttpOnly/SameSite=Strict imzalı çerez kullanılır. Çerezi silmek oturum sınırını sıfırlayabilir; güvenilir IP ve genel sınır ayrıca uygulanır. Sayaçlar sunucu belleğinde değildir ve başarısız siparişte geri alınmaz. Ham IP yerine sunucu HMAC özeti tutulur; bir saatten eski sayaçlar sınırlı partilerle temizlenir.
+- Vercel'de platformun yazdığı `x-vercel-forwarded-for` kullanılır. Diğer barındırmalarda IP kontrolü varsayılan kapalıdır; yalnızca her istekte güvenilir proxy tarafından üzerine yazılan tek IP başlığı `ORDER_REQUEST_TRUSTED_IP_HEADER` ile seçilebilir. Proxy atlanarak uygulamaya doğrudan erişim engellenmelidir. Başlık yapılandırılmış ama geçersiz/eksikse 503 döner. Rastgele istemci `X-Forwarded-For` başlıkları kullanılmaz. [Vercel başlıkları](https://vercel.com/docs/headers/request-headers)
+- Bu uygulama katmanı koruması, ağ düzeyindeki DDoS/bot korumasının yerini almaz. Akış hâlâ manuel sipariş talebidir; stok rezervasyonu/online ödeme içermez.
+
+Yayın sırası: önce bekleyen migration'ları (Aşama 1 güvenlik migration'ı dahil), sonra uygulama kodunu yayınlayın. Yeni RPC'ler hazır değilse API talep oluşturmadan 503 döner. Eski açık sekmelerde işlem anahtarı olmadığı için kullanıcıdan sayfayı yenilemesi istenir.
+
 ## Uygulamayı çalıştırma
 
 Node.js 22 ve npm kullanın:
@@ -41,7 +53,7 @@ npm run build
 
 PowerShell ortam değişkeni örneği: $env:TEST_DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:54322/postgres'. Uygulamayı yerel Supabase'e bağlamak için supabase status çıktısındaki API adresini ve public anahtarı .env.local dosyasına yazın. Build sırasında da public bağlantı değişkenleri gerekir; CI sahte yerel değerler kullanır ve canlı verilere bağlanmaz.
 
-Veritabanı testleri yalnızca izole test ortamında çalıştırılmalıdır. Testler rol/kimlik taklidi, ürün/sipariş fixture'ları ve transaction rollback kullanır. Üretim bağlantısını TEST_DATABASE_URL olarak kullanmayın.
+Veritabanı testleri yalnızca izole yerel test ortamında çalıştırılabilir. Testler rol/kimlik taklidi, ürün/sipariş fixture'ları ve transaction rollback kullanır. Ayrıca iki gerçek veritabanı oturumuyla eşzamanlı sipariş ve limit testleri çalışır; bu testin commit edilen fixture'ları sonunda silinir. Runner uzak bağlantıları reddeder. Üretim bağlantısını TEST_DATABASE_URL olarak kullanmayın.
 
 ## Migration geçmişi
 
