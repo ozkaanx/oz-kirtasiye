@@ -53,7 +53,7 @@
   overflow: hidden;
 }
 .thumbs button[aria-pressed='true'] {
-  border-color: #111;
+  border-color: var(--orange);
 }
 .thumbs img {
   width: 100%;
@@ -101,7 +101,7 @@
   cursor: default;
 }
 .add {
-  background: #000;
+  background: var(--orange);
   color: #fff;
   border: 0;
   border-radius: 5px;
@@ -109,6 +109,9 @@
   font-weight: 750;
   cursor: pointer;
   padding: 12px;
+}
+.add:hover:not(:disabled) {
+  background: var(--orange-dark);
 }
 .add:disabled {
   opacity: 0.45;
@@ -151,8 +154,9 @@
   cursor: pointer;
 }
 .variants button[aria-pressed='true'] {
-  border-color: #111;
-  background: #f4f4f4;
+  border-color: #fc6947;
+  background: #fff0ec;
+  color: #ad3e23;
   font-weight: 700;
 }
 .accordions details {
@@ -194,7 +198,7 @@
 }
 .description a,
 .description button {
-  color: #111;
+  color: var(--orange-dark);
   text-decoration: underline;
   background: none;
   border: 0;
