@@ -1,101 +1,75 @@
-# Öz Kırtasiye — Next.js + Supabase
+# Öz Kırtasiye
 
-Öz Kırtasiye için hazırlanan sade, beyaz–siyah–turuncu tasarım korunarak gerçek ürün ve barkodsuz manuel stok yönetimi Supabase'e bağlandı.
+Next.js 16, React 19 ve Supabase ile ürün/varyant, stok, müşteri hesabı, kupon/kampanya, sipariş talebi, kargo, fatura kaydı, iade ve yorum yönetimi.
 
-> **GELİŞTİRME SÜRÜMÜ:** Sipariş, online ödeme ve sepetin gerçek satış bağlantısı henüz yoktur. Önceki örnek katalog, sepet ve favoriler demo olarak durur. Gerçek ürünler ayrı vitrinde **inceleme amaçlı** gösterilir; satın alma aktif değildir.
+## Satış akışı
 
-## Yerel kurulum (Node.js 22 önerilir)
+Sepet gerçek ürünlere bağlıdır. Checkout çevrimiçi ödeme almaz: müşteri sipariş talebi oluşturur, mağaza iletişime geçer. Talep oluşturulurken stok ayrılmaz. Yönetici hazırlığa aldığında stok düşer; hazırlık aşamasında iptal edildiğinde bir kez geri eklenir. Kargoya verilmiş ürünler ayrı iade sürecinden geçer. Fatura ekranı resmî belge düzenlemez, düzenlenmiş belgenin kaydını tutar.
 
-1. Dosyaları mevcut GitHub repo klasörünüzle birleştirin.
-2. `.env.example` dosyasını `.env.local` olarak kopyalayın.
-3. Supabase panelinde **Project Settings → API Keys** bölümünden `sb_publishable_...` anahtarını `.env.local` içerisine girin. `.env.local` dosyasını GitHub'a göndermeyin.
-4. Terminalde:
+PayTR henüz entegre değildir. Ödeme, rezervasyon ve callback işlemleri ayrıca geliştirilecektir.
 
-```bash
-npm install
+## Uygulamayı çalıştırma
+
+Node.js 22 ve npm kullanın:
+
+```sh
+npm ci
+# .env.example dosyasını .env.local olarak kopyalayın ve değerleri doldurun.
 npm run dev
 ```
 
-Tarayıcı: `http://localhost:3000`.
+- NEXT_PUBLIC_SUPABASE_URL: Supabase API adresi.
+- NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: tarayıcıda kullanılabilen publishable anahtar.
+- SUPABASE_SECRET_KEY: yalnızca sunucuda saklanan secret/service_role anahtarı.
+- ORDER_REQUESTS_ENABLED: talep gönderimini açmak için true; varsayılan false.
 
-### Yönetici hesabı oluşturma (bir kez)
+Gizli anahtarlara NEXT_PUBLIC_ öneki eklemeyin. .env.local sürüm kontrolüne girmez.
 
-Yönetici girişine herkesi otomatik kabul etmiyoruz. Önce Supabase Dashboard → **Authentication → Users → Add user** bölümünden kullanacağınız e-posta ve şifre ile bir kullanıcı oluşturun. E-postanın doğrulanmış olduğundan emin olun.
+## Yerel veritabanı ve kontroller
 
-Sonra Dashboard → **SQL Editor** içinde **yalnızca kendi e-postanızı** yazarak şu sorguyu çalıştırın:
+Docker, Supabase CLI 2.81.2 ve PostgreSQL istemcisi (psql) gerekir. Yerel başlangıç bir Supabase projesine bağlanmaz.
 
-```sql
-insert into public.store_admins (user_id, role)
-select id, 'owner' from auth.users where email = 'KENDI_EPOSTANIZI_YAZIN'
-on conflict (user_id) do update set role = excluded.role;
-```
-
-`INSERT 0 0` görürseniz e-posta adresine ait Auth kullanıcısı bulunamadı demektir. Yeni kullanıcı kayıt olunca yetki otomatik verilmez; her yeni yöneticiyi yetkili olarak ayrıca atamalısınız.
-
-Yönetici girişi: `http://localhost:3000/admin/giris`  
-Ürün ve stok ekranı: `http://localhost:3000/admin/urunler`
-
-### İlk gerçek ürün
-
-1. Yönetici olarak giriş yapın.
-2. Önce **Kategori ekle** alanından bir kategori oluşturun.
-3. **Yeni ürün ekle** ile ad, fiyat, açıklama, fotoğraf ve stok sayısı girin.
-4. **Sitede yayınla** seçeneğini işaretleyin ve kaydedin.
-5. Ana sayfayı yenileyin. **Mağazamızdaki ürünler** bölümünde Supabase'den gelen gerçek ürün görünür.
-6. Ürünün **Stok** düğmesine basarak ekleme veya azaltma yapın; işlem **Stok hareketleri** bölümüne kaydedilir.
-
-## Veri güvenliği
-
-- `store_admins`, `categories`, `products`, `product_images` ve `stock_movements` tablolarında RLS açık.
-- Yalnızca yönetici kullanıcıların ürün ve stok kayıtlarını değiştirme yetkisi var.
-- Stok güncelleme `adjust_product_stock` isimli sunucu tarafı PostgreSQL fonksiyonuyla tek atomik işlem olarak çalışır ve hareket kaydı oluşturur.
-- Fotoğraflar `product-images` public Storage bucket'ına yalnızca yöneticiler tarafından yüklenebilir. Görseller herkese açık URL ile yayımlanır; gizli dosyaları buraya yüklemeyin.
-- `service_role`, `sb_secret_...` veya veritabanı şifresini projeye **eklemeyin**. Public/repo içinde yalnızca `.env.example` şablonu bulunur.
-- Yönetim ekranlarının sunucu tarafı erişim kontrolü vardır. RLS, yalnızca arayüze güvenmeden veritabanı düzeyinde de erişimi kısıtlar.
-
-## Supabase projesi
-
-- Proje: `oz-kirtasiye`
-- Ref: `dvkndlaamlwxikhszpqd`
-- Bölge: `eu-central-1`
-- Migration geçmişi Supabase projesinde oluşturuldu:
-  - `20261021192915_initial_catalog_manual_inventory`
-  - `20261021192947_restrict_automatic_rls_helper_execution`
-  - `20261021193540_atomic_stock_adjustments_and_product_storage`
-
-Sonraki aşamada Supabase CLI üzerinden migration dosyalarını repoya çekip sürüm kontrolüne dahil etmek uygun olacak. Bu pakette migration SQL dosyaları yeniden uygulanmak üzere yer almıyor; aynı şemayı tekrar oluşturmaya çalışmayın.
-
-## Ekranlar
-
-| Adres                                       | Durum                                                         |
-| ------------------------------------------- | ------------------------------------------------------------- |
-| `/`                                         | Onaylı ana sayfa + gerçek ürün vitrini (varsa) + demo katalog |
-| `/urunler`                                  | Gerçek ürünler ve mevcut demo katalog                         |
-| `/magaza/urun/[slug]`                       | Gerçek ürün detay sayfası, satın alma kapalı                  |
-| `/admin/giris`                              | Supabase Auth girişi                                          |
-| `/admin/urunler`                            | Yetkili ürün/kategori/fotoğraf/stok yönetimi                  |
-| `/admin/stok`                               | Yeni yönetim paneline yönlendirir                             |
-| `/sepet`, `/favoriler`, eski `/urun/[slug]` | Demo; gerçek sipariş oluşturmaz                               |
-
-## Kod kontrolü
-
-```bash
+```sh
+supabase start
+supabase db reset --local
+# TEST_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+npm run test:db
 npm run typecheck
 npm run lint
 npm run build
 ```
 
-Bu paketin oluşturulduğu ortamda npm kayıt sistemine erişilemediği için `npm install` ve tam Next.js derlemesi çalıştırılamadı. TypeScript/TSX dosyalarının söz dizimi kontrol edildi. Yukarıdaki komutlarla bilgisayarınızda doğrulayın.
+PowerShell ortam değişkeni örneği: $env:TEST_DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:54322/postgres'. Uygulamayı yerel Supabase'e bağlamak için supabase status çıktısındaki API adresini ve public anahtarı .env.local dosyasına yazın. Build sırasında da public bağlantı değişkenleri gerekir; CI sahte yerel değerler kullanır ve canlı verilere bağlanmaz.
 
-## GitHub
+Veritabanı testleri yalnızca izole test ortamında çalıştırılmalıdır. Testler rol/kimlik taklidi, ürün/sipariş fixture'ları ve transaction rollback kullanır. Üretim bağlantısını TEST_DATABASE_URL olarak kullanmayın.
 
-Dosyaları mevcut `ozkaanx/oz-kirtasiye` klasörünüzle birleştirdikten sonra:
+## Migration geçmişi
 
-```bash
-git checkout -b feature/supabase-products
-git add .
-git commit -m "feat: integrate Supabase product and inventory management"
-git push -u origin feature/supabase-products
+supabase/migrations klasörü canlı ortamın uygulanmış geçmişiyle eşleştirilmiştir. Eksik ilk üç migration ve iki katalog migration'ı canlı migration ledger'ından kurtarıldı. Dört dosyanın tarihleri canlı sürüm numaralarına düzeltildi. Önceden elle yeniden yazılmış tarihsel dosyalar, metin tabanlı fonksiyon güncellemelerinin temiz kurulumda çalışabilmesi için uygulanmış SQL ile eşleştirildi.
+
+Tek uyumluluk istisnası: 20261021192947, yalnızca hosted ortamda bulunabilen rls_auto_enable() yardımcısı varsa yetkisini kaldırır. Yeni davranış değişiklikleri yeni migration'a eklenir; uygulanmış migration'ları elle tekrar çalıştırmayın.
+
+Canlıya geçişten önce migration list çıktısını karşılaştırın. Bu çalışma uzaktaki migration history tablosunu değiştirmez. Yeni güvenlik migration'ı mevcut uygulamayla uyumludur; frontend deploy beklemez. Uygulama sürümünün deploy edilmesi tek başına veritabanı migration'ını uygulamaz.
+
+## Yönetici hesabı
+
+Supabase Auth üzerinde doğrulanmış kullanıcı oluşturun. Güvenilir SQL yönetim oturumundan yalnızca yöneticiniz için:
+
+```sql
+insert into public.store_admins(user_id,role)
+select id,'owner' from auth.users where email='YONETICI_EPOSTASI'
+on conflict(user_id) do update set role=excluded.role;
 ```
 
-Projeyi GitHub'a yazma yetkisi olmadığı için bu paketteki değişiklikler **otomatik push edilmedi**.
+Yönetim: /admin/giris. Normal kullanıcı kaydı yönetici yetkisi vermez.
+
+## Güvenlik sınırları
+
+- Müşteri kimliği tarayıcı payload'ından alınmaz; Next.js API oturumu auth.getUser() ile doğrular.
+- Kimlik alan RPC'ler yalnızca service_role tarafından çağrılır; private şeması API'ye açılmaz.
+- Fiyat, varyant stoğu, kupon hakkı ve kargo tutarı PostgreSQL'de yeniden hesaplanır.
+- Yorum yazma ve moderasyon yalnızca yetki kontrolü yapan RPC'lerden geçer; doğrudan tablo yazımı kapalıdır.
+- Misafir katalog/yorum okuma politikaları yönetici tablosuna erişim istemez.
+- product-images herkese açık görseller içindir; gizli dosya yüklemeyin.
+
+GitHub Actions temiz Supabase kurulumunu, SQL regresyonlarını, TypeScript, lint ve build kontrollerini çalıştırır.

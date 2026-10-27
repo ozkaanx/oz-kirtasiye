@@ -1,4 +1,4 @@
--- Personal coupon discovery: disclose only the authenticated customer's assigned coupons.
+-- Recovered from the hosted migration ledger; original version retained.
 create or replace function public.my_private_coupons()
 returns table (
   code text, label text, discount_type text, discount_value numeric,

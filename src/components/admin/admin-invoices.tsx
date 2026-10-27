@@ -358,7 +358,7 @@ export function AdminInvoices({
                             />
                           </label>
                           <p className={`${css.muted} ${css.full}`}>
-                            Bu işlem faturayı GİB'e göndermez. Yalnızca dış sistemde düzenlenmiş
+                            Bu işlem faturayı GİB&apos;e göndermez. Yalnızca dış sistemde düzenlenmiş
                             belgenin referansını saklar; hata varsa muhasebeciyle düzeltme
                             yapılmalıdır.
                           </p>

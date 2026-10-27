@@ -1,5 +1,5 @@
--- Oz Kirtasiye | Return / exchange requests, explicit inventory receipt and audit.
--- Executed on hosted Supabase already. Keep this migration in git; do not re-run there.
+-- Recovered from the hosted migration ledger; original version retained.
+
 create table if not exists public.order_return_requests (
   id uuid primary key default gen_random_uuid(),
   order_request_id uuid not null references public.order_requests(id) on delete cascade,
@@ -33,7 +33,6 @@ create table if not exists public.order_return_requests (
 create index if not exists order_return_by_order_idx on public.order_return_requests(order_request_id,created_at desc);
 create index if not exists order_return_status_idx on public.order_return_requests(status,created_at desc);
 create index if not exists order_return_customer_idx on public.order_return_requests(customer_user_id,created_at desc);
-
 create table if not exists public.order_return_status_history (
   id uuid primary key default gen_random_uuid(),
   return_request_id uuid not null references public.order_return_requests(id) on delete cascade,
@@ -44,12 +43,10 @@ create table if not exists public.order_return_status_history (
   created_at timestamptz not null default now()
 );
 create index if not exists return_status_history_idx on public.order_return_status_history(return_request_id,created_at);
-
 alter table public.order_return_requests enable row level security;
 alter table public.order_return_status_history enable row level security;
 revoke all on public.order_return_requests,public.order_return_status_history from public,anon,authenticated;
 grant select on public.order_return_requests,public.order_return_status_history to authenticated;
-
 create policy "order_return_owner_or_admin_read" on public.order_return_requests for select to authenticated
 using (
   customer_user_id=(select auth.uid())
@@ -61,7 +58,6 @@ using (
     where r.id=return_request_id and r.customer_user_id=(select auth.uid()))
   or exists(select 1 from public.store_admins a where a.user_id=(select auth.uid()))
 );
-
 create or replace function public.customer_request_return(
   p_order_id uuid,
   p_item_id uuid,
@@ -87,7 +83,6 @@ begin
     or char_length(btrim(coalesce(p_note,''))) not between 10 and 1000 then
     raise exception 'İade/değişim bilgileri geçersiz.' using errcode='22023';
   end if;
-  -- Lock parent to serialize parallel claims for this order.
   select * into v_order from public.order_requests o where o.id=p_order_id for update;
   if not found or v_order.customer_user_id is distinct from v_user then
     raise exception 'Sipariş bulunamadı veya bu hesaba ait değil.' using errcode='42501';
@@ -119,7 +114,6 @@ end;
 $function$;
 revoke all on function public.customer_request_return(uuid,uuid,integer,text,text,text) from public,anon,authenticated;
 grant execute on function public.customer_request_return(uuid,uuid,integer,text,text,text) to authenticated;
-
 create or replace function public.admin_handle_return_request(
  p_return_id uuid,
  p_action text,

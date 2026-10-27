@@ -1,3 +1,5 @@
+-- Recovered from the hosted migration ledger; original version retained.
+
 create or replace function private.audit_initial_variant_stock() returns trigger
 language plpgsql security definer set search_path='' as $function$
 begin

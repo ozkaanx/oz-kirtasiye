@@ -1,6 +1,5 @@
--- Minimum-cart promotional notices for product and category campaigns.
--- This is a server-only read-only RPC; no campaign admin data is exposed directly.
--- This migration has ALREADY been applied on Supabase; commit it for history only.
+-- Recovered from the hosted migration ledger; original version retained.
+
 create or replace function public.catalog_campaign_notices(p_product_id uuid default null)
 returns table (
  product_id uuid, variant_id uuid, campaign_name text, min_subtotal numeric,

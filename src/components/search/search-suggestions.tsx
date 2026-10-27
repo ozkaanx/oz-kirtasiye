@@ -31,6 +31,7 @@ export function SearchSuggestions({ query, onChoose }: { query: string; onChoose
     if (!focused) return;
     try {
       const stored: unknown = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Read external search history after SSR.
       setRecent(Array.isArray(stored) ? stored.filter((item): item is string => typeof item === 'string').slice(0, 5) : []);
     } catch { setRecent([]); }
   }, [focused]);

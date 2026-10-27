@@ -1,4 +1,4 @@
--- Applied to linked Supabase project on 2026-10-27. Reference only: do not re-run after applying.
+-- Recovered from the hosted migration ledger; original version retained.
 create table if not exists public.coupon_private_assignments (
  coupon_id uuid primary key references public.coupons(id) on delete cascade,
  user_id uuid not null references auth.users(id) on delete cascade,
@@ -21,7 +21,7 @@ begin
  if v_coupon_id is not null then
   select a.user_id into v_assignee from public.coupon_private_assignments a where a.coupon_id=v_coupon_id;
   if v_assignee is not null and ((select auth.uid()) is null or (select auth.uid())<>v_assignee or p_user_id is distinct from v_assignee) then
-   raise exception 'Bu kupon yalnızca atandığı müşteri hesabıyla kullanılabilir.' using errcode='22023';
+    raise exception 'Bu kupon yalnızca atandığı müşteri hesabıyla kullanılabilir.' using errcode='22023';
   end if;
  end if;
  return query select t.coupon_id,t.code,t.amount from private.coupon_discount_unrestricted(p_code,p_subtotal,p_phone,p_user_id,p_lock) t;

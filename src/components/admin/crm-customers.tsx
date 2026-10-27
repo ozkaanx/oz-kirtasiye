@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useClock } from '@/lib/use-clock';
 import { ArrowLeft, ArrowRight, LogOut, Search, Users, TicketPercent } from 'lucide-react';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
@@ -13,7 +14,7 @@ const formatDate=(value:string|null)=>value?new Date(value).toLocaleDateString('
 function segmentFor(c:CrmCustomer):Exclude<Segment,'all'> { if(!c.orderCount)return 'no-order'; if(c.orderCount>=2)return 'repeat';return 'first'; }
 export function CrmCustomers({customers,error,capped}:{customers:CrmCustomer[];error:string|null;capped:boolean}) {
  const [search,setSearch]=useState('');const [segment,setSegment]=useState<Segment>('all');const router=useRouter();
- const now = Date.now(); const inactive=(c:CrmCustomer)=>!!c.lastOrderAt && now-new Date(c.lastOrderAt).getTime()>90*86400000;
+ const now = useClock(); const inactive=(c:CrmCustomer)=>!!c.lastOrderAt && now-new Date(c.lastOrderAt).getTime()>90*86400000;
  const filtered=customers.filter(c=>{
   const q=search.trim().toLocaleLowerCase('tr-TR');
   return (!q||`${c.name} ${c.email} ${c.phone}`.toLocaleLowerCase('tr-TR').includes(q)) &&

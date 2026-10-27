@@ -1,3 +1,5 @@
+-- Recovered from the hosted migration ledger; original version retained.
+
 create or replace function public.submit_order_request_with_auto_discounts(
  p_customer_name text,p_phone text,p_city text,p_district text,p_address text,
  p_note text,p_items jsonb,p_pre_information_read boolean,p_privacy_notice_read boolean,

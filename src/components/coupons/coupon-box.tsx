@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { BadgePercent, CheckCircle2, X } from 'lucide-react';
 import { useShop } from '@/context/shop-context';
 import { normalizeCouponCode, type CouponQuote } from '@/lib/coupon';
@@ -18,7 +18,11 @@ export function CouponBox({
 }) {
   const { couponCode, setCouponCode } = useShop();
   const [draft, setDraft] = useState(couponCode);
-  useEffect(() => setDraft(couponCode), [couponCode]);
+  const [previousCode, setPreviousCode] = useState(couponCode);
+  if (couponCode !== previousCode) {
+    setPreviousCode(couponCode);
+    setDraft(couponCode);
+  }
   return (
     <section className={styles.container} aria-label="İndirim kuponu">
       <div className={styles.heading}>

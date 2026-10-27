@@ -355,7 +355,7 @@ export function AdminProducts({
               <h1>
                 Ürün ve stok yönetimi<span className="orange-dot">.</span>
               </h1>
-              <p>Manuel stok ve ürün düzenleme işlemleri Supabase'e kaydedilir.</p>
+              <p>Manuel stok ve ürün düzenleme işlemleri Supabase&apos;e kaydedilir.</p>
             </div>
             <button type="button" className="button button-primary" onClick={startCreate}>
               <Plus size={17} /> Yeni ürün ekle

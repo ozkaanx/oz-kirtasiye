@@ -1,6 +1,5 @@
--- Move privileged implementations outside the exposed public API schema.
--- The public endpoints remain SECURITY INVOKER wrappers; internal functions
--- continue to verify the authenticated user and order ownership/admin role.
+-- Recovered from the hosted migration ledger; original version retained.
+
 create schema if not exists returns_private;
 revoke all on schema returns_private from public,anon,authenticated;
 grant usage on schema returns_private to authenticated;

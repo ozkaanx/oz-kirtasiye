@@ -58,6 +58,7 @@ export function InventoryDemo() {
         if (data && typeof data === 'object' && 'stocks' in data && 'history' in data) {
           const s = data as StockStore;
           if (s.stocks && typeof s.stocks === 'object' && Array.isArray(s.history))
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- Hydrate the external demo inventory after SSR.
             setStore({ stocks: { ...seed, ...s.stocks }, history: s.history.slice(0, 200) });
         }
       }
