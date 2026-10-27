@@ -65,18 +65,18 @@
 .live-product-card .live-card-actions .button {
   display: flex;
   width: 100%;
-  background: #000;
+  background: var(--orange);
   color: #fff;
-  border: 1px solid #000;
+  border: 1px solid var(--orange);
   border-radius: 5px;
   min-height: 56px;
   font-size: 15px;
   font-weight: 750;
   padding: 12px;
 }
-.live-product-card .live-card-actions .button:hover {
-  background: #252525;
-  border-color: #252525;
+.live-product-card .live-card-actions .button:hover:not(:disabled) {
+  background: var(--orange-dark);
+  border-color: var(--orange-dark);
   transform: none;
 }
 .live-product-card .live-card-buy .button svg {

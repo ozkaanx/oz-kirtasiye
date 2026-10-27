@@ -33,7 +33,6 @@
 }
 .price:not(.detail) > .regular,
 .price:not(.detail) .discounted {
-  color: #111;
   font-size: 27px;
   font-weight: 800;
 }
@@ -58,8 +57,10 @@
 }
 .detail .discounted,
 .detail .regular {
-  color: #111;
   font-size: 28px;
+}
+.detail .discounted {
+  color: #eb5230;
 }
 @media (max-width: 600px) {
   .price:not(.detail) > .regular,
