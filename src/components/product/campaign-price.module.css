@@ -89,6 +89,27 @@
   font-weight: 800;
   box-shadow: 0 5px 16px #1a1a1a20;
 }
+.price.compact {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 9px;
+}
+.price.compact .regular,
+.price.compact .discounted {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.price.compact .old {
+  order: 1;
+  font-size: 12px;
+}
+@media (max-width: 600px) {
+  .price.compact .regular,
+  .price.compact .discounted { font-size: 16px; }
+  .price.compact .old { font-size: 11px; }
+}
 
 /* Cart-threshold messaging never changes the displayed single-item price. */
 .basketCondition {

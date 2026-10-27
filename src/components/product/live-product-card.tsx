@@ -2,51 +2,41 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Package } from 'lucide-react';
 import type { LiveProduct } from '@/lib/real-catalog';
-import { LivePurchaseButton } from '@/components/product/live-purchase-button';
-import { LiveFavoriteButton } from '@/components/product/live-favorite-button';
+import { LiveFavoriteButton } from './live-favorite-button';
 import { CampaignPrice } from './campaign-price';
-import styles from './campaign-price.module.css';
+import styles from './live-product-card.module.css';
 
 export function LiveProductCard({ product }: { product: LiveProduct }) {
   return (
-    <article className="product-card live-product-card">
-      <div className="product-photo">
-        <LiveFavoriteButton productId={product.id} />
-        <Link href={`/magaza/urun/${product.slug}`} className="product-image-link" aria-label={`${product.name} ürün detayları`}>
+    <article className={styles.card}>
+      <Link className={styles.content} href={`/magaza/urun/${product.slug}`}>
+        <div className={styles.photo}>
           {product.imageUrl ? (
             <Image
-              className="product-art" src={product.imageUrl} alt={product.name}
-              width={520} height={540} sizes="(max-width: 550px) 46vw, (max-width: 1000px) 30vw, 23vw"
+              src={product.imageUrl}
+              alt=""
+              width={520}
+              height={650}
+              sizes="(max-width: 600px) 46vw, (max-width: 1000px) 30vw, 23vw"
             />
           ) : (
-            <Package size={72} color="#b8bbc3" />
+            <Package size={64} color="#b6bac1" aria-hidden="true" />
           )}
-        </Link>
-        {product.stock_quantity === 0 ? (
-          <span className="product-badge">TÜKENDİ</span>
-        ) : product.promotion ? (
-          <span className={styles.ribbon}>%{product.promotion.discountPercent} KAMPANYA</span>
-        ) : product.is_featured ? (
-          <span className="product-badge">ÖNE ÇIKAN</span>
-        ) : null}
-      </div>
-      <div className="product-information">
-        <Link href={`/magaza/urun/${product.slug}`} className="product-title">{product.name}</Link>
-        <div className="product-buy-row">
-          <div className="product-prices">
-            <CampaignPrice
-              price={product.price} compareAtPrice={product.compare_at_price}
-              promotion={product.promotion} campaignNotice={product.campaignNotice}
-            />
-          </div>
-          <div className="live-card-actions">
-            {product.has_variants ? (
-              <Link className="button button-primary" href={`/magaza/urun/${product.slug}`}>Seçenekleri gör</Link>
-            ) : (
-              <LivePurchaseButton productId={product.id} stock={product.stock_quantity} />
-            )}
-          </div>
+          {product.stock_quantity === 0 && <span className={styles.unavailable}>Tükendi</span>}
         </div>
+        <div className={styles.information}>
+          <h3 title={product.name}>{product.name}</h3>
+          <CampaignPrice
+            price={product.price}
+            compareAtPrice={product.compare_at_price}
+            promotion={product.promotion}
+            campaignNotice={product.campaignNotice}
+            compact
+          />
+        </div>
+      </Link>
+      <div className={styles.favorite}>
+        <LiveFavoriteButton productId={product.id} productName={product.name} />
       </div>
     </article>
   );
