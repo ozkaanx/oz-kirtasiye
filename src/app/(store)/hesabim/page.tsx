@@ -29,7 +29,7 @@ export default async function AccountPage() {
     supabase
       .from('order_requests')
       .select(
-        'id,reference,created_at,status,payment_status,delivery_method,total,shipping_fee,carrier,tracking_number,shipped_at,delivered_at,discount_amount,coupon_code,automatic_campaign_name,order_request_items(product_name,variant_label,quantity,line_total),order_invoice_register(status,document_type,invoice_number,issue_date)',
+        'id,reference,created_at,status,payment_status,delivery_method,total,shipping_fee,carrier,tracking_number,shipped_at,delivered_at,discount_amount,coupon_code,automatic_campaign_name,order_request_items(product_id,variant_id,product_name,variant_label,quantity,line_total),order_invoice_register(status,document_type,invoice_number,issue_date)',
       )
       .eq('customer_user_id', user.id)
       .order('created_at', { ascending: false })
@@ -56,6 +56,8 @@ export default async function AccountPage() {
       coupon_code: order.coupon_code,
       automatic_campaign_name: order.automatic_campaign_name,
       order_request_items: (order.order_request_items ?? []).map((line) => ({
+        product_id: line.product_id,
+        variant_id: line.variant_id ?? null,
         product_name: line.product_name,
         variant_label: line.variant_label ?? null,
         quantity: Number(line.quantity),

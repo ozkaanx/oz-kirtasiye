@@ -6,6 +6,7 @@ import { type FormEvent, useMemo, useState } from 'react';
 import {
   ArrowRight,
   Bell,
+  BadgePercent,
   Check,
   Home,
   LogOut,
@@ -13,10 +14,12 @@ import {
   Package,
   Pencil,
   Plus,
+  ShoppingBag,
   Trash2,
   UserRound,
 } from 'lucide-react';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
+import { useShop } from '@/context/shop-context';
 import { formatPrice } from '@/lib/format';
 import type { CustomerAddress, CustomerOrder, CustomerProfile } from '@/lib/customer';
 import { NotificationUnreadBadge } from '@/components/notifications/unread-badge';
@@ -65,6 +68,8 @@ export function CustomerAccount({
 }: Props) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const router = useRouter();
+  const { couponCode } = useShop();
+  const { addToCart } = useShop();
   const [tab, setTab] = useState<'overview' | 'addresses' | 'orders'>('overview');
   const [profile, setProfile] = useState({
     full_name: initialProfile.full_name,
@@ -215,6 +220,20 @@ export function CustomerAccount({
     router.refresh();
   }
 
+  function repeatOrder(order: CustomerOrder) {
+    // Current cart remains intact. Fresh stock/prices are checked by the existing cart flow.
+    const entries = order.order_request_items.filter(item => item.product_id && item.quantity > 0);
+    if (!entries.length) {
+      message('Bu siparişte yeniden eklenebilecek ürün bulunmuyor.');
+      return;
+    }
+    if (!window.confirm('Bu siparişteki ürünler mevcut sepetine eklensin mi? Güncel fiyat ve stok yeniden kontrol edilecek.')) return;
+    for (const item of entries.slice(0, 20)) {
+      addToCart(item.product_id, Math.min(item.quantity, 99), item.variant_id);
+    }
+    message(undefined, 'Ürünler sepetine eklendi. Güncel fiyat ve stok bilgilerini kontrol et.');
+  }
+
   return (
     <section className={`container-wide ${styles.page}`}>
       <div className={styles.pageHeader}>
@@ -252,6 +271,11 @@ export function CustomerAccount({
               {label}
             </button>
           ))}
+          <Link href="/hesabim/avantajlar" className={styles.tab}>
+            <BadgePercent size={18} />
+            Avantajlarım
+            {couponCode && <span style={{ marginLeft: 'auto', fontSize: 11, color: '#d9572f', fontWeight: 800 }}>Kod var</span>}
+          </Link>
           <Link href="/hesabim/iade" className={styles.tab}>
             <Package size={18} />
             İade ve değişim
@@ -278,6 +302,18 @@ export function CustomerAccount({
           )}
           {tab === 'overview' && (
             <>
+              <Link href="/hesabim/avantajlar" style={{ display: 'flex', alignItems: 'center', gap: 14, justifyContent: 'space-between', background: '#fff4ed', border: '1px solid #ffddc9', padding: '18px 20px', borderRadius: 14, color: '#303039', marginBottom: 25, textDecoration: 'none' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                  <BadgePercent size={28} color="#ed643f" style={{ flexShrink: 0 }} aria-hidden="true" />
+                  <span style={{ display: 'grid', gap: 4 }}>
+                    <strong style={{ fontSize: 16 }}>Avantajlarım ve kuponlarım</strong>
+                    <small style={{ color: '#745d53', lineHeight: 1.5 }}>
+                      {couponCode ? `Sepetinde ${couponCode} kupon kodu kayıtlı. İndirimi kontrol et.` : 'İndirim kuponlarını görüntüle, kodunu kaydet ve sepetinde kullan.'}
+                    </small>
+                  </span>
+                </span>
+                <ArrowRight size={19} aria-hidden="true" style={{ flexShrink: 0 }} />
+              </Link>
               <div className={styles.sectionTop}>
                 <div>
                   <h2>Kişisel bilgilerim</h2>
@@ -539,6 +575,13 @@ export function CustomerAccount({
                       </span>
                     </div>
                     <OrderJourney order={order} />
+                    {order.order_request_items.some(item => item.product_id) && (
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '10px 0' }}>
+                        <button type="button" className="button button-outline" onClick={() => repeatOrder(order)}>
+                          <ShoppingBag size={16} /> Yeniden sepete ekle
+                        </button>
+                      </div>
+                    )}
                     <div className={styles.orderItems}>
                       {order.order_request_items?.map((line, index) => (
                         <div key={`${order.id}-${index}`}>
