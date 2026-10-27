@@ -9,16 +9,20 @@ export function CampaignPrice({
   promotion,
   campaignNotice,
   size = 'card',
+  compact = false,
 }: {
   price: number;
   compareAtPrice: number | null;
   promotion: CatalogPromotion | null;
   campaignNotice?: CatalogCampaignNotice | null;
   size?: 'card' | 'detail';
+  compact?: boolean;
 }) {
   const activePromotion = promotion && promotion.discountedPrice < price ? promotion : null;
   return (
-    <div className={`${styles.price} ${size === 'detail' ? styles.detail : ''}`}>
+    <div
+      className={`${styles.price} ${size === 'detail' ? styles.detail : ''} ${compact ? styles.compact : ''}`}
+    >
       {activePromotion ? (
         <>
           <div className={styles.mainRow}>
@@ -27,13 +31,17 @@ export function CampaignPrice({
               {formatPrice(activePromotion.discountedPrice)}
             </strong>
           </div>
-          <span className={styles.saving}>
-            %{activePromotion.discountPercent} indirim ·{' '}
-            {formatPrice(activePromotion.discountAmount)} avantaj
-          </span>
-          <span className={styles.note}>
-            {activePromotion.campaignName} · Sepette tek ürün için geçerli
-          </span>
+          {!compact && (
+            <span className={styles.saving}>
+              %{activePromotion.discountPercent} indirim ·{' '}
+              {formatPrice(activePromotion.discountAmount)} avantaj
+            </span>
+          )}
+          {!compact && (
+            <span className={styles.note}>
+              {activePromotion.campaignName} · Sepette tek ürün için geçerli
+            </span>
+          )}
         </>
       ) : (
         <>
@@ -43,7 +51,7 @@ export function CampaignPrice({
           <strong className={styles.regular}>{formatPrice(price)}</strong>
         </>
       )}
-      {!activePromotion && campaignNotice && (
+      {!compact && !activePromotion && campaignNotice && (
         <div className={styles.basketCondition} role="note">
           <BadgePercent size={size === 'detail' ? 17 : 14} aria-hidden="true" />
           <span>
