@@ -219,7 +219,7 @@ select pg_temp.assert_true(
  (select stock_quantity=0 from public.products where id='92000000-0000-0000-0000-000000000001'),
  'legacy prepare still deducts only its own inventory');
 select pg_temp.assert_true(
- public.manage_order_request('95000000-0000-0000-0000-000000000004','cancel')='cancelled',
+ public.manage_order_request('95000000-0000-0000-0000-000000000004','cancel',null,null,'Test iptali')='cancelled',
  'legacy cancellation still enters cancelled state');
 select pg_temp.assert_true(
  (select stock_quantity=1 from public.products where id='92000000-0000-0000-0000-000000000001'),
