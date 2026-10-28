@@ -19,6 +19,8 @@ export type OrderSearchResult = {
 const statuses = [
   'new',
   'contacted',
+  'awaiting_payment',
+  'paid',
   'processing',
   'shipped',
   'delivered',
