@@ -13,7 +13,7 @@ export type CatalogPageMatch = {
 };
 
 export function parseCatalogPage(value: string | null): number {
-  if (!value || !/^[1-9]\\d{0,5}$/.test(value)) return 1;
+  if (!value || !/^[1-9]\d{0,5}$/.test(value)) return 1;
   return Math.min(Number(value), 100000);
 }
 
