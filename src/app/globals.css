@@ -3633,6 +3633,14 @@ a:focus-visible {
   color: #265f9e;
   background: #e8f0fc;
 }
+.status-awaiting_payment {
+  color: #a35b16;
+  background: #fff2dc;
+}
+.status-paid {
+  color: #146c4b;
+  background: #e7f7ed;
+}
 .status-completed {
   color: #167148;
   background: #e8f8ef;
