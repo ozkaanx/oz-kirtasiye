@@ -9,6 +9,7 @@ import {
   type ProductSearchMeta,
 } from '@/lib/admin-product-search';
 import { formatPrice } from '@/lib/format';
+import { estimateProductProfit } from '@/lib/admin-product-profit';
 import type { Category, Product, StockEntry } from './admin-product-types';
 import filterStyles from './admin-list-filters.module.css';
 export function AdminProductList({
@@ -113,12 +114,17 @@ export function AdminProductList({
               'Ürün listesi yüklenemedi.'
             )}
           </p>
+          <p className={filterStyles.result}>
+            Alış maliyeti ve fark yalnızca yöneticilere gösterilir. Brüt fark; KDV, kargo, komisyon ve genel giderleri içermez.
+          </p>
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
                   <th>ÜRÜN</th>
-                  <th>FİYAT</th>
+                  <th>SATIŞ</th>
+                  <th>ALIŞ</th>
+                  <th>TAHMİNİ FARK</th>
                   <th>STOK</th>
                   <th>DURUM</th>
                   <th>İŞLEMLER</th>
@@ -138,6 +144,22 @@ export function AdminProductList({
                     <td>
                       {p.has_variants && <small>Başlangıç </small>}
                       {formatPrice(Number(p.price))}
+                    </td>
+                    <td>{p.has_variants ? <small>Varyant bazlı</small> : p.cost_price === null ? '—' : formatPrice(p.cost_price)}</td>
+                    <td>
+                      {p.has_variants ? (
+                        <small>Varyant bazlı</small>
+                      ) : (() => {
+                        const estimate=estimateProductProfit(Number(p.price),p.cost_price);
+                        return estimate ? (
+                          <span title="KDV, kargo, komisyon ve işletme giderleri hariç; tahmini fark">
+                            {formatPrice(estimate.difference)}
+                            {estimate.marginPercent !== null && (
+                              <small> · %{estimate.marginPercent.toLocaleString('tr-TR')}</small>
+                            )}
+                          </span>
+                        ) : '—';
+                      })()}
                     </td>
                     <td>
                       {p.stock_quantity} adet {p.has_variants && <small>(varyant)</small>}
