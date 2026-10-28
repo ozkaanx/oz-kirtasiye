@@ -193,8 +193,10 @@ select pg_temp.assert_true(
  and (select stock_quantity=4 from public.product_variants where id='93000000-0000-0000-0000-000000000001'),
  'repeating expiry job cannot double-restore inventory');
 select pg_temp.assert_true(
- public.finish_payment_reservation('OZP-PAYTEST-3','succeeded')='requires_review'
- and (select status='cancelled' and payment_status='requires_review'
+ public.finish_payment_reservation('OZP-PAYTEST-3','succeeded')='requires_review',
+ 'late success is reported for reconciliation');
+select pg_temp.assert_true(
+ (select status='cancelled' and payment_status='requires_review'
    from public.order_requests where id='95000000-0000-0000-0000-000000000003')
  and (select stock_quantity=4 from public.product_variants where id='93000000-0000-0000-0000-000000000001'),
  'late success flags reconciliation instead of overselling released stock');
@@ -211,12 +213,16 @@ select pg_temp.assert_true(
  public.manage_order_request('95000000-0000-0000-0000-000000000004','contact')='contacted',
  'legacy contact action still works');
 select pg_temp.assert_true(
- public.manage_order_request('95000000-0000-0000-0000-000000000004','prepare')='processing'
- and (select stock_quantity=0 from public.products where id='92000000-0000-0000-0000-000000000001'),
+ public.manage_order_request('95000000-0000-0000-0000-000000000004','prepare')='processing',
+ 'legacy prepare still enters processing state');
+select pg_temp.assert_true(
+ (select stock_quantity=0 from public.products where id='92000000-0000-0000-0000-000000000001'),
  'legacy prepare still deducts only its own inventory');
 select pg_temp.assert_true(
- public.manage_order_request('95000000-0000-0000-0000-000000000004','cancel')='cancelled'
- and (select stock_quantity=1 from public.products where id='92000000-0000-0000-0000-000000000001'),
+ public.manage_order_request('95000000-0000-0000-0000-000000000004','cancel')='cancelled',
+ 'legacy cancellation still enters cancelled state');
+select pg_temp.assert_true(
+ (select stock_quantity=1 from public.products where id='92000000-0000-0000-0000-000000000001'),
  'legacy cancellation still restores its own stock');
 
 reset role;
