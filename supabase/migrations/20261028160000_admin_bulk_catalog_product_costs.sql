@@ -3,12 +3,12 @@
 create table public.product_costs (
   product_id uuid primary key references public.products(id) on delete cascade,
   cost_price numeric(12,2) not null check (cost_price >= 0 and cost_price <= 9999999999.99),
-  updated_by uuid references auth.users(id) on delete set null,
+  updated_by uuid references auth.users(id) on delete set null default auth.uid(),
   updated_at timestamptz not null default now()
 );
 alter table public.product_costs enable row level security;
 revoke all on public.product_costs from public, anon, authenticated;
-grant select, insert, update on public.product_costs to authenticated;
+grant select, insert, update, delete on public.product_costs to authenticated;
 
 create policy product_costs_admin_read on public.product_costs
 for select to authenticated using (
@@ -22,6 +22,11 @@ create policy product_costs_admin_update on public.product_costs
 for update to authenticated
 using (exists (select 1 from public.store_admins a where a.user_id = (select auth.uid())))
 with check (exists (select 1 from public.store_admins a where a.user_id = (select auth.uid())));
+
+create policy product_costs_admin_delete on public.product_costs
+for delete to authenticated using (
+  exists (select 1 from public.store_admins a where a.user_id = (select auth.uid()))
+);
 
 create index products_admin_sku_ci_idx on public.products ((upper(btrim(sku))))
 where sku is not null;
@@ -52,10 +57,6 @@ declare
   v_updated integer := 0;
   v_preview jsonb := '[]'::jsonb;
   v_seen text[] := '{}'::text[];
-  v_price numeric(12,2);
-  v_cost numeric(12,2);
-  v_stock integer;
-  v_threshold integer;
   v_index integer := 0;
   v_allowed text[] := array[
     'sku','name','price','cost_price','stock_quantity',
@@ -191,8 +192,11 @@ begin
         'sku',v_sku,'action','create','row',v_index
       ));
     else
-      select * into v_existing from public.products where id=v_product_id
-        for update;
+      if p_commit then
+        select * into v_existing from public.products where id=v_product_id for update;
+      else
+        select * into v_existing from public.products where id=v_product_id;
+      end if;
       if v_existing.has_variants then
         raise exception 'Satır %: Varyantlı ürünler toplu aktarılamaz; varyant ekranını kullanın.',v_index
           using errcode='22023';
