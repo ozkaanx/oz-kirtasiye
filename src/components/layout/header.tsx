@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -17,6 +17,7 @@ import {
 import type { StoreCategory } from '@/lib/category-utils';
 import { useShop } from '@/context/shop-context';
 import { Logo } from './logo';
+import { MobileCategoryDrawer } from './mobile-category-drawer';
 import { SearchSuggestions, saveRecentSearch } from '@/components/search/search-suggestions';
 
 export function Header({ categories }: { categories: StoreCategory[] }) {
@@ -28,12 +29,20 @@ export function Header({ categories }: { categories: StoreCategory[] }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { cartCount, favorites } = useShop();
 
+  const closeMobileMenu = useCallback(() => {
+    setMobileMenuOpen(false);
+    menuButtonRef.current?.focus();
+  }, []);
+  const navigateFromMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
+
   useEffect(() => {
     if (!searchOpen && !mobileMenuOpen) return;
     const onPointer = (event: PointerEvent) => {
+      // The mobile modal lives outside <header>. Its backdrop handles closing;
+      // never dismiss it when focus/taps move into the drawer.
+      if (mobileMenuOpen) return;
       if (!headerRef.current?.contains(event.target as Node)) {
         setSearchOpen(null);
-        setMobileMenuOpen(false);
       }
     };
     const onKey = (event: KeyboardEvent) => {
@@ -89,7 +98,7 @@ export function Header({ categories }: { categories: StoreCategory[] }) {
         onBlur={(event) => {
           if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget as Node)) {
             setSearchOpen(null);
-            setMobileMenuOpen(false);
+            // Drawer focus intentionally moves outside the sticky header.
           }
         }}
       >
@@ -132,7 +141,7 @@ export function Header({ categories }: { categories: StoreCategory[] }) {
           </form>
           <div className="header-actions">
             <Link href="/hesabim" className="header-action user-action" aria-label="Hesabım">
-              <UserRound size={22} />
+              <span className="action-icon"><UserRound size={22} /></span>
               <span>Hesabım</span>
             </Link>
             <Link
@@ -180,8 +189,8 @@ export function Header({ categories }: { categories: StoreCategory[] }) {
           </form>
         </div>
         <nav
-          id="store-category-menu"
-          className={`category-nav ${mobileMenuOpen ? 'nav-is-open' : ''}`}
+          id="store-desktop-category-nav"
+          className="category-nav"
           aria-label="Ana menü"
         >
           <div className="container-wide category-nav-inner">
@@ -227,6 +236,14 @@ export function Header({ categories }: { categories: StoreCategory[] }) {
           </div>
         </nav>
       </header>
+      <MobileCategoryDrawer
+        categories={categories}
+        open={mobileMenuOpen}
+        cartCount={cartCount}
+        favoritesCount={favorites.length}
+        onClose={closeMobileMenu}
+        onNavigate={navigateFromMobileMenu}
+      />
     </>
   );
 }
