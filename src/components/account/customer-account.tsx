@@ -12,6 +12,7 @@ import {
   LogOut,
   MapPin,
   Package,
+  RotateCcw,
   Pencil,
   Plus,
   ShoppingBag,
@@ -21,6 +22,7 @@ import {
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 import { useShop } from '@/context/shop-context';
 import { formatPrice } from '@/lib/format';
+import { orderStatusPresentation, paymentStatusPresentation, type AccountTab } from '@/lib/account-ui';
 import type { CustomerAddress, CustomerOrder, CustomerProfile } from '@/lib/customer';
 import { NotificationUnreadBadge } from '@/components/notifications/unread-badge';
 import styles from './customer-account.module.css';
@@ -40,6 +42,7 @@ const blankAddress: AddressFields = {
 };
 
 type Props = {
+  initialTab: AccountTab;
   userId: string;
   email: string;
   initialProfile: CustomerProfile;
@@ -48,17 +51,8 @@ type Props = {
   loadError?: string;
 };
 
-const statusLabels: Record<string, string> = {
-  new: 'Yeni talep',
-  contacted: 'Görüşüldü',
-  processing: 'Hazırlanıyor',
-  shipped: 'Kargoda',
-  delivered: 'Teslim edildi',
-  completed: 'Tamamlandı',
-  cancelled: 'İptal edildi',
-};
-
 export function CustomerAccount({
+  initialTab,
   userId,
   email,
   initialProfile,
@@ -68,9 +62,8 @@ export function CustomerAccount({
 }: Props) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const router = useRouter();
-  const { couponCode } = useShop();
-  const { addToCart } = useShop();
-  const [tab, setTab] = useState<'overview' | 'addresses' | 'orders'>('overview');
+  const { couponCode, addToCart } = useShop();
+  const [tab, setTab] = useState<AccountTab>(initialTab);
   const [profile, setProfile] = useState({
     full_name: initialProfile.full_name,
     phone: initialProfile.phone ?? '',
@@ -78,13 +71,21 @@ export function CustomerAccount({
   const [addresses, setAddresses] = useState<CustomerAddress[]>(initialAddresses);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addressForm, setAddressForm] = useState<AddressFields | null>(null);
-  const [error, setError] = useState(loadError ?? '');
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [busy, setBusy] = useState(false);
 
   function message(errorText?: string, successText?: string) {
     setError(errorText ?? '');
     setSuccess(successText ?? '');
+  }
+
+  function changeTab(nextTab: AccountTab) {
+    if (busy || nextTab === tab) return;
+    setTab(nextTab);
+    message();
+    const nextUrl = nextTab === 'overview' ? '/hesabim' : `/hesabim?tab=${nextTab}`;
+    window.history.replaceState(null, '', nextUrl);
   }
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
@@ -240,13 +241,13 @@ export function CustomerAccount({
         <div>
           <span className="section-eyebrow">ÖZ KIRTASİYE / HESABIM</span>
           <h1>
-            Merhaba{profile.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}
+            Merhaba{profile.full_name.trim() ? `, ${profile.full_name.trim().split(/\s+/)[0]}` : ''}
             <span className="orange-dot">.</span>
           </h1>
           <p>Hesap bilgilerin, adreslerin ve sipariş taleplerin tek bir yerde.</p>
         </div>
         <button type="button" className={styles.logout} onClick={logout} disabled={busy}>
-          <LogOut size={16} /> Çıkış yap
+          <LogOut size={17} aria-hidden="true" /> {busy ? 'İşleniyor...' : 'Çıkış yap'}
         </button>
       </div>
       <div className={styles.shell}>
@@ -262,34 +263,37 @@ export function CustomerAccount({
               type="button"
               key={id}
               className={`${styles.tab} ${tab === id ? styles.active : ''}`}
-              onClick={() => {
-                setTab(id);
-                message();
-              }}
+              aria-pressed={tab === id}
+              aria-controls="account-content-panel"
+              disabled={busy}
+              onClick={() => changeTab(id)}
             >
-              <Icon size={18} />
-              {label}
+              <Icon size={18} aria-hidden="true" />
+              <span>{label}</span>
             </button>
           ))}
           <Link href="/hesabim/avantajlar" className={styles.tab}>
-            <BadgePercent size={18} />
-            Avantajlarım
-            {couponCode && <span style={{ marginLeft: 'auto', fontSize: 11, color: '#d9572f', fontWeight: 800 }}>Kod var</span>}
+            <BadgePercent size={18} aria-hidden="true" />
+            <span>Avantajlarım</span>
+            {couponCode && <span className={styles.menuHint}>Kod var</span>}
           </Link>
           <Link href="/hesabim/iade" className={styles.tab}>
-            <Package size={18} />
-            İade ve değişim
+            <RotateCcw size={18} aria-hidden="true" />
+            <span>İade ve değişim</span>
           </Link>
           <Link href="/hesabim/bildirimler" className={styles.tab}>
-            <Bell size={18} />
-            Bildirimler
+            <Bell size={18} aria-hidden="true" />
+            <span>Bildirimler</span>
             <NotificationUnreadBadge audience="customer" />
           </Link>
           <Link href="/urunler" className={styles.shopLink}>
             Alışverişe dön <ArrowRight size={16} />
           </Link>
         </nav>
-        <div className={styles.panel}>
+        <div className={styles.panel} id="account-content-panel" aria-label="Hesap içeriği">
+          {loadError && (
+            <p role="alert" className={styles.error}>{loadError}</p>
+          )}
           {error && (
             <p role="alert" className={styles.error}>
               {error}
@@ -358,8 +362,7 @@ export function CustomerAccount({
                 <span>Adreslerini kaydedersen sipariş verirken tek tıkla seçebilirsin.</span>
                 <button
                   onClick={() => {
-                    setTab('addresses');
-                    message();
+                    changeTab('addresses');
                   }}
                 >
                   Adreslerime git
