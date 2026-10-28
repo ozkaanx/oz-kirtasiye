@@ -25,6 +25,13 @@ insert into public.order_requests(reference,customer_name,phone,city,district,ad
 insert into public.products(id,slug,name,price,stock_quantity,is_active) values('73000000-0000-0000-0000-000000000001','search-test-product','Search test product',100,10,true);
 insert into public.order_request_items(order_request_id,product_id,product_name,unit_price,quantity,line_total)
  values('72000000-0000-0000-0000-000000000125','73000000-0000-0000-0000-000000000001','Search test product',100,1,100);
+-- Stage 31: the reservation foundation introduced states that must remain searchable.
+insert into public.order_requests
+ (reference,customer_name,phone,city,district,address,subtotal,total,status,payment_status)
+values
+ ('ADMIN31-AWAITING','Payment fixture','05551234567','İstanbul','Bağcılar','Test address 123',100,100,'awaiting_payment','pending'),
+ ('ADMIN31-PAID','Payment fixture','05551234567','İstanbul','Bağcılar','Test address 123',100,100,'paid','paid');
+
 set local role anon;
 select pg_temp.expect_error('select public.admin_search_orders()','42501','guest cannot search orders');
 set local role authenticated;
@@ -40,6 +47,15 @@ select pg_temp.assert_true(jsonb_array_length(public.admin_search_orders('PAGEFI
 select pg_temp.assert_true((public.admin_search_orders('PAGEFIXTURE-1')->>'total')::int=37,'reference substring search finds old records');
 select pg_temp.assert_true((public.admin_search_orders('ipek ışık')->>'total')::int=1,'Turkish dotted and dotless I search');
 select pg_temp.assert_true((public.admin_search_orders('%_')->>'total')::int=1,'wildcards are literal search characters');
+select pg_temp.assert_true(
+ (public.admin_search_orders('ADMIN31','awaiting_payment')->>'total')::int=1,
+ 'awaiting-payment orders can be found using secure admin status filter');
+select pg_temp.assert_true(
+ (public.admin_search_orders('ADMIN31','paid')->>'total')::int=1,
+ 'paid orders can be found using secure admin status filter');
+select pg_temp.assert_true(
+ public.admin_search_orders('ADMIN31','paid')->'rows'->0->>'payment_status'='paid',
+ 'admin search returns actual payment state, not a fabricated unpaid state');
 select pg_temp.assert_true((public.admin_search_orders('PAGEFIXTURE','new','shipping')->>'total')::int=63,'status and delivery filters combine');
 select pg_temp.assert_true((public.admin_search_orders('PAGEFIXTURE','new','pickup')->>'total')::int=0,'no match returns a genuine zero');
 select pg_temp.assert_true((public.admin_search_orders('TZFIXTURE',null,null,'2026-01-02','2026-01-02')->>'total')::int=2,'inclusive local-day bounds exclude next midnight');

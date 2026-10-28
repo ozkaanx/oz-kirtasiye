@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 
 import { formatPrice } from '@/lib/format';
+import { ORDER_STATUS_LABELS } from '@/lib/admin-orders';
 import styles from './admin-overview.module.css';
 
 export type AdminDashboardSummary = {
@@ -53,16 +54,6 @@ export type DashboardLowStock = {
   threshold: number;
 };
 
-const statusLabels: Record<string, string> = {
-  new: 'Yeni',
-  contacted: 'Görüşüldü',
-  processing: 'Hazırlanıyor',
-  shipped: 'Kargoda',
-  delivered: 'Teslim edildi',
-  completed: 'Eski kayıt · Tamamlandı',
-  cancelled: 'İptal',
-};
-
 function formatDay(value: string) {
   const [, month, day] = value.split('-');
   return `${day}.${month}`;
@@ -81,11 +72,13 @@ export function AdminOverview({
   summary,
   recentOrders,
   lowStockProducts,
+  stockAlertsUnavailable,
   loadError,
 }: {
   summary: AdminDashboardSummary | null;
   recentOrders: DashboardOrder[];
   lowStockProducts: DashboardLowStock[];
+  stockAlertsUnavailable: boolean;
   loadError: string | null;
 }) {
   const chart = summary?.dailyRequests ?? [];
@@ -284,7 +277,7 @@ export function AdminOverview({
                       </div>
                       <div className={styles.rowRight}>
                         <span className={styles.statusTag}>
-                          {statusLabels[order.status] ?? order.status}
+                          {ORDER_STATUS_LABELS[order.status as keyof typeof ORDER_STATUS_LABELS] ?? order.status}
                         </span>
                         <strong>{formatPrice(order.total)}</strong>
                       </div>
@@ -301,13 +294,17 @@ export function AdminOverview({
                   <h2>
                     <TriangleAlert size={19} /> Stok uyarıları
                   </h2>
-                  <p>Aktif ve kritik stoklu ürünler</p>
+                  <p>Aktif ürünler · Varyant stokları dahil</p>
                 </div>
                 <Link href="/admin/urunler" className={styles.link}>
                   Ürünlere git <ArrowRight size={15} />
                 </Link>
               </div>
-              {lowStockProducts.length ? (
+              {stockAlertsUnavailable ? (
+                <p className={styles.empty} role="alert">
+                  Kritik stok listesi şu anda yüklenemiyor. Ürün ve stok ekranından kontrol edin.
+                </p>
+              ) : lowStockProducts.length ? (
                 <div className={styles.rows}>
                   {lowStockProducts.map((product) => (
                     <div key={product.id} className={styles.stockRow}>
