@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 
 import { formatPrice } from '@/lib/format';
+import { ORDER_STATUS_LABELS } from '@/lib/admin-orders';
 import styles from './admin-overview.module.css';
 
 export type AdminDashboardSummary = {
@@ -53,15 +54,7 @@ export type DashboardLowStock = {
   threshold: number;
 };
 
-const statusLabels: Record<string, string> = {
-  new: 'Yeni',
-  contacted: 'Görüşüldü',
-  processing: 'Hazırlanıyor',
-  shipped: 'Kargoda',
-  delivered: 'Teslim edildi',
-  completed: 'Eski kayıt · Tamamlandı',
-  cancelled: 'İptal',
-};
+
 
 function formatDay(value: string) {
   const [, month, day] = value.split('-');
@@ -284,7 +277,7 @@ export function AdminOverview({
                       </div>
                       <div className={styles.rowRight}>
                         <span className={styles.statusTag}>
-                          {statusLabels[order.status] ?? order.status}
+                          {ORDER_STATUS_LABELS[order.status as keyof typeof ORDER_STATUS_LABELS] ?? order.status}
                         </span>
                         <strong>{formatPrice(order.total)}</strong>
                       </div>
