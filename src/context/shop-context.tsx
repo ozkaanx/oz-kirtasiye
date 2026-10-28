@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { shopStorage } from '@/lib/safe-storage';
 import { cartReducer, initialCartState, type CartFeedback } from '@/lib/cart-state';
 import { cartLineKey, type CartLine, type CartProduct } from '@/lib/cart-types';
 
@@ -58,7 +59,7 @@ function isValidLine(value: unknown): value is CartLine {
 
 function readCart(): CartLine[] {
   try {
-    const parsed: unknown = JSON.parse(window.localStorage.getItem(CART_KEY) ?? '[]');
+    const parsed: unknown = JSON.parse(shopStorage.getItem(CART_KEY) ?? '[]');
     if (!Array.isArray(parsed)) return [];
     const seen = new Set<string>();
     return parsed
@@ -77,7 +78,7 @@ function readCart(): CartLine[] {
 
 function readFavorites(): string[] {
   try {
-    const parsed: unknown = JSON.parse(window.localStorage.getItem(FAVORITES_KEY) ?? '[]');
+    const parsed: unknown = JSON.parse(shopStorage.getItem(FAVORITES_KEY) ?? '[]');
     return Array.isArray(parsed)
       ? [
           ...new Set(parsed.filter((id): id is string => typeof id === 'string' && UUID.test(id))),
@@ -105,18 +106,18 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     dispatchCart({ type: 'hydrate', lines: readCart() });
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Hydrate validated browser storage after SSR.
     setFavorites(readFavorites());
-    const storedCoupon = window.localStorage.getItem(COUPON_KEY) ?? '';
+    const storedCoupon = shopStorage.getItem(COUPON_KEY) ?? '';
     if (/^[A-Z0-9_-]{4,32}$/.test(storedCoupon)) setCouponCode(storedCoupon);
     setLoaded(true);
   }, []);
   useEffect(() => {
-    if (loaded) window.localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    if (loaded) shopStorage.setItem(CART_KEY, JSON.stringify(cart));
   }, [cart, loaded]);
   useEffect(() => {
-    if (loaded) window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+    if (loaded) shopStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
   }, [favorites, loaded]);
   useEffect(() => {
-    if (loaded) window.localStorage.setItem(COUPON_KEY, couponCode);
+    if (loaded) shopStorage.setItem(COUPON_KEY, couponCode);
   }, [couponCode, loaded]);
 
   const cartIdentity = useMemo(

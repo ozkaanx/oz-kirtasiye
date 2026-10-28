@@ -1,4 +1,6 @@
 'use client';
+import { AdminDialog } from './admin-dialog';
+import Image from 'next/image';
 
 import { type FormEvent, useState } from 'react';
 
@@ -328,7 +330,11 @@ export function AdminVariants({
                     <tr key={v.id}>
                       <td>
                         <div className={styles.variantName}>
-                          {v.imageUrl ? <img src={v.imageUrl} alt="" /> : <Package size={22} />}
+                          {v.imageUrl ? (
+                            <Image width={64} height={64} src={v.imageUrl} alt="" />
+                          ) : (
+                            <Package size={22} />
+                          )}
                           <div>
                             <strong>{[v.color, v.size].filter(Boolean).join(' / ')}</strong>
                             <small>{v.sku ?? 'SKU yok'}</small>
@@ -385,185 +391,191 @@ export function AdminVariants({
       </div>
 
       {editing && (
-        <div className="admin-modal-backdrop">
-          <div
-            className="admin-modal admin-modal-large"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Varyant düzenle"
-          >
-            <div className="admin-modal-heading">
-              <h2>{editing === 'new' ? 'Yeni varyant' : 'Varyant düzenle'}</h2>
-              <button type="button" aria-label="Kapat" onClick={() => setEditing(null)}>
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={save} className="admin-product-form">
+        <AdminDialog
+          className="admin-modal admin-modal-large"
+          label="Varyant düzenle"
+          busy={pending}
+          onClose={() => setEditing(null)}
+        >
+          <div className="admin-modal-heading">
+            <h2>{editing === 'new' ? 'Yeni varyant' : 'Varyant düzenle'}</h2>
+            <button
+              type="button"
+              aria-label="Kapat"
+              disabled={pending}
+              onClick={() => setEditing(null)}
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <form onSubmit={save} className="admin-product-form">
+            <label className="admin-field">
+              Renk
+              <input
+                maxLength={60}
+                placeholder="Mavi"
+                value={form.color}
+                onChange={(e) => setForm((s) => ({ ...s, color: e.target.value }))}
+              />
+            </label>
+            <label className="admin-field">
+              Boyut / ölçü
+              <input
+                maxLength={60}
+                placeholder="A5"
+                value={form.size}
+                onChange={(e) => setForm((s) => ({ ...s, size: e.target.value }))}
+              />
+            </label>
+            <label className="admin-field">
+              Varyant kodu (isteğe bağlı)
+              <input
+                value={form.sku}
+                onChange={(e) => setForm((s) => ({ ...s, sku: e.target.value }))}
+              />
+            </label>
+            <label className="admin-field">
+              Satış fiyatı ₺ *
+              <input
+                required
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.price}
+                onChange={(e) => setForm((s) => ({ ...s, price: e.target.value }))}
+              />
+            </label>
+            <label className="admin-field">
+              Eski fiyat
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.compare}
+                onChange={(e) => setForm((s) => ({ ...s, compare: e.target.value }))}
+              />
+            </label>
+            {editing === 'new' && (
               <label className="admin-field">
-                Renk
-                <input
-                  maxLength={60}
-                  placeholder="Mavi"
-                  value={form.color}
-                  onChange={(e) => setForm((s) => ({ ...s, color: e.target.value }))}
-                />
-              </label>
-              <label className="admin-field">
-                Boyut / ölçü
-                <input
-                  maxLength={60}
-                  placeholder="A5"
-                  value={form.size}
-                  onChange={(e) => setForm((s) => ({ ...s, size: e.target.value }))}
-                />
-              </label>
-              <label className="admin-field">
-                Varyant kodu (isteğe bağlı)
-                <input
-                  value={form.sku}
-                  onChange={(e) => setForm((s) => ({ ...s, sku: e.target.value }))}
-                />
-              </label>
-              <label className="admin-field">
-                Satış fiyatı ₺ *
-                <input
-                  required
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={form.price}
-                  onChange={(e) => setForm((s) => ({ ...s, price: e.target.value }))}
-                />
-              </label>
-              <label className="admin-field">
-                Eski fiyat
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={form.compare}
-                  onChange={(e) => setForm((s) => ({ ...s, compare: e.target.value }))}
-                />
-              </label>
-              {editing === 'new' && (
-                <label className="admin-field">
-                  İlk stok miktarı *
-                  <input
-                    required
-                    min="0"
-                    step="1"
-                    type="number"
-                    value={form.stock}
-                    onChange={(e) => setForm((s) => ({ ...s, stock: e.target.value }))}
-                  />
-                </label>
-              )}
-              <label className="admin-field">
-                Az stok uyarı limiti *
+                İlk stok miktarı *
                 <input
                   required
                   min="0"
                   step="1"
                   type="number"
-                  value={form.threshold}
-                  onChange={(e) => setForm((s) => ({ ...s, threshold: e.target.value }))}
+                  value={form.stock}
+                  onChange={(e) => setForm((s) => ({ ...s, stock: e.target.value }))}
                 />
               </label>
-              <label className="admin-field">
-                <ImagePlus size={16} /> Seçeneğe özel fotoğraf
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                />
-              </label>
-              <label className="admin-checkbox">
-                <input
-                  type="checkbox"
-                  checked={form.isActive}
-                  onChange={(e) => setForm((s) => ({ ...s, isActive: e.target.checked }))}
-                />{' '}
-                Satışta göster
-              </label>
-              {error && (
-                <p role="alert" className="admin-form-error admin-form-wide">
-                  {error}
-                </p>
-              )}
-              <button
-                type="submit"
-                disabled={pending}
-                className="button button-primary admin-form-wide"
-              >
-                <Save size={16} />
-                {pending ? 'Kaydediliyor...' : 'Varyantı kaydet'}
-              </button>
-            </form>
-          </div>
-        </div>
+            )}
+            <label className="admin-field">
+              Az stok uyarı limiti *
+              <input
+                required
+                min="0"
+                step="1"
+                type="number"
+                value={form.threshold}
+                onChange={(e) => setForm((s) => ({ ...s, threshold: e.target.value }))}
+              />
+            </label>
+            <label className="admin-field">
+              <ImagePlus size={16} /> Seçeneğe özel fotoğraf
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
+            </label>
+            <label className="admin-checkbox">
+              <input
+                type="checkbox"
+                checked={form.isActive}
+                onChange={(e) => setForm((s) => ({ ...s, isActive: e.target.checked }))}
+              />{' '}
+              Satışta göster
+            </label>
+            {error && (
+              <p role="alert" className="admin-form-error admin-form-wide">
+                {error}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={pending}
+              className="button button-primary admin-form-wide"
+            >
+              <Save size={16} />
+              {pending ? 'Kaydediliyor...' : 'Varyantı kaydet'}
+            </button>
+          </form>
+        </AdminDialog>
       )}
       {selected && (
-        <div className="admin-modal-backdrop">
-          <div
-            className="admin-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Varyant stok değişikliği"
-          >
-            <div className="admin-modal-heading">
-              <h2>Varyant stok</h2>
-              <button type="button" aria-label="Kapat" onClick={() => setSelected(null)}>
-                <X size={20} />
+        <AdminDialog
+          className="admin-modal"
+          label="Varyant stok değişikliği"
+          busy={pending}
+          onClose={() => setSelected(null)}
+        >
+          <div className="admin-modal-heading">
+            <h2>Varyant stok</h2>
+            <button
+              type="button"
+              aria-label="Kapat"
+              disabled={pending}
+              onClick={() => setSelected(null)}
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <form onSubmit={saveStock} className={styles.stockForm}>
+            <p>
+              {[selected.color, selected.size].filter(Boolean).join(' / ')} ·{' '}
+              {selected.stock_quantity} adet
+            </p>
+            <div className={styles.actions}>
+              <button
+                type="button"
+                onClick={() => setDirection('increase')}
+                aria-pressed={direction === 'increase'}
+              >
+                + Artır
+              </button>
+              <button
+                type="button"
+                onClick={() => setDirection('decrease')}
+                aria-pressed={direction === 'decrease'}
+              >
+                − Azalt
               </button>
             </div>
-            <form onSubmit={saveStock} className={styles.stockForm}>
-              <p>
-                {[selected.color, selected.size].filter(Boolean).join(' / ')} ·{' '}
-                {selected.stock_quantity} adet
+            <label>
+              Miktar
+              <input
+                type="number"
+                step="1"
+                min="1"
+                max="100000"
+                required
+                value={change}
+                onChange={(e) => setChange(e.target.value)}
+              />
+            </label>
+            <label>
+              Açıklama
+              <input maxLength={250} value={note} onChange={(e) => setNote(e.target.value)} />
+            </label>
+            {error && (
+              <p role="alert" className="admin-form-error">
+                {error}
               </p>
-              <div className={styles.actions}>
-                <button
-                  type="button"
-                  onClick={() => setDirection('increase')}
-                  aria-pressed={direction === 'increase'}
-                >
-                  + Artır
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDirection('decrease')}
-                  aria-pressed={direction === 'decrease'}
-                >
-                  − Azalt
-                </button>
-              </div>
-              <label>
-                Miktar
-                <input
-                  type="number"
-                  step="1"
-                  min="1"
-                  max="100000"
-                  required
-                  value={change}
-                  onChange={(e) => setChange(e.target.value)}
-                />
-              </label>
-              <label>
-                Açıklama
-                <input maxLength={250} value={note} onChange={(e) => setNote(e.target.value)} />
-              </label>
-              {error && (
-                <p role="alert" className="admin-form-error">
-                  {error}
-                </p>
-              )}
-              <button type="submit" className="button button-primary" disabled={pending}>
-                <Check size={16} /> Kaydet
-              </button>
-            </form>
-          </div>
-        </div>
+            )}
+            <button type="submit" className="button button-primary" disabled={pending}>
+              <Check size={16} /> Kaydet
+            </button>
+          </form>
+        </AdminDialog>
       )}
     </>
   );

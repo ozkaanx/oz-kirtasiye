@@ -35,7 +35,13 @@ jobs:
           version: 2.81.2
       - run: npm ci --ignore-scripts
       - run: supabase start
+        env:
+          # setup-cli defaults to GHCR; that mirror intermittently throttles
+          # unauthenticated runner downloads. Use the official Docker Hub images.
+          SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
       - run: supabase db reset --local
+        env:
+          SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
       - run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - run: npm run test:db
         env:

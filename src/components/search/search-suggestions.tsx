@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -129,7 +130,11 @@ export function SearchSuggestions({ query, onChoose }: { query: string; onChoose
               }}
             >
               <div className={styles.picture}>
-                {product.imageUrl ? <img src={product.imageUrl} alt="" /> : <Package size={19} />}
+                {product.imageUrl ? (
+                  <Image width={64} height={64} src={product.imageUrl} alt="" />
+                ) : (
+                  <Package size={19} />
+                )}
               </div>
               <span className={styles.itemName}>
                 {product.name}

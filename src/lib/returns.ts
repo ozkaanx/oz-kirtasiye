@@ -30,6 +30,9 @@ export type ReturnHistory = {
 };
 
 export type ReturnRequest = {
+  order_reference?: string;
+  product_name?: string;
+  variant_label?: string | null;
   id: string;
   order_request_id: string;
   order_item_id: string;
@@ -55,6 +58,7 @@ export type ReturnOrder = {
     product_name: string;
     variant_label: string | null;
     quantity: number;
+    claimed_quantity: number;
   }>;
 };
 

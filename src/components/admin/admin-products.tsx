@@ -3,7 +3,15 @@
 import type { ProductSearch, ProductSearchMeta } from '@/lib/admin-product-search';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Activity, Boxes, ClipboardList, FolderTree, FileSpreadsheet, Package, Plus } from 'lucide-react';
+import {
+  Activity,
+  Boxes,
+  ClipboardList,
+  FolderTree,
+  FileSpreadsheet,
+  Package,
+  Plus,
+} from 'lucide-react';
 import type { Category, Product, StockEntry } from './admin-product-types';
 import { AdminProductList } from './admin-product-list';
 import { AdminProductEditor } from './admin-product-editor';
@@ -35,6 +43,10 @@ export function AdminProducts({
     setEditing('new');
   }
   function startEdit(product: Product) {
+    if (loadError) {
+      setNotice('Ürün bilgileri tam yüklenmedi. Düzenlemeden önce sayfayı yenileyin.');
+      return;
+    }
     setNotice('');
     setEditing(product);
   }
@@ -57,7 +69,11 @@ export function AdminProducts({
             <p>Manuel stok ve ürün düzenleme işlemleri Supabase&apos;e kaydedilir.</p>
           </div>
           <div className="admin-action-group">
-            <button type="button" className="button button-secondary" onClick={() => setImportOpen(true)}>
+            <button
+              type="button"
+              className="button button-secondary"
+              onClick={() => setImportOpen(true)}
+            >
               <FileSpreadsheet size={17} /> Excel / CSV aktar
             </button>
             <button type="button" className="button button-primary" onClick={startCreate}>

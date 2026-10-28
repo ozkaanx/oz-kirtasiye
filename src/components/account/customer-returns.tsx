@@ -1,5 +1,7 @@
 'use client';
 
+import { CustomerPagination } from './customer-pagination';
+import type { CustomerPage } from '@/lib/customer-pagination';
 import { useMemo, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { ClipboardCheck, PackageCheck, RotateCcw } from 'lucide-react';
@@ -19,13 +21,22 @@ import {
 import styles from './customer-returns.module.css';
 
 type Props = {
+  ordersMeta: CustomerPage;
+  requestsMeta: CustomerPage;
   orders: ReturnOrder[];
   requests: ReturnRequest[];
   history: ReturnHistory[];
   loadError: string | null;
 };
 
-export function CustomerReturns({ orders, requests, history, loadError }: Props) {
+export function CustomerReturns({
+  orders,
+  requests,
+  history,
+  loadError,
+  ordersMeta,
+  requestsMeta,
+}: Props) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const router = useRouter();
   const [selectedOrder, setSelectedOrder] = useState('');
@@ -40,9 +51,7 @@ export function CustomerReturns({ orders, requests, history, loadError }: Props)
 
   const order = orders.find((o) => o.id === selectedOrder);
   const item = order?.order_request_items.find((i) => i.id === selectedItem);
-  const previouslyClaimed = requests
-    .filter((r) => r.order_item_id === selectedItem && r.status !== 'rejected')
-    .reduce((sum, r) => sum + r.quantity, 0);
+  const previouslyClaimed = item?.claimed_quantity ?? 0;
   const remaining = Math.max(0, (item?.quantity ?? 0) - previouslyClaimed);
 
   function chooseOrder(id: string) {
@@ -122,102 +131,113 @@ export function CustomerReturns({ orders, requests, history, loadError }: Props)
               İade/değişim talebi açılabilecek teslim edilmiş siparişin bulunmuyor.
             </p>
           ) : (
-            <form onSubmit={submit} className={styles.form}>
-              <label>
-                Sipariş
-                <select
-                  required
-                  value={selectedOrder}
-                  onChange={(e) => chooseOrder(e.target.value)}
-                >
-                  <option value="">Sipariş seç</option>
-                  {orders.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      #{o.reference} · {returnDate(o.created_at)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {order && (
+            <>
+              <CustomerPagination
+                result={ordersMeta}
+                path="/hesabim/iade"
+                pageKey="ordersPage"
+                params={{ requestsPage: String(requestsMeta.page) }}
+                label="İade edilebilir sipariş sayfaları"
+              />
+              <form onSubmit={submit} className={styles.form}>
                 <label>
-                  Ürün / varyant
+                  Sipariş
                   <select
                     required
-                    value={selectedItem}
-                    onChange={(e) => chooseItem(e.target.value)}
+                    value={selectedOrder}
+                    onChange={(e) => chooseOrder(e.target.value)}
                   >
-                    <option value="">Ürün seç</option>
-                    {order.order_request_items.map((i) => {
-                      const claimed = requests
-                        .filter((r) => r.order_item_id === i.id && r.status !== 'rejected')
-                        .reduce((sum, r) => sum + r.quantity, 0);
-                      const available = i.quantity - claimed;
-                      return (
-                        <option value={i.id} key={i.id} disabled={available <= 0}>
-                          {i.product_name}
-                          {i.variant_label ? ` · ${i.variant_label}` : ''} · {available} adet talep
-                          hakkı
-                        </option>
-                      );
-                    })}
+                    <option value="">Sipariş seç</option>
+                    {orders.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        #{o.reference} · {returnDate(o.created_at)}
+                      </option>
+                    ))}
                   </select>
                 </label>
-              )}
-              <div className={styles.twoCol}>
+                {order && (
+                  <label>
+                    Ürün / varyant
+                    <select
+                      required
+                      value={selectedItem}
+                      onChange={(e) => chooseItem(e.target.value)}
+                    >
+                      <option value="">Ürün seç</option>
+                      {order.order_request_items.map((i) => {
+                        const available = Math.max(0, i.quantity - i.claimed_quantity);
+                        return (
+                          <option value={i.id} key={i.id} disabled={available <= 0}>
+                            {i.product_name}
+                            {i.variant_label ? ` · ${i.variant_label}` : ''} · {available} adet
+                            talep hakkı
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </label>
+                )}
+                <div className={styles.twoCol}>
+                  <label>
+                    İşlem türü
+                    <select value={kind} onChange={(e) => setKind(e.target.value as ReturnKind)}>
+                      <option value="return">İade</option>
+                      <option value="exchange">Değişim</option>
+                    </select>
+                  </label>
+                  <label>
+                    Adet
+                    <input
+                      type="number"
+                      min={1}
+                      max={remaining || 1}
+                      required
+                      value={quantity}
+                      disabled={!item || !remaining}
+                      onChange={(e) => setQuantity(Number(e.target.value))}
+                    />
+                  </label>
+                </div>
                 <label>
-                  İşlem türü
-                  <select value={kind} onChange={(e) => setKind(e.target.value as ReturnKind)}>
-                    <option value="return">İade</option>
-                    <option value="exchange">Değişim</option>
+                  Talep nedeni
+                  <select
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value as ReturnReason)}
+                  >
+                    {Object.entries(RETURN_REASONS).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
                   </select>
                 </label>
                 <label>
-                  Adet
-                  <input
-                    type="number"
-                    min={1}
-                    max={remaining || 1}
+                  Açıklaman
+                  <textarea
                     required
-                    value={quantity}
-                    disabled={!item || !remaining}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
+                    rows={4}
+                    minLength={10}
+                    maxLength={1000}
+                    placeholder="Ürünün durumunu ve talebini en az 10 karakterle anlat."
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
                   />
                 </label>
-              </div>
-              <label>
-                Talep nedeni
-                <select value={reason} onChange={(e) => setReason(e.target.value as ReturnReason)}>
-                  {Object.entries(RETURN_REASONS).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Açıklaman
-                <textarea
-                  required
-                  rows={4}
-                  minLength={10}
-                  maxLength={1000}
-                  placeholder="Ürünün durumunu ve talebini en az 10 karakterle anlat."
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
-              </label>
-              <button
-                className="button button-primary"
-                disabled={working || !item || remaining < 1 || quantity > remaining || quantity < 1}
-                type="submit"
-              >
-                {working ? 'Gönderiliyor...' : 'Talep oluştur'}
-              </button>
-              <p className={styles.hint}>
-                Talep oluşturulması otomatik para iadesi veya değişim ürünü gönderimi anlamına
-                gelmez. Mağaza seninle iletişime geçer.
-              </p>
-            </form>
+                <button
+                  className="button button-primary"
+                  disabled={
+                    working || !item || remaining < 1 || quantity > remaining || quantity < 1
+                  }
+                  type="submit"
+                >
+                  {working ? 'Gönderiliyor...' : 'Talep oluştur'}
+                </button>
+                <p className={styles.hint}>
+                  Talep oluşturulması otomatik para iadesi veya değişim ürünü gönderimi anlamına
+                  gelmez. Mağaza seninle iletişime geçer.
+                </p>
+              </form>
+            </>
           )}
         </section>
         <section className={styles.card} aria-labelledby="my-returns">
@@ -241,9 +261,11 @@ export function CustomerReturns({ orders, requests, history, loadError }: Props)
                     <span className={styles.status}>{RETURN_STATUS[r.status]}</span>
                   </div>
                   <p>
-                    {line
-                      ? `${line.product_name}${line.variant_label ? ` · ${line.variant_label}` : ''}`
-                      : `Sipariş #${r.order_request_id.slice(0, 8)}`}
+                    {r.product_name
+                      ? `${r.product_name}${r.variant_label ? ` · ${r.variant_label}` : ''}`
+                      : line
+                        ? `${line.product_name}${line.variant_label ? ` · ${line.variant_label}` : ''}`
+                        : `Sipariş #${r.order_reference ?? r.order_request_id.slice(0, 8)}`}
                   </p>
                   <small>
                     {returnDate(r.created_at)} · {RETURN_REASONS[r.reason]}
@@ -272,6 +294,13 @@ export function CustomerReturns({ orders, requests, history, loadError }: Props)
               );
             })}
           </div>
+          <CustomerPagination
+            result={requestsMeta}
+            path="/hesabim/iade"
+            pageKey="requestsPage"
+            params={{ ordersPage: String(ordersMeta.page) }}
+            label="İade talebi sayfaları"
+          />
         </section>
       </div>
     </AccountSubpage>

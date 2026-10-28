@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import { useState } from 'react';
 import Link from 'next/link';
 import { Boxes, CirclePlus, Edit3, Package, Search, X } from 'lucide-react';
@@ -115,7 +116,8 @@ export function AdminProductList({
             )}
           </p>
           <p className={filterStyles.result}>
-            Alış maliyeti ve fark yalnızca yöneticilere gösterilir. Brüt fark; KDV, kargo, komisyon ve genel giderleri içermez.
+            Alış maliyeti ve fark yalnızca yöneticilere gösterilir. Brüt fark; KDV, kargo, komisyon
+            ve genel giderleri içermez.
           </p>
           <div className="admin-table-wrap">
             <table className="admin-table">
@@ -136,7 +138,11 @@ export function AdminProductList({
                     <td>
                       <div className="admin-product">
                         <span style={{ background: '#f2f3f6' }}>
-                          {p.imageUrl ? <img alt="" src={p.imageUrl} /> : <Package size={25} />}
+                          {p.imageUrl ? (
+                            <Image width={64} height={64} alt="" src={p.imageUrl} />
+                          ) : (
+                            <Package size={25} />
+                          )}
                         </span>
                         <strong>{p.name}</strong>
                       </div>
@@ -145,21 +151,33 @@ export function AdminProductList({
                       {p.has_variants && <small>Başlangıç </small>}
                       {formatPrice(Number(p.price))}
                     </td>
-                    <td>{p.has_variants ? <small>Varyant bazlı</small> : p.cost_price === null ? '—' : formatPrice(p.cost_price)}</td>
                     <td>
                       {p.has_variants ? (
                         <small>Varyant bazlı</small>
-                      ) : (() => {
-                        const estimate=estimateProductProfit(Number(p.price),p.cost_price);
-                        return estimate ? (
-                          <span title="KDV, kargo, komisyon ve işletme giderleri hariç; tahmini fark">
-                            {formatPrice(estimate.difference)}
-                            {estimate.marginPercent !== null && (
-                              <small> · %{estimate.marginPercent.toLocaleString('tr-TR')}</small>
-                            )}
-                          </span>
-                        ) : '—';
-                      })()}
+                      ) : p.cost_price === null ? (
+                        '—'
+                      ) : (
+                        formatPrice(p.cost_price)
+                      )}
+                    </td>
+                    <td>
+                      {p.has_variants ? (
+                        <small>Varyant bazlı</small>
+                      ) : (
+                        (() => {
+                          const estimate = estimateProductProfit(Number(p.price), p.cost_price);
+                          return estimate ? (
+                            <span title="KDV, kargo, komisyon ve işletme giderleri hariç; tahmini fark">
+                              {formatPrice(estimate.difference)}
+                              {estimate.marginPercent !== null && (
+                                <small> · %{estimate.marginPercent.toLocaleString('tr-TR')}</small>
+                              )}
+                            </span>
+                          ) : (
+                            '—'
+                          );
+                        })()
+                      )}
                     </td>
                     <td>
                       {p.stock_quantity} adet {p.has_variants && <small>(varyant)</small>}

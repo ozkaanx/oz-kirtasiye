@@ -1,5 +1,7 @@
 'use client';
 
+import { CustomerPagination } from './customer-pagination';
+import type { CustomerPage } from '@/lib/customer-pagination';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
@@ -21,7 +23,11 @@ import {
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 import { useShop } from '@/context/shop-context';
 import { formatPrice } from '@/lib/format';
-import { orderStatusPresentation, paymentStatusPresentation, type AccountTab } from '@/lib/account-ui';
+import {
+  orderStatusPresentation,
+  paymentStatusPresentation,
+  type AccountTab,
+} from '@/lib/account-ui';
 import type { CustomerAddress, CustomerOrder, CustomerProfile } from '@/lib/customer';
 import { AccountSidebar } from './account-sidebar';
 import styles from './customer-account.module.css';
@@ -41,6 +47,7 @@ const blankAddress: AddressFields = {
 };
 
 type Props = {
+  pagination: CustomerPage;
   initialTab: AccountTab;
   userId: string;
   email: string;
@@ -51,6 +58,7 @@ type Props = {
 };
 
 export function CustomerAccount({
+  pagination,
   initialTab,
   userId,
   email,
@@ -228,12 +236,19 @@ export function CustomerAccount({
 
   function repeatOrder(order: CustomerOrder) {
     // Current cart remains intact. Fresh stock/prices are checked by the existing cart flow.
-    const entries = order.order_request_items.filter(item => item.product_id && item.quantity > 0);
+    const entries = order.order_request_items.filter(
+      (item) => item.product_id && item.quantity > 0,
+    );
     if (!entries.length) {
       message('Bu siparişte yeniden eklenebilecek ürün bulunmuyor.');
       return;
     }
-    if (!window.confirm('Bu siparişteki ürünler mevcut sepetine eklensin mi? Güncel fiyat ve stok yeniden kontrol edilecek.')) return;
+    if (
+      !window.confirm(
+        'Bu siparişteki ürünler mevcut sepetine eklensin mi? Güncel fiyat ve stok yeniden kontrol edilecek.',
+      )
+    )
+      return;
     for (const item of entries.slice(0, 20)) {
       addToCart(item.product_id, Math.min(item.quantity, 99), item.variant_id);
     }
@@ -257,9 +272,16 @@ export function CustomerAccount({
       </div>
       <div className={styles.shell}>
         <AccountSidebar active={tab} onAccountTabChange={changeTab} disabled={busy} />
-        <div className={styles.panel} id="account-content-panel" role="region" aria-label="Hesap içeriği">
+        <div
+          className={styles.panel}
+          id="account-content-panel"
+          role="region"
+          aria-label="Hesap içeriği"
+        >
           {loadError && (
-            <p role="alert" className={styles.error}>{loadError}</p>
+            <p role="alert" className={styles.error}>
+              {loadError}
+            </p>
           )}
           {error && (
             <p role="alert" className={styles.error}>
@@ -274,24 +296,44 @@ export function CustomerAccount({
           {tab === 'overview' && (
             <>
               <div className={styles.quickGrid} role="group" aria-label="Hesap özeti">
-                <button type="button" disabled={busy} onClick={() => changeTab('orders')} className={styles.quickCard}>
-                  <span className={styles.quickIcon}><Package size={20} aria-hidden="true" /></span>
-                  <strong>{loadError ? '—' : initialOrders.length}</strong>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => changeTab('orders')}
+                  className={styles.quickCard}
+                >
+                  <span className={styles.quickIcon}>
+                    <Package size={20} aria-hidden="true" />
+                  </span>
+                  <strong>{loadError ? '—' : pagination.total}</strong>
                   <span>Son sipariş taleplerim</span>
                   <ArrowRight size={17} className={styles.quickArrow} aria-hidden="true" />
                 </button>
-                <button type="button" disabled={busy} onClick={() => changeTab('addresses')} className={styles.quickCard}>
-                  <span className={styles.quickIcon}><MapPin size={20} aria-hidden="true" /></span>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => changeTab('addresses')}
+                  className={styles.quickCard}
+                >
+                  <span className={styles.quickIcon}>
+                    <MapPin size={20} aria-hidden="true" />
+                  </span>
                   <strong>{loadError ? '—' : addresses.length}</strong>
                   <span>Kayıtlı adreslerim</span>
                   <ArrowRight size={17} className={styles.quickArrow} aria-hidden="true" />
                 </button>
               </div>
               <Link href="/hesabim/avantajlar" className={styles.benefitsBanner}>
-                <span className={styles.benefitsIcon}><BadgePercent size={25} aria-hidden="true" /></span>
+                <span className={styles.benefitsIcon}>
+                  <BadgePercent size={25} aria-hidden="true" />
+                </span>
                 <span className={styles.benefitsCopy}>
                   <strong>Avantajlarım ve kuponlarım</strong>
-                  <small>{couponCode ? `Sepetinde ${couponCode} kupon kodu kayıtlı. İndirimi kontrol et.` : 'Kuponlarını görüntüle, kodunu sepetine kaydet ve kullan.'}</small>
+                  <small>
+                    {couponCode
+                      ? `Sepetinde ${couponCode} kupon kodu kayıtlı. İndirimi kontrol et.`
+                      : 'Kuponlarını görüntüle, kodunu sepetine kaydet ve kullan.'}
+                  </small>
                 </span>
                 <ArrowRight size={19} aria-hidden="true" className={styles.benefitsArrow} />
               </Link>
@@ -311,29 +353,30 @@ export function CustomerAccount({
                 <div className={styles.formGrid}>
                   <label>
                     Ad soyad
-                  <input
-                    required
-                    minLength={3}
-                    maxLength={100}
-                    autoComplete="name"
-                    value={profile.full_name}
-                    onChange={(e) => setProfile((p) => ({ ...p, full_name: e.target.value }))}
-                  />
-                </label>
-                <label>
-                  Telefon
-                  <input
-                    type="tel"
-                    minLength={10}
-                    maxLength={20}
-                    autoComplete="tel"
-                    value={profile.phone}
-                    onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
-                  />
-                </label>
+                    <input
+                      required
+                      minLength={3}
+                      maxLength={100}
+                      autoComplete="name"
+                      value={profile.full_name}
+                      onChange={(e) => setProfile((p) => ({ ...p, full_name: e.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    Telefon
+                    <input
+                      type="tel"
+                      minLength={10}
+                      maxLength={20}
+                      autoComplete="tel"
+                      value={profile.phone}
+                      onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
+                    />
+                  </label>
                 </div>
                 <button type="submit" className="button button-primary" disabled={busy}>
-                  {busy ? 'Kaydediliyor...' : 'Bilgileri kaydet'} <Check size={17} aria-hidden="true" />
+                  {busy ? 'Kaydediliyor...' : 'Bilgileri kaydet'}{' '}
+                  <Check size={17} aria-hidden="true" />
                 </button>
               </form>
               <div className={styles.hint}>
@@ -377,100 +420,104 @@ export function CustomerAccount({
               {addressForm && (
                 <div className={styles.addressEditor}>
                   <h3>{editingId ? 'Adresi düzenle' : 'Yeni adres ekle'}</h3>
-                  <p className={styles.editorHint}>Teslimat sırasında kullanacağın adres bilgilerini doldur.</p>
+                  <p className={styles.editorHint}>
+                    Teslimat sırasında kullanacağın adres bilgilerini doldur.
+                  </p>
                   <form onSubmit={saveAddress} className={styles.form}>
-                  <div className={styles.formGrid}>
+                    <div className={styles.formGrid}>
+                      <label>
+                        Adres başlığı
+                        <input
+                          required
+                          maxLength={40}
+                          ref={addressTitleRef}
+                          value={addressForm.label}
+                          onChange={(e) =>
+                            setAddressForm((p) => p && { ...p, label: e.target.value })
+                          }
+                          placeholder="Ev / İş"
+                        />
+                      </label>
+                      <label>
+                        Alıcı adı soyadı
+                        <input
+                          required
+                          minLength={3}
+                          maxLength={100}
+                          autoComplete="name"
+                          value={addressForm.recipient_name}
+                          onChange={(e) =>
+                            setAddressForm((p) => p && { ...p, recipient_name: e.target.value })
+                          }
+                        />
+                      </label>
+                      <label>
+                        Telefon
+                        <input
+                          required
+                          type="tel"
+                          minLength={10}
+                          maxLength={20}
+                          value={addressForm.phone}
+                          onChange={(e) =>
+                            setAddressForm((p) => p && { ...p, phone: e.target.value })
+                          }
+                        />
+                      </label>
+                      <label>
+                        İl
+                        <input
+                          required
+                          minLength={2}
+                          maxLength={80}
+                          value={addressForm.city}
+                          onChange={(e) =>
+                            setAddressForm((p) => p && { ...p, city: e.target.value })
+                          }
+                        />
+                      </label>
+                      <label>
+                        İlçe
+                        <input
+                          required
+                          minLength={2}
+                          maxLength={80}
+                          value={addressForm.district}
+                          onChange={(e) =>
+                            setAddressForm((p) => p && { ...p, district: e.target.value })
+                          }
+                        />
+                      </label>
+                    </div>
                     <label>
-                      Adres başlığı
-                      <input
+                      Açık adres
+                      <textarea
                         required
-                        maxLength={40}
-                        ref={addressTitleRef}
-                         value={addressForm.label}
-                        onChange={(e) =>
-                          setAddressForm((p) => p && { ...p, label: e.target.value })
-                        }
-                        placeholder="Ev / İş"
-                      />
-                    </label>
-                    <label>
-                      Alıcı adı soyadı
-                      <input
-                        required
-                        minLength={3}
-                        maxLength={100}
-                        autoComplete="name"
-                        value={addressForm.recipient_name}
-                        onChange={(e) =>
-                          setAddressForm((p) => p && { ...p, recipient_name: e.target.value })
-                        }
-                      />
-                    </label>
-                    <label>
-                      Telefon
-                      <input
-                        required
-                        type="tel"
                         minLength={10}
-                        maxLength={20}
-                        value={addressForm.phone}
+                        maxLength={500}
+                        rows={3}
+                        value={addressForm.address}
                         onChange={(e) =>
-                          setAddressForm((p) => p && { ...p, phone: e.target.value })
+                          setAddressForm((p) => p && { ...p, address: e.target.value })
                         }
                       />
                     </label>
-                    <label>
-                      İl
-                      <input
-                        required
-                        minLength={2}
-                        maxLength={80}
-                        value={addressForm.city}
-                        onChange={(e) => setAddressForm((p) => p && { ...p, city: e.target.value })}
-                      />
-                    </label>
-                    <label>
-                      İlçe
-                      <input
-                        required
-                        minLength={2}
-                        maxLength={80}
-                        value={addressForm.district}
-                        onChange={(e) =>
-                          setAddressForm((p) => p && { ...p, district: e.target.value })
-                        }
-                      />
-                    </label>
-                  </div>
-                  <label>
-                    Açık adres
-                    <textarea
-                      required
-                      minLength={10}
-                      maxLength={500}
-                      rows={3}
-                      value={addressForm.address}
-                      onChange={(e) =>
-                        setAddressForm((p) => p && { ...p, address: e.target.value })
-                      }
-                    />
-                  </label>
-                  <div className={styles.actionRow}>
-                    <button type="submit" className="button button-primary" disabled={busy}>
-                      {busy ? 'Kaydediliyor...' : editingId ? 'Adres güncelle' : 'Adresi kaydet'}
-                    </button>
-                    <button
-                      type="button"
-                      className="button button-outline"
-                      disabled={busy}
-                      onClick={() => {
-                        setAddressForm(null);
-                        setEditingId(null);
-                      }}
-                    >
-                      Vazgeç
-                    </button>
-                  </div>
+                    <div className={styles.actionRow}>
+                      <button type="submit" className="button button-primary" disabled={busy}>
+                        {busy ? 'Kaydediliyor...' : editingId ? 'Adres güncelle' : 'Adresi kaydet'}
+                      </button>
+                      <button
+                        type="button"
+                        className="button button-outline"
+                        disabled={busy}
+                        onClick={() => {
+                          setAddressForm(null);
+                          setEditingId(null);
+                        }}
+                      >
+                        Vazgeç
+                      </button>
+                    </div>
                   </form>
                 </div>
               )}
@@ -530,7 +577,10 @@ export function CustomerAccount({
               <div className={styles.sectionTop}>
                 <div>
                   <h2>Sipariş taleplerim</h2>
-                  <p>Üye olarak verdiğin sipariş taleplerinin son 30 kaydı.</p>
+                  <p>
+                    Üye olarak verdiğin tüm sipariş taleplerini sayfalar arasında gezerek
+                    inceleyebilirsin.
+                  </p>
                 </div>
                 <Package size={25} />
               </div>
@@ -563,20 +613,31 @@ export function CustomerAccount({
                               })}
                             </small>
                           </span>
-                          <span className={styles.status} data-tone={orderStatusPresentation(order.status).tone}>
+                          <span
+                            className={styles.status}
+                            data-tone={orderStatusPresentation(order.status).tone}
+                          >
                             {orderStatusPresentation(order.status).label}
                           </span>
                         </span>
                         <span className={styles.orderSummaryEnd}>
                           <strong>{formatPrice(Number(order.total))}</strong>
-                          <ChevronDown size={20} className={styles.orderChevron} aria-hidden="true" />
+                          <ChevronDown
+                            size={20}
+                            className={styles.orderChevron}
+                            aria-hidden="true"
+                          />
                         </span>
                       </summary>
                       <div className={styles.orderExpanded}>
                         <OrderJourney order={order} />
-                        {order.order_request_items.some(item => item.product_id) && (
+                        {order.order_request_items.some((item) => item.product_id) && (
                           <div className={styles.repeatActions}>
-                            <button type="button" className="button button-outline" onClick={() => repeatOrder(order)}>
+                            <button
+                              type="button"
+                              className="button button-outline"
+                              onClick={() => repeatOrder(order)}
+                            >
                               <ShoppingBag size={16} /> Yeniden sepete ekle
                             </button>
                           </div>
@@ -586,7 +647,8 @@ export function CustomerAccount({
                             <div key={`${order.id}-${lineIndex}`}>
                               <span>
                                 {line.product_name}
-                                {line.variant_label ? ` — ${line.variant_label}` : ''} × {line.quantity}
+                                {line.variant_label ? ` — ${line.variant_label}` : ''} ×{' '}
+                                {line.quantity}
                               </span>
                               <b>{formatPrice(Number(line.line_total))}</b>
                             </div>
@@ -603,7 +665,10 @@ export function CustomerAccount({
                         <div className={styles.orderFooter}>
                           <small className={styles.paymentDescription}>
                             {order.delivery_method === 'pickup' ? 'Mağazadan teslim' : 'Kargo'}
-                            <span className={styles.paymentStatus} data-tone={paymentStatusPresentation(order.payment_status).tone}>
+                            <span
+                              className={styles.paymentStatus}
+                              data-tone={paymentStatusPresentation(order.payment_status).tone}
+                            >
                               {paymentStatusPresentation(order.payment_status).label}
                             </span>
                           </small>
@@ -621,6 +686,12 @@ export function CustomerAccount({
                   </article>
                 ))}
               </div>
+              <CustomerPagination
+                result={pagination}
+                path="/hesabim"
+                params={{ tab: 'orders' }}
+                label="Sipariş sayfaları"
+              />
             </>
           )}
         </div>

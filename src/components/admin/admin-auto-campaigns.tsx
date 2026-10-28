@@ -1,5 +1,6 @@
 'use client';
 
+import { CampaignProductPicker } from './campaign-product-picker';
 import { useMemo, useState, type FormEvent } from 'react';
 
 import { useClock } from '@/lib/use-clock';
@@ -13,6 +14,7 @@ import styles from './admin-coupons.module.css';
 type Scope = 'order' | 'category' | 'product';
 type DiscountType = 'percent' | 'fixed';
 export type AutoCampaign = {
+  target_name?: string;
   id: string;
   name: string;
   scope: Scope;
@@ -40,12 +42,10 @@ const showDate = (value: string | null) =>
 export function AdminAutoCampaigns({
   campaigns,
   categories,
-  products,
   loadError,
 }: {
   campaigns: AutoCampaign[];
   categories: Target[];
-  products: Target[];
   loadError: string | null;
 }) {
   const router = useRouter();
@@ -64,7 +64,7 @@ export function AdminAutoCampaigns({
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [search, setSearch] = useState('');
-  const options = scope === 'category' ? categories : products;
+  const options = categories;
   const visible = useMemo(
     () =>
       campaigns.filter((c) =>
@@ -75,9 +75,7 @@ export function AdminAutoCampaigns({
   const targetName = (c: AutoCampaign) =>
     c.scope === 'order'
       ? 'Tüm sepet'
-      : ((c.scope === 'category'
-          ? categories.find((t) => t.id === c.category_id)?.name
-          : products.find((t) => t.id === c.product_id)?.name) ?? 'Bilinmiyor');
+      : (c.target_name ?? categories.find((t) => t.id === c.category_id)?.name ?? 'Bilinmiyor');
 
   async function create(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -91,7 +89,8 @@ export function AdminAutoCampaigns({
     if (
       name.trim().length < 3 ||
       name.trim().length > 100 ||
-      (scope !== 'order' && !options.some((t) => t.id === target))
+      (scope === 'category' && !categories.some((t) => t.id === target)) ||
+      (scope === 'product' && !/^[0-9a-f-]{36}$/i.test(target))
     ) {
       setError('Kampanya adı ve hedef seçimini kontrol et.');
       return;
@@ -229,9 +228,10 @@ export function AdminAutoCampaigns({
                   <option value="order">Tüm sepet</option>
                 </select>
               </label>
-              {scope !== 'order' && (
+              {scope === 'product' && <CampaignProductPicker value={target} onChange={setTarget} />}
+              {scope === 'category' && (
                 <label>
-                  {scope === 'category' ? 'Kategori' : 'Ürün'}
+                  Kategori
                   <select required value={target} onChange={(e) => setTarget(e.target.value)}>
                     <option value="">Seçiniz</option>
                     {options.map((o) => (

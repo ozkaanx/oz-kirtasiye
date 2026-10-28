@@ -3333,13 +3333,28 @@ a:focus-visible {
     min-width: 44px;
     height: 44px;
   }
-  .header-main .header-actions { gap: 2px; }
-  .header-main { gap: 4px; }
-  .header-main .brand { min-width: 0; }
-  .cart-drawer { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
-  .cart-line-controls .quantity-picker { height: 44px; }
-  .cart-line-controls .quantity-picker button { width: 40px; }
-  .cart-line-controls .remove-line { width: 44px; height: 44px; }
+  .header-main .header-actions {
+    gap: 2px;
+  }
+  .header-main {
+    gap: 4px;
+  }
+  .header-main .brand {
+    min-width: 0;
+  }
+  .cart-drawer {
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+  .cart-line-controls .quantity-picker {
+    height: 44px;
+  }
+  .cart-line-controls .quantity-picker button {
+    width: 40px;
+  }
+  .cart-line-controls .remove-line {
+    width: 44px;
+    height: 44px;
+  }
 }
 .live-card-buy .button svg {
   width: 15px;
@@ -4738,4 +4753,24 @@ a:focus-visible {
     justify-self: start;
     margin-top: 2px;
   }
+}
+
+.admin-native-dialog {
+  border: 0;
+  margin: auto;
+  max-width: calc(100vw - 32px);
+}
+.admin-native-dialog::backdrop {
+  background: #121a2780;
+}
+.admin-native-dialog:not([open]) {
+  display: none;
+}
+.customer-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 24px 0;
 }
