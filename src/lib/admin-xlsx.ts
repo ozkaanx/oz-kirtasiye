@@ -155,7 +155,7 @@ export function parseXlsxFirstSheet(bytes:Buffer):string[][] {
       const type=attribute(attr,'t');
       const matchValue=body.match(/<v(?:\s[^>]*)?>([\s\S]*?)<\/v>/);
       const raw=matchValue?xmlText(matchValue[1]):'';
-      let value=type==='s' ? sharedStrings[Number(raw)] : type==='inlineStr' ? textNodes(body) : raw;
+      const value=type==='s' ? sharedStrings[Number(raw)] : type==='inlineStr' ? textNodes(body) : raw;
       if(type==='e') throw new Error('Excel formül/hücre hatası içeriyor.');
       if(value===undefined) throw new Error('XLSX metin indeksi geçersiz.');
       cells[idx]=value;
