@@ -200,7 +200,7 @@ export function AdminCategories({ categories, productCounts, loadError }: Props)
           </div>
           <div>
             <Check size={22} />
-            <strong>{categories.filter((c) => c.is_active).length}</strong>
+            <strong>{productCounts ? categories.filter((c) => c.is_active).length : '—'}</strong>
             <span>Aktif kategori</span>
           </div>
           <div>
