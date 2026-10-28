@@ -55,6 +55,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  position: sticky;
+  top: 20px;
 }
 .tab,
 .shopLink {
@@ -70,7 +72,13 @@
   color: #515966;
   font-size: 14px;
   font-weight: 700;
+  min-height: 46px;
+  line-height: 1.35;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color .15s, color .15s;
 }
+.tab:disabled { cursor: progress; opacity: .7; }
 .tab:hover,
 .shopLink:hover {
   background: #f5f6f8;
@@ -271,7 +279,10 @@
   color: #525d69;
   font-size: 12px;
   font-weight: 750;
-  padding: 3px 0;
+  padding: 9px 6px;
+  min-height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -497,18 +508,33 @@
     grid-template-columns: 1fr;
   }
   .tabs {
+    position: static;
     flex-direction: row;
-    flex-wrap: wrap;
-    gap: 6px;
+    flex-wrap: nowrap;
+    gap: 4px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    padding: 8px;
   }
   .tab {
     width: auto;
-    flex: 1 1 auto;
+    min-width: max-content;
+    flex: 0 0 auto;
     justify-content: center;
-    padding: 12px;
+    padding: 12px 14px;
+    white-space: nowrap;
   }
   .shopLink {
-    display: none;
+    display: inline-flex;
+    flex: 0 0 auto;
+    width: auto;
+    margin: 0;
+    min-height: 44px;
+    padding: 12px;
+    border-top: 0;
+    border-radius: 10px;
   }
   .panel {
     padding: 18px;
@@ -566,3 +592,72 @@
     flex-wrap: wrap;
   }
 }
+
+/* Account overview: compact actions and visible hierarchy. */
+.page{min-width:0}
+.pageHeader>div{min-width:0}
+.panel{box-shadow:0 9px 30px rgba(29,35,50,.025)}
+.menuHint{margin-left:auto;color:#b9472b;font-size:10px;font-weight:850;background:#fff0e8;border-radius:999px;padding:4px 7px;white-space:nowrap}
+.tabs .tab:focus-visible,.tabs .shopLink:focus-visible,.logout:focus-visible,.actionButton:focus-visible,.cardActions button:focus-visible,.quickCard:focus-visible,.benefitsBanner:focus-visible,.hint button:focus-visible{outline:3px solid #ff987c;outline-offset:2px}
+.quickGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-bottom:16px}
+.quickCard{position:relative;display:grid;justify-items:start;align-content:start;gap:6px;text-align:left;border:1px solid #e8e9ee;background:#fff;border-radius:15px;padding:19px;min-width:0;cursor:pointer;transition:border-color .15s,background-color .15s}
+.quickCard:hover{border-color:#efc4b1;background:#fffaf7}
+.quickIcon{display:grid;place-items:center;color:#db5b36;background:#fff0e8;border-radius:11px;width:38px;height:38px;margin-bottom:4px}
+.quickCard strong{font-size:26px;line-height:1.2;color:#232933;font-weight:900}
+.quickCard>span:not(.quickIcon){font-size:12px;color:#677482;line-height:1.45;font-weight:650}
+.quickArrow{position:absolute;right:17px;top:22px;color:#bd6c52}
+.benefitsBanner{display:flex;align-items:center;gap:14px;min-width:0;color:#303039;text-decoration:none;background:linear-gradient(120deg,#fff3eb,#fffcf8);border:1px solid #f6d7c4;padding:18px 20px;border-radius:15px;margin-bottom:27px}
+.benefitsBanner:hover{border-color:#eeb595}
+.benefitsIcon{display:grid;place-items:center;flex:none;width:47px;height:47px;border-radius:12px;background:#fff;color:#e35c39}
+.benefitsCopy{display:grid;gap:4px;min-width:0}
+.benefitsCopy strong{font-size:15px}
+.benefitsCopy small{font-size:12px;color:#735d53;line-height:1.55;overflow-wrap:anywhere}
+.benefitsArrow{flex:none;margin-left:auto;color:#bd5936}
+.profileForm{max-width:720px}
+.addressEditor{background:#fbfcfd;border:1px solid #e5e8ed;border-radius:15px;padding:23px;margin-bottom:20px}
+.addressEditor h3{font-size:18px;color:#272e39;letter-spacing:-.3px;margin:0 0 5px}
+.editorHint{font-size:13px;color:#697582;line-height:1.5;margin:0 0 18px}
+.cardActions button:hover{background:#fff2eb}
+.cardActions button:disabled{opacity:.5;cursor:not-allowed}
+.status[data-tone="success"],.paymentStatus[data-tone="success"]{color:#1c7248;background:#eaf7ef}
+.status[data-tone="warning"],.paymentStatus[data-tone="warning"]{color:#9d581c;background:#fff3dc}
+.status[data-tone="danger"],.paymentStatus[data-tone="danger"]{color:#a43d39;background:#fff0ef}
+.status[data-tone="neutral"],.paymentStatus[data-tone="neutral"]{color:#596879;background:#f0f3f6}
+.repeatActions{display:flex;justify-content:flex-end;gap:8px;margin:12px 0}
+.repeatActions .button{min-height:40px}
+.paymentDescription{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.paymentStatus{display:inline-flex;align-items:center;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:800;line-height:1.4}
+.orderDiscount{font-size:12px;color:#24754d;margin:10px 0}
+.invoiceNote{font-size:12px;color:#687683;line-height:1.5;margin:11px 0 0;overflow-wrap:anywhere}
+.orderItems div{align-items:flex-start}
+.orderItems b{white-space:nowrap}
+.addressCard,.orderCard{background:#fff}
+.addressCard:hover,.orderCard:hover{border-color:#d8dde6}
+@media(max-width:1100px){.addressList{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:730px){
+  .pageHeader{margin-bottom:20px}
+  .shell{gap:14px}
+  .sectionTop{margin-bottom:20px}
+  .cardActions{gap:8px 12px}
+  .cardActions button{min-height:42px}
+  .addressEditor{padding:18px}
+  .repeatActions{justify-content:stretch}
+  .repeatActions .button{width:100%}
+}
+@media(max-width:470px){
+  .quickGrid{gap:9px}
+  .quickCard{padding:13px}
+  .quickCard strong{font-size:22px}
+  .quickCard>span:not(.quickIcon){font-size:11px}
+  .quickArrow{top:17px;right:12px}
+  .benefitsBanner{padding:14px;gap:10px}
+  .benefitsIcon{width:38px;height:38px}
+  .benefitsCopy strong{font-size:13px}
+  .benefitsArrow{width:16px}
+  .panel{padding:15px}
+  .orderItems div{flex-wrap:wrap;gap:4px}
+  .orderItems b{margin-left:auto}
+  .orderHeading strong{overflow-wrap:anywhere}
+  .logout{min-height:44px}
+}
+@media(prefers-reduced-motion:reduce){.quickCard,.tab,.benefitsBanner{transition:none}}
