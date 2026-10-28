@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { formatPrice } from '@/lib/format';
+import { ORDER_STATUS_LABELS } from '@/lib/admin-orders';
 import styles from './admin-reports.module.css';
 
 type ReportData = {
@@ -12,15 +13,7 @@ type ReportData = {
   statuses: { status: string; count: number }[];
   products: { name: string; quantity: number }[];
 };
-const labels: Record<string, string> = {
-  new: 'Yeni',
-  contacted: 'Görüşüldü',
-  processing: 'Hazırlanıyor',
-  shipped: 'Kargoda',
-  delivered: 'Teslim edildi',
-  completed: 'Tamamlandı',
-  cancelled: 'İptal',
-};
+
 
 export function AdminReports({
   period,
@@ -122,7 +115,7 @@ export function AdminReports({
               {data.statuses.length ? (
                 data.statuses.map((s) => (
                   <div key={s.status} className={styles.line}>
-                    <span>{labels[s.status] ?? s.status}</span>
+                    <span>{ORDER_STATUS_LABELS[s.status as keyof typeof ORDER_STATUS_LABELS] ?? s.status}</span>
                     <strong>{s.count}</strong>
                   </div>
                 ))
