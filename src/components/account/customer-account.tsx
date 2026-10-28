@@ -5,26 +5,23 @@ import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
-  Bell,
   BadgePercent,
   Check,
   Home,
   LogOut,
   MapPin,
   Package,
-  RotateCcw,
   Pencil,
   Plus,
   ShoppingBag,
   Trash2,
-  UserRound,
 } from 'lucide-react';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 import { useShop } from '@/context/shop-context';
 import { formatPrice } from '@/lib/format';
 import { orderStatusPresentation, paymentStatusPresentation, type AccountTab } from '@/lib/account-ui';
 import type { CustomerAddress, CustomerOrder, CustomerProfile } from '@/lib/customer';
-import { NotificationUnreadBadge } from '@/components/notifications/unread-badge';
+import { AccountSidebar } from './account-sidebar';
 import styles from './customer-account.module.css';
 import { OrderJourney } from './order-journey';
 
@@ -257,45 +254,7 @@ export function CustomerAccount({
         </button>
       </div>
       <div className={styles.shell}>
-        <nav className={styles.tabs} aria-label="Hesap menüsü">
-          {(
-            [
-              { id: 'overview', label: 'Profilim', icon: UserRound },
-              { id: 'addresses', label: 'Adreslerim', icon: MapPin },
-              { id: 'orders', label: 'Siparişlerim', icon: Package },
-            ] as const
-          ).map(({ id, label, icon: Icon }) => (
-            <button
-              type="button"
-              key={id}
-              className={`${styles.tab} ${tab === id ? styles.active : ''}`}
-              aria-pressed={tab === id}
-              aria-controls="account-content-panel"
-              disabled={busy}
-              onClick={() => changeTab(id)}
-            >
-              <Icon size={18} aria-hidden="true" />
-              <span>{label}</span>
-            </button>
-          ))}
-          <Link href="/hesabim/avantajlar" className={styles.tab}>
-            <BadgePercent size={18} aria-hidden="true" />
-            <span>Avantajlarım</span>
-            {couponCode && <span className={styles.menuHint}>Kod var</span>}
-          </Link>
-          <Link href="/hesabim/iade" className={styles.tab}>
-            <RotateCcw size={18} aria-hidden="true" />
-            <span>İade ve değişim</span>
-          </Link>
-          <Link href="/hesabim/bildirimler" className={styles.tab}>
-            <Bell size={18} aria-hidden="true" />
-            <span>Bildirimler</span>
-            <NotificationUnreadBadge audience="customer" />
-          </Link>
-          <Link href="/urunler" className={styles.shopLink}>
-            Alışverişe dön <ArrowRight size={16} />
-          </Link>
-        </nav>
+        <AccountSidebar active={tab} onAccountTabChange={changeTab} disabled={busy} />
         <div className={styles.panel} id="account-content-panel" role="region" aria-label="Hesap içeriği">
           {loadError && (
             <p role="alert" className={styles.error}>{loadError}</p>
