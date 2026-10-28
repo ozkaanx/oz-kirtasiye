@@ -9,6 +9,7 @@ export type Product = {
   sku: string | null;
   price: number;
   compare_at_price: number | null;
+  cost_price: number | null;
   stock_quantity: number;
   has_variants: boolean;
   low_stock_threshold: number;
@@ -35,6 +36,7 @@ export type ProductForm = {
   sku: string;
   price: string;
   compare_at_price: string;
+  cost_price: string;
   stock_quantity: string;
   low_stock_threshold: string;
   is_active: boolean;
