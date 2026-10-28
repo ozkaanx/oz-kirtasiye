@@ -16,7 +16,6 @@ import { LiveProductCard } from '@/components/product/live-product-card';
 import {
   categoryArtwork,
   categoryColor,
-  descendantIds,
   type StoreCategory,
 } from '@/lib/category-utils';
 import type { LiveProduct } from '@/lib/real-catalog';
@@ -45,31 +44,16 @@ const campaignCards = [
   },
 ];
 
-type Props = { liveProducts: LiveProduct[]; categories: StoreCategory[] };
+type Props = {
+  featuredByCategory: Record<string, LiveProduct[]>;
+  newestProducts: LiveProduct[];
+  categories: StoreCategory[];
+};
 
-function getFeaturedProducts(activeCategory: string, categories: StoreCategory[], liveProducts: LiveProduct[]) {
-    const category = categories.find((item) => item.slug === activeCategory);
-    const ids = category ? descendantIds(categories, category.id) : null;
-    const list = liveProducts.filter(
-      (product) => !ids || (product.category_id && ids.has(product.category_id)),
-    );
-    return list
-      .sort(
-        (a, b) =>
-          Number(b.is_featured) - Number(a.is_featured) || b.created_at.localeCompare(a.created_at),
-      )
-      .slice(0, 8);
-
-}
-
-export function HomeStorefront({ liveProducts, categories }: Props) {
+export function HomeStorefront({ featuredByCategory, newestProducts, categories }: Props) {
   const [activeCategory, setActiveCategory] = useState('all');
   const topCategories = categories.filter((category) => !category.parent_id).slice(0, 6);
-  const featuredProducts = getFeaturedProducts(activeCategory, categories, liveProducts);
-
-  const newestProducts = [...liveProducts]
-    .sort((a, b) => b.created_at.localeCompare(a.created_at))
-    .slice(0, 4);
+  const featuredProducts = featuredByCategory[activeCategory] ?? [];
 
   return (
     <>

@@ -19,6 +19,7 @@ type ShopContextValue = {
   cartLoading: boolean;
   cartError: string;
   favorites: string[];
+  favoritesReady: boolean;
   couponCode: string;
   setCouponCode: (code: string) => void;
   cartFeedback: CartFeedback | null;
@@ -217,6 +218,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         cartLoading,
         cartError,
         favorites,
+        favoritesReady: loaded,
         couponCode,
         setCouponCode,
         cartFeedback,
