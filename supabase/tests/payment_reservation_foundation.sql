@@ -30,6 +30,8 @@ insert into public.products(id,slug,name,price,stock_quantity,is_active) values
 insert into public.product_variants(id,product_id,color,size,price,stock_quantity,is_active) values
 ('93000000-0000-0000-0000-000000000001','92000000-0000-0000-0000-000000000002','Mavi','M',80,4,true);
 
+update public.store_settings set pickup_enabled=true where id=1;
+update public.automatic_campaigns set is_active=false;
 insert into public.coupons(id,code,label,discount_type,discount_value)
   values('94000000-0000-0000-0000-000000000001','PAYTEST','Payment coupon','fixed',20);
 insert into public.order_requests
@@ -144,7 +146,11 @@ select pg_temp.assert_true(
     and o.status<>'cancelled'),
  'failed payment no longer consumes coupon usage quota');
 select pg_temp.assert_true(
- (select amount=20 from private.coupon_discount('PAYTEST',280,'05551110001',null,false)),
+ (select discount_amount=20 from public.quote_order_savings(
+    '[{"productId":"92000000-0000-0000-0000-000000000001","quantity":2},
+      {"productId":"92000000-0000-0000-0000-000000000002",
+       "variantId":"93000000-0000-0000-0000-000000000001","quantity":1}]',
+    'pickup','PAYTEST','05551110001',null)),
  'released coupon becomes usable again for the same customer');
 
 select pg_temp.assert_true(
