@@ -1,3 +1,8 @@
+import {
+  customerPageNumber,
+  customerPageMeta,
+  CUSTOMER_PAGE_SIZE,
+} from '@/lib/customer-pagination';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createServerSupabase } from '@/lib/supabase/server';
@@ -11,9 +16,9 @@ export const dynamic = 'force-dynamic';
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string | string[] }>;
+  searchParams: Promise<{ tab?: string | string[]; page?: string | string[] }>;
 }) {
-  const { tab } = await searchParams;
+  const { tab, page } = await searchParams;
   const initialTab = parseAccountTab(tab);
   const supabase = await createServerSupabase();
   const {
@@ -22,6 +27,11 @@ export default async function AccountPage({
   } = await supabase.auth.getUser();
   if (error || !user) redirect('/giris?next=%2Fhesabim');
 
+  const countResult = await supabase
+    .from('order_requests')
+    .select('id', { count: 'exact', head: true })
+    .eq('customer_user_id', user.id);
+  const pagination = customerPageMeta(countResult.count ?? 0, customerPageNumber(page));
   const [profileResult, addressesResult, ordersResult] = await Promise.all([
     supabase
       .from('customer_profiles')
@@ -40,7 +50,8 @@ export default async function AccountPage({
       )
       .eq('customer_user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(30),
+      .order('id', { ascending: false })
+      .range((pagination.page - 1) * CUSTOMER_PAGE_SIZE, pagination.page * CUSTOMER_PAGE_SIZE - 1),
   ]);
   // Supabase returns the nested invoice relation as an array in this query.
   // Normalize it once for the account UI rather than asserting an incompatible type.
@@ -86,6 +97,8 @@ export default async function AccountPage({
 
   return (
     <CustomerAccount
+      key={initialTab}
+      pagination={pagination}
       initialTab={initialTab}
       userId={user.id}
       email={user.email ?? ''}
@@ -100,7 +113,7 @@ export default async function AccountPage({
       initialAddresses={(addressesResult.data ?? []) as CustomerAddress[]}
       initialOrders={customerOrders}
       loadError={
-        profileResult.error || addressesResult.error || ordersResult.error
+        countResult.error || profileResult.error || addressesResult.error || ordersResult.error
           ? 'Bazı hesap bilgileri yüklenemedi. Yenileyip tekrar deneyin.'
           : undefined
       }

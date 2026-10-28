@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, Plus, ArrowUpRight } from 'lucide-react';
+import { Heart, Plus } from 'lucide-react';
 import { useShop } from '@/context/shop-context';
 import { categories } from '@/data/catalog';
 import { formatPrice } from '@/lib/format';

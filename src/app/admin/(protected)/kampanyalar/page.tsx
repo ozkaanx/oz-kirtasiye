@@ -22,8 +22,8 @@ export default async function CampaignsPage() {
       )
       .order('created_at', { ascending: false })
       .limit(500),
-    db.from('categories').select('id,name').eq('is_active', true).order('name').limit(500),
-    db.from('products').select('id,name').eq('is_active', true).order('name').limit(2000),
+    db.rpc('admin_category_catalog'),
+    db.from('automatic_campaigns').select('products(id,name)').not('product_id', 'is', null),
   ]);
   const campaigns: AutoCampaign[] = (campaignRes.data ?? []).map((row) => ({
     ...row,
@@ -36,8 +36,16 @@ export default async function CampaignsPage() {
   return (
     <AdminAutoCampaigns
       campaigns={campaigns}
-      categories={(categoryRes.data ?? []) as Target[]}
-      products={(productRes.data ?? []) as Target[]}
+      categories={
+        (categoryRes.data?.categories ?? []).filter(
+          (c: { is_active: boolean }) => c.is_active,
+        ) as Target[]
+      }
+      products={
+        (productRes.data ?? []).flatMap((row) =>
+          row.products ? [row.products] : [],
+        ) as unknown as Target[]
+      }
       loadError={
         campaignRes.error?.message ??
         categoryRes.error?.message ??

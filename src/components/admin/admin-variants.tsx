@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 
 import { type FormEvent, useState } from 'react';
 
@@ -328,7 +329,11 @@ export function AdminVariants({
                     <tr key={v.id}>
                       <td>
                         <div className={styles.variantName}>
-                          {v.imageUrl ? <img src={v.imageUrl} alt="" /> : <Package size={22} />}
+                          {v.imageUrl ? (
+                            <Image width={64} height={64} src={v.imageUrl} alt="" />
+                          ) : (
+                            <Package size={22} />
+                          )}
                           <div>
                             <strong>{[v.color, v.size].filter(Boolean).join(' / ')}</strong>
                             <small>{v.sku ?? 'SKU yok'}</small>

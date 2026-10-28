@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Package } from 'lucide-react';
 import { cartLineKey, type CartLine, type CartProduct } from '@/lib/cart-types';
@@ -30,7 +31,7 @@ export function CheckoutSummary({ cart, products, cartLoading, method, pricing, 
         return (
           <div key={cartLineKey(line.productId, line.variantId)} className="checkout-summary-line">
             {product?.imageUrl ? (
-              <img src={product.imageUrl} alt="" />
+              <Image width={64} height={64} src={product.imageUrl} alt="" />
             ) : (
               <Package size={31} color="#9ba3ae" />
             )}
