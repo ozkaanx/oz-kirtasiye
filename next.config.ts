@@ -13,6 +13,12 @@ const storageUrl = (() => {
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Allow the explicitly trusted LAN hostname when testing next dev on a phone.
+  // Add LOCAL_DEV_HOST to .env.local if your computer receives a new IP address.
+  allowedDevOrigins:
+    process.env.NODE_ENV === 'development'
+      ? [process.env.LOCAL_DEV_HOST?.trim() || '192.168.1.131']
+      : [],
   images: {
     remotePatterns: storageUrl
       ? [
