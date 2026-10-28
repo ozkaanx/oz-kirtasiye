@@ -1,10 +1,17 @@
 import type { Metadata } from 'next';
+import { absoluteStoreUrl } from '@/lib/seo';
 import Link from 'next/link';
 import { ArrowRight, Clock3, Mail, MapPin, Phone } from 'lucide-react';
 import { getStoreSettings } from '@/lib/store-settings';
 import { supportPhoneHref } from '@/lib/store-profile';
 
-export const metadata: Metadata = { title: 'İletişim' };
+const description = 'Öz Kırtasiye Bağcılar Güneşli mağaza bilgileri, adresi ve iletişim kanallarına ulaşın.';
+export const metadata: Metadata = {
+  title: 'İletişim',
+  description,
+  ...(absoluteStoreUrl('/iletisim') ? { alternates: { canonical: '/iletisim' } } : {}),
+  openGraph: { title: 'İletişim', description, type: 'website' },
+};
 export const dynamic = 'force-dynamic';
 
 export default async function ContactPage() {
