@@ -83,7 +83,7 @@ export function validateStockAdjustment(
 export function validateCostPrice(input: string): Result<number | null> {
   if (!input.trim()) return {ok:true,value:null};
   const value=input.trim().replace(',','.');
-  if (!/^(?:\\d+(?:\\.\\d{1,2})?)$/.test(value))
+  if (!/^(?:\d+(?:\.\d{1,2})?)$/.test(value))
     return {ok:false,error:'Alış maliyeti en fazla iki ondalık basamaklı olmalı.'};
   const cost=Number(value);
   if (!Number.isFinite(cost) || cost<0 || cost>MAX_CATALOG_PRICE)
