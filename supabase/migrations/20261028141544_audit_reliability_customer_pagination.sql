@@ -141,10 +141,14 @@ begin
     )) order by o.created_at desc,o.id desc),'[]'::jsonb) into v_orders
   from (select id,reference,status,created_at from public.order_requests where customer_user_id=v_uid
     and status in ('delivered','completed') order by created_at desc,id desc limit 20 offset (v_op-1)*20) o;
-  select coalesce(jsonb_agg(to_jsonb(r) order by r.created_at desc,r.id desc),'[]'::jsonb) into v_requests
+  select coalesce(jsonb_agg(to_jsonb(r)||jsonb_build_object('order_reference',o.reference,
+    'product_name',i.product_name,'variant_label',i.variant_label)
+    order by r.created_at desc,r.id desc),'[]'::jsonb) into v_requests
   from (select id,order_request_id,order_item_id,quantity,request_type,reason,customer_note,status,
     admin_note,condition_on_receipt,restocked_quantity,received_at,created_at from public.order_return_requests
-    where customer_user_id=v_uid order by created_at desc,id desc limit 20 offset (v_rp-1)*20) r;
+    where customer_user_id=v_uid order by created_at desc,id desc limit 20 offset (v_rp-1)*20) r
+    join public.order_requests o on o.id=r.order_request_id
+    join public.order_request_items i on i.id=r.order_item_id;
   select coalesce(jsonb_agg(to_jsonb(h) order by h.created_at,h.id),'[]'::jsonb) into v_history
   from (select id,return_request_id,from_status,to_status,note,created_at from public.order_return_status_history
     where return_request_id in (select (value->>'id')::uuid from jsonb_array_elements(v_requests))) h;

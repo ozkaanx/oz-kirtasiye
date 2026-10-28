@@ -264,9 +264,11 @@ export function CustomerReturns({
                     <span className={styles.status}>{RETURN_STATUS[r.status]}</span>
                   </div>
                   <p>
-                    {line
-                      ? `${line.product_name}${line.variant_label ? ` · ${line.variant_label}` : ''}`
-                      : `Sipariş #${r.order_request_id.slice(0, 8)}`}
+                    {r.product_name
+                      ? `${r.product_name}${r.variant_label ? ` · ${r.variant_label}` : ''}`
+                      : line
+                        ? `${line.product_name}${line.variant_label ? ` · ${line.variant_label}` : ''}`
+                        : `Sipariş #${r.order_reference ?? r.order_request_id.slice(0, 8)}`}
                   </p>
                   <small>
                     {returnDate(r.created_at)} · {RETURN_REASONS[r.reason]}
