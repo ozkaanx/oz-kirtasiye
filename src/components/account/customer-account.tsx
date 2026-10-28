@@ -16,6 +16,7 @@ import {
   Plus,
   ShoppingBag,
   Trash2,
+  UserRound,
 } from 'lucide-react';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 import { useShop } from '@/context/shop-context';
@@ -549,7 +550,7 @@ export function CustomerAccount({
               <div className={styles.orderList}>
                 {initialOrders.map((order, index) => (
                   <article className={styles.orderCard} key={order.id}>
-                    <details className={styles.orderAccordion} defaultOpen={index === 0}>
+                    <details className={styles.orderAccordion} open={index === 0}>
                       <summary className={styles.orderSummary}>
                         <div className={styles.orderHeading}>
                       <div>
