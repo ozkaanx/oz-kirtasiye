@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { deflateRawSync } from 'node:zlib';
 import {
   parseDelimitedTable, normalizeImportTable, MAX_IMPORT_ROWS, IMPORT_TEMPLATE_CSV,
 } from '../src/lib/admin-bulk-import.ts';
@@ -65,29 +66,32 @@ function crc32(bytes) {
   }
   return (crc^0xffffffff)>>>0;
 }
-function makeZip(files) {
+function makeZip(files, compressed=false) {
   const locals=[],centrals=[];
   let offset=0;
   for(const [name,content] of Object.entries(files)) {
     const nameBytes=Buffer.from(name),body=Buffer.from(content),crc=crc32(body);
+    const packed=compressed ? deflateRawSync(body) : body;
     const l=Buffer.alloc(30),d=Buffer.alloc(46);
     l.writeUInt32LE(0x04034b50,0);
     l.writeUInt16LE(20,4);
+    l.writeUInt16LE(compressed?8:0,8);
     l.writeUInt32LE(crc,14);
-    l.writeUInt32LE(body.length,18);
+    l.writeUInt32LE(packed.length,18);
     l.writeUInt32LE(body.length,22);
     l.writeUInt16LE(nameBytes.length,26);
     d.writeUInt32LE(0x02014b50,0);
     d.writeUInt16LE(20,4);
     d.writeUInt16LE(20,6);
+    d.writeUInt16LE(compressed?8:0,10);
     d.writeUInt32LE(crc,16);
-    d.writeUInt32LE(body.length,20);
+    d.writeUInt32LE(packed.length,20);
     d.writeUInt32LE(body.length,24);
     d.writeUInt16LE(nameBytes.length,28);
     d.writeUInt32LE(offset,42);
-    locals.push(l,nameBytes,body);
+    locals.push(l,nameBytes,packed);
     centrals.push(d,nameBytes);
-    offset+=l.length+nameBytes.length+body.length;
+    offset+=l.length+nameBytes.length+packed.length;
   }
   const dir=Buffer.concat(centrals),end=Buffer.alloc(22);
   end.writeUInt32LE(0x06054b50,0);
@@ -98,13 +102,13 @@ function makeZip(files) {
   return Buffer.concat([...locals,dir,end]);
 }
 
-function sampleXlsx(sheet) {
+function sampleXlsx(sheet, compressed=false) {
   return makeZip({
     'xl/workbook.xml':'<workbook><sheets><sheet name="Ürünler" sheetId="1" r:id="rId1"/></sheets></workbook>',
     'xl/_rels/workbook.xml.rels':'<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>',
     'xl/sharedStrings.xml':'<sst><si><t>sku</t></si><si><t>name</t></si><si><t>price</t></si><si><t>cost_price</t></si></sst>',
     'xl/worksheets/sheet1.xml':sheet,
-  });
+  },compressed);
 }
 test('standard Excel XLSX shared strings and numeric cells import without another dependency',()=>{
   const sheet='<worksheet><sheetData>'+
@@ -113,7 +117,7 @@ test('standard Excel XLSX shared strings and numeric cells import without anothe
     '<c r="B2" t="inlineStr"><is><t>A5 &amp; Defter</t></is></c>'+
     '<c r="C2"><v>49.9</v></c><c r="D2"><v>25</v></c></row>'+
     '</sheetData></worksheet>';
-  const matrix=parseXlsxFirstSheet(sampleXlsx(sheet));
+  const matrix=parseXlsxFirstSheet(sampleXlsx(sheet,true));
   assert.deepEqual(matrix[0],['sku','name','price','cost_price']);
   const rows=normalizeImportTable(matrix);
   assert.deepEqual(rows[0],{
