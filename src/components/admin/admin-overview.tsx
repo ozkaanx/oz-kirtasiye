@@ -74,11 +74,13 @@ export function AdminOverview({
   summary,
   recentOrders,
   lowStockProducts,
+  stockAlertsUnavailable,
   loadError,
 }: {
   summary: AdminDashboardSummary | null;
   recentOrders: DashboardOrder[];
   lowStockProducts: DashboardLowStock[];
+  stockAlertsUnavailable: boolean;
   loadError: string | null;
 }) {
   const chart = summary?.dailyRequests ?? [];
@@ -294,13 +296,17 @@ export function AdminOverview({
                   <h2>
                     <TriangleAlert size={19} /> Stok uyarıları
                   </h2>
-                  <p>Aktif ve kritik stoklu ürünler</p>
+                  <p>Aktif ürünler · Varyant stokları dahil</p>
                 </div>
                 <Link href="/admin/urunler" className={styles.link}>
                   Ürünlere git <ArrowRight size={15} />
                 </Link>
               </div>
-              {lowStockProducts.length ? (
+              {stockAlertsUnavailable ? (
+                <p className={styles.empty} role="alert">
+                  Kritik stok listesi şu anda yüklenemiyor. Ürün ve stok ekranından kontrol edin.
+                </p>
+              ) : lowStockProducts.length ? (
                 <div className={styles.rows}>
                   {lowStockProducts.map((product) => (
                     <div key={product.id} className={styles.stockRow}>
