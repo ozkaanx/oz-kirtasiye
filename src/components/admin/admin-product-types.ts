@@ -1,0 +1,41 @@
+import type { StoreCategory } from '@/lib/category-utils';
+export type Category = StoreCategory;
+export type Product = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  category_id: string | null;
+  sku: string | null;
+  price: number;
+  compare_at_price: number | null;
+  stock_quantity: number;
+  has_variants: boolean;
+  low_stock_threshold: number;
+  is_active: boolean;
+  is_featured: boolean;
+  product_images: { storage_path: string; sort_order: number }[];
+  imageUrl: string | null;
+};
+export type StockEntry = {
+  id: string;
+  product_id: string;
+  change_quantity: number;
+  quantity_after: number;
+  created_at: string;
+  note: string | null;
+  reason: string;
+};
+export type ProductForm = {
+  name: string;
+  slug: string;
+  description: string;
+  category_id: string;
+  sku: string;
+  price: string;
+  compare_at_price: string;
+  stock_quantity: string;
+  low_stock_threshold: string;
+  is_active: boolean;
+  is_featured: boolean;
+};

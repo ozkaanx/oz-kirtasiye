@@ -4,6 +4,11 @@ import { type FormEvent, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 import { Check, ImagePlus, Package, Plus, Save, Trash2, X } from 'lucide-react';
+import {
+  validateCatalogNumbers,
+  validateCatalogImage,
+  validateStockAdjustment,
+} from '@/lib/admin-catalog-validation';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 
 import { formatPrice } from '@/lib/format';
@@ -115,32 +120,31 @@ export function AdminVariants({
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!editing || pending) return;
-    const price = Number(form.price),
-      compare = form.compare ? Number(form.compare) : null,
-      stock = Number(form.stock),
-      threshold = Number(form.threshold);
     if (
       !(form.color.trim() || form.size.trim()) ||
       form.color.length > 60 ||
-      form.size.length > 60 ||
-      !Number.isFinite(price) ||
-      price < 0 ||
-      price > 999999.99 ||
-      (compare !== null && (!Number.isFinite(compare) || compare < 0)) ||
-      !Number.isInteger(stock) ||
-      stock < 0 ||
-      !Number.isInteger(threshold) ||
-      threshold < 0
+      form.size.length > 60
     ) {
-      setError('Renk veya boyut, geçerli fiyat ve stok değerleri gerekli.');
+      setError('Renk veya boyut gerekli; en fazla 60 karakter olabilir.');
       return;
     }
-    if (
-      file &&
-      (file.size > 5 * 1024 * 1024 ||
-        !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
-    ) {
-      setError('Fotoğraf JPG/PNG/WebP ve en fazla 5 MB olmalı.');
+    const validated = validateCatalogNumbers(
+      {
+        price: form.price,
+        compare: form.compare,
+        stock: editing === 'new' ? form.stock : '0',
+        threshold: form.threshold,
+      },
+      'variant',
+    );
+    if (!validated.ok) {
+      setError(validated.error);
+      return;
+    }
+    const { price, compare, stock, threshold } = validated.value;
+    const imageError = validateCatalogImage(file);
+    if (imageError) {
+      setError(imageError);
       return;
     }
     const supabase = createBrowserSupabase();
@@ -212,9 +216,9 @@ export function AdminVariants({
   async function saveStock(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selected || pending) return;
-    const amount = Number(change);
-    if (!Number.isInteger(amount) || amount < 1 || amount > 100000) {
-      setError('Miktar 1-100000 arasında olmalı.');
+    const validated = validateStockAdjustment(change, selected.stock_quantity, direction);
+    if (!validated.ok) {
+      setError(validated.error);
       return;
     }
     setPending(true);
@@ -222,7 +226,7 @@ export function AdminVariants({
     try {
       const { error: stockError } = await createBrowserSupabase().rpc('adjust_variant_stock', {
         p_variant_id: selected.id,
-        p_change: direction === 'increase' ? amount : -amount,
+        p_change: validated.value.change,
         p_note: note.trim() || null,
       });
       if (stockError) throw stockError;

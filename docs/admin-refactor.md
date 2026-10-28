@@ -23,3 +23,15 @@
 Üretim derlemesi, TypeScript ve mevcut 38 regresyon testi geçti. ESLint hata vermedi; mevcut 7 uyarı kaldı. Yerel, boş veri kullanan geçici önizlemede 1440 px masaüstü ve 390 px mobil çerçeve, menü açma/Escape ile kapatma, kapalı menünün erişilebilirlik ağacından çıkması, ürün formunun açılıp kapanması ve oturumsuz çıkışın giriş sayfasına yönlendirmesi kontrol edildi. Geçici önizleme route dosyası teslimden önce kaldırıldı. Kaynak taramasında aktif korumalı sayfalardan tekrarlanan çerçeve ve iç içe main alanları kaldırıldı.
 
 Canlı bir admin hesabıyla ürün/stok/sipariş yazma işlemi yapılmadı. Bu ilk grup ortak ekran yapısına odaklanır; tam RLS güvenlik denetimi veya sayfalama dönüşümü olarak değerlendirilmemelidir.
+
+## Uygulanan ikinci grup: ürün ve stok bileşenleri
+
+- AdminProducts yalnızca özetleri, açık pencereyi ve başarı bildirimlerini yönetir. Ürün listesi/filtreler/geçmiş AdminProductList; ürün formu/görsel yükleme AdminProductEditor; stok penceresi AdminProductStockDialog bileşenlerine ayrıldı.
+- Formların kendi durumları vardır. Pencere kapatılıp yeniden açıldığında kaydedilmemiş taslak ve hata temizlenir; liste filtresi korunur. Kayıt sürerken formun kapanması engellenir.
+- Ürün ve varyantlar fiyat, eski fiyat, stok, uyarı limiti, dosya tipi/boyutu ve stok değişimi için ortak saf doğrulamaları kullanır. Boş zorunlu sayılar sıfıra dönüşmez; ikiden fazla ondalık basamak ve veritabanı sınırını aşan değerler reddedilir. Ürün/varyant satış fiyatı üst sınırları mevcut farklı veritabanı kısıtlarıyla uyumludur.
+- Stok azaltma mevcut adedi aşamaz; artış integer sınırını aşamaz. Atomik stok RPC ve sunucu kontrolleri son yetkili kaynak olmaya devam eder. Ürün düzenlemede gizli başlangıç stoku tekrar yazılmaz.
+- Normalize edilince boş kalan slug kayıttan önce reddedilir. Dosya doğrulaması 5 MiB PNG/JPEG/WebP sınırını korur, sıfır bayt dosyaları da reddeder.
+- 7 yeni sınır testiyle toplam 45 test geçti. TypeScript ve üretim derlemesi geçti; lint hata vermedi (mevcut 7 uyarı).
+- Yerel sahte verilerle arama, ürün formunun doğru verilerle açılması, taslağın yeniden açılışta temizlenmesi, filtrenin korunması, geçersiz slug ve aşırı stok azaltmanın isteğe çıkmadan engellenmesi kontrol edildi. Form 390 px mobil genişlikte de incelendi. Canlı veriye yazılmadı; geçici önizleme route dosyası kaldırıldı.
+
+Sıradaki grup: liste arama/filtre/sıralama ve sayfalamanın sunucuya taşınması. Büyük varyant ekranının kendi form/liste alt bileşenlerine ayrılması ayrıca sürdürülebilir. Görsel yükleme sonradan hata verirse kısmi kayıt/retry davranışı ayrı bir iş akışı çalışması gerektirir; mevcut kayıt ve yükleme sırası bu grupta korunmuştur.
