@@ -552,8 +552,8 @@ export function CustomerAccount({
                   <article className={styles.orderCard} key={order.id}>
                     <details className={styles.orderAccordion} open={index === 0}>
                       <summary className={styles.orderSummary}>
-                        <div className={styles.orderHeading}>
-                      <div>
+                        <span className={styles.orderHeading}>
+                      <span>
                         <strong>#{order.reference}</strong>
                         <small>
                           {new Date(order.created_at).toLocaleDateString('tr-TR', {
@@ -562,11 +562,11 @@ export function CustomerAccount({
                             year: 'numeric',
                           })}
                         </small>
-                      </div>
+                      </span>
                           <span className={styles.status} data-tone={orderStatusPresentation(order.status).tone}>
                             {orderStatusPresentation(order.status).label}
                           </span>
-                        </div>
+                        </span>
                         <span className={styles.orderSummaryEnd}>
                           <strong>{formatPrice(Number(order.total))}</strong>
                           <ChevronDown size={20} className={styles.orderChevron} aria-hidden="true" />
