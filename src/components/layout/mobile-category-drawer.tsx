@@ -92,10 +92,12 @@ export function MobileCategoryDrawer({
         return;
       }
       if (event.key !== 'Tab') return;
-      const elements = drawerRef.current?.querySelectorAll<HTMLElement>(
+      const nodes = drawerRef.current?.querySelectorAll<HTMLElement>(
         'a[href], button:not(:disabled), summary, input:not(:disabled), [tabindex="0"]',
       );
-      if (!elements?.length) return;
+      // Links inside closed <details> are not focusable despite matching the selector.
+      const elements = [...(nodes ?? [])].filter((node) => node.getClientRects().length > 0);
+      if (!elements.length) return;
       const first = elements[0];
       const last = elements[elements.length - 1];
       if (event.shiftKey && document.activeElement === first) {
