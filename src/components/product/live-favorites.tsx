@@ -32,13 +32,23 @@ export function LiveFavorites() {
           signal: controller.signal,
           cache: 'no-store',
         });
-        if (!response.ok) throw new Error('Favoriler yüklenemedi.');
-        const body = (await response.json()) as { products: LiveProduct[] };
-        if (!Array.isArray(body.products)) throw new Error('Geçersiz favori yanıtı.');
+        const body = (await response.json().catch(() => null)) as
+          | { products?: LiveProduct[]; message?: string }
+          | null;
+        if (!response.ok) {
+          // Safe public status/message only. Helps diagnose LAN mobile errors.
+          throw new Error(`${body?.message ?? 'Favori ürünler yüklenemedi.'} (HTTP ${response.status})`);
+        }
+        if (!Array.isArray(body?.products)) throw new Error('Favori ürün yanıtı geçersiz.');
         if (!controller.signal.aborted) setResult({ key, products: body.products, error: null });
-      } catch {
-        if (!controller.signal.aborted)
-          setResult({ key, products: [], error: 'Favori ürünlerin şu anda yüklenemiyor.' });
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setResult({
+            key,
+            products: [],
+            error: error instanceof Error ? error.message : 'Favori ürünlerin şu anda yüklenemiyor.',
+          });
+        }
       }
     }
     void loadFavorites();

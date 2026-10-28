@@ -12,8 +12,12 @@ const json = (body: unknown, status = 200) =>
 
 /** Favorited IDs are supplied after localStorage hydration; never fetch the entire catalog. */
 export async function POST(request: Request) {
-  if (request.headers.get('origin') !== new URL(request.url).origin)
-    return json({ message: 'Geçersiz istek kaynağı.' }, 403);
+  // This endpoint only reads public, active product information for up to 100
+  // validated IDs. It has no state changes or private response fields.
+  // Comparing Origin to request.url is unreliable behind LAN/proxy dev hosts
+  // (e.g. iPhone at 192.168.x.x while Next internally resolves localhost).
+  // Keep JSON-only requests; browsers will not expose this response cross-origin
+  // without CORS response headers.
   if (request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/json')
     return json({ message: 'Geçersiz içerik türü.' }, 415);
 
