@@ -56,7 +56,7 @@
   flex-direction: column;
   gap: 4px;
   position: sticky;
-  top: 20px;
+  top: 104px;
 }
 .tab,
 .shopLink {
@@ -615,6 +615,7 @@
 .benefitsArrow{flex:none;margin-left:auto;color:#bd5936}
 .profileForm{max-width:720px}
 .addressEditor{background:#fbfcfd;border:1px solid #e5e8ed;border-radius:15px;padding:23px;margin-bottom:20px}
+.addressEditor input{scroll-margin-top:112px}
 .addressEditor h3{font-size:18px;color:#272e39;letter-spacing:-.3px;margin:0 0 5px}
 .editorHint{font-size:13px;color:#697582;line-height:1.5;margin:0 0 18px}
 .cardActions button:hover{background:#fff2eb}
