@@ -97,8 +97,8 @@
 }
 .price.compact .regular,
 .price.compact .discounted {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 30px;
+  font-weight: 800;
   letter-spacing: -0.3px;
 }
 .price.compact .old {
@@ -107,8 +107,12 @@
 }
 @media (max-width: 600px) {
   .price.compact .regular,
-  .price.compact .discounted { font-size: 16px; }
-  .price.compact .old { font-size: 11px; }
+  .price.compact .discounted {
+    font-size: 22px;
+  }
+  .price.compact .old {
+    font-size: 11px;
+  }
 }
 
 /* Cart-threshold messaging never changes the displayed single-item price. */
