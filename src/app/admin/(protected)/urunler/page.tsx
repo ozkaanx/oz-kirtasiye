@@ -45,10 +45,21 @@ export default async function Page({
     trace.error(error ? 'database_error' : 'empty_result', error?.code);
     loadError = 'Yönetim verileri yüklenemedi. Tekrar deneyin. Takip kodu: ' + trace.requestId;
   }
+  const productIds=(result?.rows ?? []).map((p)=>p.id);
+  const costs=productIds.length
+    ? await supabase.from('product_costs')
+        .select('product_id,cost_price').in('product_id',productIds)
+    : {data:[] as {product_id:string;cost_price:number}[],error:null};
+  if(costs.error) {
+    trace.error('database_error',costs.error.code);
+    loadError=loadError ?? 'Alış maliyetleri şu anda yüklenemiyor. Sayfayı yenileyin.';
+  }
+  const costById=new Map((costs.data??[]).map((row)=>[row.product_id,Number(row.cost_price)]));
   const products = (result?.rows ?? []).map((p) => {
     const path = p.product_images[0]?.storage_path;
     return {
       ...p,
+      cost_price: costById.get(p.id) ?? null,
       imageUrl: path
         ? supabase.storage.from('product-images').getPublicUrl(path).data.publicUrl
         : null,
