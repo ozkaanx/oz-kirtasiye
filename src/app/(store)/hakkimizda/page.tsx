@@ -1,9 +1,16 @@
 import type { Metadata } from 'next';
+import { absoluteStoreUrl } from '@/lib/seo';
 import Link from 'next/link';
 import { ArrowRight, MapPin, NotebookPen, Sparkles } from 'lucide-react';
 import { getStoreSettings } from '@/lib/store-settings';
 
-export const metadata: Metadata = { title: 'Hakkımızda' };
+const description = 'Öz Kırtasiye\'nin İstanbul Bağcılar Güneşli\'deki kırtasiye, okul ve oyuncak ürünleri mağazasını tanıyın.';
+export const metadata: Metadata = {
+  title: 'Hakkımızda',
+  description,
+  ...(absoluteStoreUrl('/hakkimizda') ? { alternates: { canonical: '/hakkimizda' } } : {}),
+  openGraph: { title: 'Hakkımızda', description, type: 'website' },
+};
 export const dynamic = 'force-dynamic';
 
 export default async function AboutPage() {

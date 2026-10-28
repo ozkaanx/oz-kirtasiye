@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 type SitemapProduct = { slug: string; updated_at: string | null };
 
 /** Only enabled public products. Avoid the 500-product storefront limit. */
-async function getSitemapProducts(): Promise<SitemapProduct[]> {
+async function getSitemapProducts(): Promise<SitemapProduct[] | null> {
   const supabase = await createServerSupabase();
   const rows: SitemapProduct[] = [];
   const PAGE_SIZE = 500;
@@ -22,13 +22,27 @@ async function getSitemapProducts(): Promise<SitemapProduct[]> {
       .order('id', { ascending: true })
       .range(offset, offset + PAGE_SIZE - 1);
     if (error) {
-      console.error('SEO sitemap ürün sorgusu başarısız:', error.message);
-      // Do not publish a partial sitemap after a database failure.
-      return [];
+      console.error('SEO sitemap ürün sorgusu başarısız:', error.code);
+      // A database failure must never publish an incomplete product sitemap.
+      return null;
     }
     const batch = (data ?? []) as SitemapProduct[];
     rows.push(...batch);
     if (batch.length < PAGE_SIZE) break;
+  }
+  // Detect overflow instead of silently omitting products beyond the bound.
+  // A partitioned sitemap will be needed if the catalog exceeds this limit.
+  if (rows.length === MAX_PRODUCTS) {
+    const { data, error } = await supabase
+      .from('products')
+      .select('id')
+      .eq('is_active', true)
+      .order('id', { ascending: true })
+      .range(MAX_PRODUCTS, MAX_PRODUCTS);
+    if (error || (data?.length ?? 0) > 0) {
+      console.error('SEO sitemap ürün sınırı aşıldı veya taşma sorgusu başarısız.', error?.code);
+      return null;
+    }
   }
   return rows;
 }
@@ -38,6 +52,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const root = absoluteStoreUrl('/');
   if (!root) return [];
   const [categories, products] = await Promise.all([getCachedLiveCategories(), getSitemapProducts()]);
+  // Fail closed rather than submitting a sitemap containing only some active products.
+  if (!products) return [];
   const urls: MetadataRoute.Sitemap = [
     { url: root, changeFrequency: 'weekly', priority: 1 },
     { url: absoluteStoreUrl('/urunler')!, changeFrequency: 'daily', priority: 0.9 },

@@ -1,27 +1,76 @@
+import { isIP } from 'node:net';
+
 /** Server-side SEO configuration. No private keys are ever sent to the browser. */
 export const STORE_NAME = 'Öz Kırtasiye';
 export const STORE_DESCRIPTION =
   'Öz Kırtasiye: okul, kırtasiye, oyuncak ve yaratıcı hobi ürünleri. İstanbul Bağcılar Güneşli.';
 
-/** Do not infer the canonical URL from request headers or a Vercel preview address. */
-export function getSiteUrl(): URL | null {
-  const raw = process.env.SITE_URL?.trim();
-  if (!raw) return null;
+/**
+ * The canonical origin is an explicit, verified public domain only.
+ * Never infer it from Host / forwarded headers, a preview URL or localhost.
+ */
+export function parseSiteUrl(raw: string | undefined | null): URL | null {
+  if (!raw?.trim()) return null;
   try {
-    const url = new URL(raw);
-    if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) return null;
-    if (url.hostname === 'localhost' || url.hostname.endsWith('.vercel.app')) return null;
-    if (url.pathname !== '/') return null;
+    const url = new URL(raw.trim());
+    const hostname = url.hostname.toLowerCase();
+    const localHost =
+      hostname === 'localhost' ||
+      hostname.endsWith('.localhost') ||
+      hostname.endsWith('.local') ||
+      hostname.endsWith('.internal') ||
+      isIP(hostname.replace(/^\[|\]$/g, '')) !== 0;
+    const temporaryHost = hostname === 'vercel.app' || hostname.endsWith('.vercel.app');
+    if (
+      url.protocol !== 'https:' ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash ||
+      url.pathname !== '/' ||
+      url.port ||
+      !hostname.includes('.') ||
+      localHost ||
+      temporaryHost
+    ) return null;
     return url;
   } catch {
     return null;
   }
 }
 
-/** Explicit opt-in for production only. Development and Vercel previews stay noindex. */
+export function getSiteUrl(): URL | null {
+  return parseSiteUrl(process.env.SITE_URL);
+}
+
+/** Indexing requires three explicit conditions: public domain, production and opt-in. */
+export function seoIndexingAllowed({
+  siteUrl,
+  indexable,
+  nodeEnv,
+  vercelEnv,
+}: {
+  siteUrl: string | undefined;
+  indexable: string | undefined;
+  nodeEnv: string | undefined;
+  vercelEnv: string | undefined;
+}): boolean {
+  return (
+    indexable === 'true' &&
+    nodeEnv === 'production' &&
+    (vercelEnv === undefined || vercelEnv === 'production') &&
+    parseSiteUrl(siteUrl) !== null
+  );
+}
+
+/** Preview, local development and unlaunched storefronts must remain noindex. */
 export function isSeoPublic(): boolean {
-  return process.env.SEO_INDEXABLE === 'true' &&
-    process.env.VERCEL_ENV !== 'preview' && getSiteUrl() !== null;
+  return seoIndexingAllowed({
+    siteUrl: process.env.SITE_URL,
+    indexable: process.env.SEO_INDEXABLE,
+    nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
+  });
 }
 
 export function absoluteStoreUrl(path: string): string | null {
