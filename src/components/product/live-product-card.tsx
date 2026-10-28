@@ -4,6 +4,7 @@ import { Package } from 'lucide-react';
 import type { LiveProduct } from '@/lib/real-catalog';
 import { LiveFavoriteButton } from './live-favorite-button';
 import { CampaignPrice } from './campaign-price';
+import { LivePurchaseButton } from './live-purchase-button';
 import styles from './live-product-card.module.css';
 
 export function LiveProductCard({ product }: { product: LiveProduct }) {
@@ -35,6 +36,15 @@ export function LiveProductCard({ product }: { product: LiveProduct }) {
           />
         </div>
       </Link>
+      <div className={styles.purchase}>
+        {product.has_variants && product.stock_quantity > 0 ? (
+          <Link className="button button-primary" href={`/magaza/urun/${product.slug}`}>
+            Sepete ekle<span className={styles.srOnly}> — seçenekleri seç</span>
+          </Link>
+        ) : (
+          <LivePurchaseButton productId={product.id} stock={product.stock_quantity} />
+        )}
+      </div>
       <div className={styles.favorite}>
         <LiveFavoriteButton productId={product.id} productName={product.name} />
       </div>
