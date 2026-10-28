@@ -7,6 +7,7 @@ import {
   ArrowRight,
   BadgePercent,
   Check,
+  ChevronDown,
   Home,
   LogOut,
   MapPin,
@@ -546,9 +547,11 @@ export function CustomerAccount({
                 </div>
               )}
               <div className={styles.orderList}>
-                {initialOrders.map((order) => (
+                {initialOrders.map((order, index) => (
                   <article className={styles.orderCard} key={order.id}>
-                    <div className={styles.orderHeading}>
+                    <details className={styles.orderAccordion} defaultOpen={index === 0}>
+                      <summary className={styles.orderSummary}>
+                        <div className={styles.orderHeading}>
                       <div>
                         <strong>#{order.reference}</strong>
                         <small>
@@ -559,11 +562,17 @@ export function CustomerAccount({
                           })}
                         </small>
                       </div>
-                      <span className={styles.status} data-tone={orderStatusPresentation(order.status).tone}>
-                        {orderStatusPresentation(order.status).label}
-                      </span>
-                    </div>
-                    <OrderJourney order={order} />
+                          <span className={styles.status} data-tone={orderStatusPresentation(order.status).tone}>
+                            {orderStatusPresentation(order.status).label}
+                          </span>
+                        </div>
+                        <span className={styles.orderSummaryEnd}>
+                          <strong>{formatPrice(Number(order.total))}</strong>
+                          <ChevronDown size={20} className={styles.orderChevron} aria-hidden="true" />
+                        </span>
+                      </summary>
+                      <div className={styles.orderExpanded}>
+                        <OrderJourney order={order} />
                     {order.order_request_items.some(item => item.product_id) && (
                       <div className={styles.repeatActions}>
                         <button type="button" className="button button-outline" onClick={() => repeatOrder(order)}>
@@ -606,6 +615,8 @@ export function CustomerAccount({
                           ? 'Fatura: Resmî belge kaydı bekleniyor'
                           : 'Fatura: Bu sipariş için elektronik belge bilgisi kayıtlı değil'}
                     </p>
+                      </div>
+                    </details>
                   </article>
                 ))}
               </div>
