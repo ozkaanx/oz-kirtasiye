@@ -153,7 +153,7 @@ export function AdminSidebar() {
                         <Icon className={styles.navIcon} size={18} aria-hidden="true" />
                         <span className={styles.navLabel}>
                           {item.label}
-                          {item.href === '/admin/bildirimler' && <NotificationUnreadBadge audience="admin" />}
+                          {expanded && item.href === '/admin/bildirimler' && <NotificationUnreadBadge audience="admin" />}
                         </span>
                       </Link>
                     );
