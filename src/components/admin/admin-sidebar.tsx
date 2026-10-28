@@ -107,12 +107,12 @@ export function AdminSidebar() {
       <aside id="admin-side-navigation" className={`admin-sidebar ${styles.sidebar} ${open ? 'is-open' : ''}`}>
         <div className="admin-mobile-sidebar-head">
           <strong>Yönetim menüsü</strong>
-          <button type="button" aria-label="Menüyü kapat" onClick={() => setOpen(false)}>
+          <button type="button" aria-label="Menüyü kapat" onClick={() => closeDrawer()}>
             <X size={21} aria-hidden="true" />
           </button>
         </div>
 
-        <Link href="/" className={`admin-brand ${styles.brand}`} onClick={() => setOpen(false)}>
+        <Link href="/" className={`admin-brand ${styles.brand}`} onClick={() => closeDrawer()}>
           öz kırtasiye<span>.</span>
         </Link>
         <p className={styles.caption}>YÖNETİM PANELİ</p>
@@ -154,7 +154,7 @@ export function AdminSidebar() {
                       <Link
                         key={item.href}
                         href={item.href}
-                        onClick={() => setOpen(false)}
+                        onClick={() => closeDrawer()}
                         aria-current={current ? 'page' : undefined}
                         className={styles.navLink}
                       >
@@ -180,7 +180,7 @@ export function AdminSidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setOpen(false)}
+                  onClick={() => closeDrawer()}
                   aria-current={isAdminRouteActive(pathname, item.href) && item.href !== '/' ? 'page' : undefined}
                   className={`${styles.navLink} ${item.href === '/' ? styles.storeLink : styles.footerLink}`}
                 >
