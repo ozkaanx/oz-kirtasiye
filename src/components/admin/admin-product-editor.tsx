@@ -2,7 +2,9 @@
 import { type FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, X } from 'lucide-react';
-import { validateCatalogNumbers, validateCatalogImage } from '@/lib/admin-catalog-validation';
+import { validateCatalogNumbers, validateCatalogImage, validateCostPrice } from '@/lib/admin-catalog-validation';
+import { estimateProductProfit } from '@/lib/admin-product-profit';
+import { formatPrice } from '@/lib/format';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 import { flattenCategories, slugifyTurkish } from '@/lib/category-utils';
 import type { Category, Product, ProductForm } from './admin-product-types';
@@ -14,6 +16,7 @@ const emptyForm: ProductForm = {
   sku: '',
   price: '',
   compare_at_price: '',
+  cost_price: '',
   stock_quantity: '0',
   low_stock_threshold: '5',
   is_active: false,
@@ -46,6 +49,7 @@ export function AdminProductEditor({
           price: String(editing.price),
           compare_at_price:
             editing.compare_at_price == null ? '' : String(editing.compare_at_price),
+          cost_price: editing.cost_price == null ? '' : String(editing.cost_price),
           stock_quantity: String(editing.stock_quantity),
           low_stock_threshold: String(editing.low_stock_threshold),
           is_active: editing.is_active,
@@ -76,6 +80,12 @@ export function AdminProductEditor({
       return;
     }
     const { price, compare, stock, threshold } = validated.value;
+    const costCheck = validateCostPrice(form.cost_price);
+    if(!costCheck.ok) {
+      setError(costCheck.error);
+      return;
+    }
+    const cost = costCheck.value;
     const imageError = validateCatalogImage(photo);
     if (imageError) {
       setError(imageError);
@@ -117,6 +127,18 @@ export function AdminProductEditor({
           .single();
         if (error) throw error;
         productId = data.id;
+      }
+      // Cost information lives in a separate, admin-only RLS table.
+      // Empty on edit explicitly clears a previously saved cost.
+      if (cost !== null) {
+        const { error: costError } = await supabase.from('product_costs').upsert(
+          { product_id: productId, cost_price: cost },
+          { onConflict: 'product_id' },
+        );
+        if(costError) throw new Error('Ürün kaydedildi fakat alış maliyeti kaydedilemedi: '+costError.message);
+      } else if (current !== 'new' && current.cost_price !== null) {
+        const { error: costError } = await supabase.from('product_costs').delete().eq('product_id',productId);
+        if(costError) throw new Error('Ürün kaydedildi fakat alış maliyeti kaldırılamadı: '+costError.message);
       }
       if (photo) {
         const extension =
@@ -227,6 +249,29 @@ export function AdminProductEditor({
               value={form.price}
               onChange={(e) => setForm((s) => ({ ...s, price: e.target.value }))}
             />
+          </label>
+          <label className="admin-field">
+            Alış maliyeti (₺, yöneticiye özel)
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.cost_price}
+              placeholder="Bilinmiyorsa boş bırak"
+              onChange={(e)=>setForm((s)=>({...s,cost_price:e.target.value}))}
+            />
+            {(() => {
+              const price=Number(form.price);
+              const check=validateCostPrice(form.cost_price);
+              const result=check.ok?estimateProductProfit(price,check.value):null;
+              return result ? (
+                <small>
+                  Tahmini brüt fark: {formatPrice(result.difference)}
+                  {result.marginPercent !== null ? ` · Marj: %${result.marginPercent}` : ''}
+                  {' '}(KDV / kargo / komisyon hariç)
+                </small>
+              ) : null;
+            })()}
           </label>
           <label className="admin-field">
             Eski fiyat (isteğe bağlı)
