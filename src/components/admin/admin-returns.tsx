@@ -1,9 +1,15 @@
 'use client';
 
-import { useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useRef, useState, useTransition, type FormEvent } from 'react';
 import Link from 'next/link';
+import {
+  returnSearchHref,
+  type ReturnSearch,
+  type ReturnSearchResult,
+} from '@/lib/admin-return-search';
+import filterStyles from './admin-list-filters.module.css';
 import { useRouter } from 'next/navigation';
-import { ClipboardCheck, RotateCcw, Search, ShieldCheck } from 'lucide-react';
+import { ClipboardCheck, RotateCcw, ShieldCheck } from 'lucide-react';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 
 import {
@@ -20,16 +26,20 @@ type Action = 'approve' | 'reject' | 'receive' | 'close';
 type Condition = 'resellable' | 'damaged' | 'unknown';
 
 export function AdminReturns({
-  entries,
+  result,
+  search,
   loadError,
 }: {
-  entries: AdminReturnRequest[];
+  result: ReturnSearchResult | null;
+  search: ReturnSearch;
   loadError: string | null;
 }) {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabase(), []);
-  const [statusFilter, setStatusFilter] = useState<ReturnStatus | 'all'>('all');
-  const [query, setQuery] = useState('');
+  const lock = useRef(false);
+  const [refreshing, startTransition] = useTransition();
+  const entries = result?.rows ?? [];
+  const counts = result?.stats;
   const [active, setActive] = useState<string | null>(null);
   const [action, setAction] = useState<Action>('approve');
   const [note, setNote] = useState('');
@@ -40,28 +50,8 @@ export function AdminReturns({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const filtered = useMemo(
-    () =>
-      entries.filter((entry) => {
-        if (statusFilter !== 'all' && entry.status !== statusFilter) return false;
-        const text = query.toLocaleLowerCase('tr-TR').trim();
-        return (
-          !text ||
-          `${entry.order?.reference ?? ''} ${entry.order?.customer_name ?? ''} ${entry.order?.phone ?? ''} ${entry.item?.product_name ?? ''}`
-            .toLocaleLowerCase('tr-TR')
-            .includes(text)
-        );
-      }),
-    [entries, statusFilter, query],
-  );
-  const counts = {
-    requested: entries.filter((r) => r.status === 'requested').length,
-    approved: entries.filter((r) => r.status === 'approved').length,
-    received: entries.filter((r) => r.status === 'received').length,
-    closed: entries.filter((r) => r.status === 'closed').length,
-  };
-
   function openForm(id: string, next: Action) {
+    if (lock.current || refreshing) return;
     setActive(id);
     setAction(next);
     setNote('');
@@ -72,13 +62,15 @@ export function AdminReturns({
     setSuccess('');
   }
   function closeForm() {
+    if (lock.current || refreshing) return;
     setActive(null);
     setError('');
   }
 
   async function submit(event: FormEvent<HTMLFormElement>, entry: AdminReturnRequest) {
     event.preventDefault();
-    if (busy || active !== entry.id) return;
+    if (lock.current || refreshing || active !== entry.id) return;
+    lock.current = true;
     setBusy(true);
     setError('');
     setSuccess('');
@@ -96,10 +88,11 @@ export function AdminReturns({
         `Talep güncellendi: ${action === 'approve' ? 'onaylandı' : action === 'reject' ? 'reddedildi' : action === 'receive' ? 'ürün teslim alındı' : 'işlem kapatıldı'}.`,
       );
       setActive(null);
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Talep güncellenemedi.');
     } finally {
+      lock.current = false;
       setBusy(false);
     }
   }
@@ -145,54 +138,76 @@ export function AdminReturns({
         <div className={styles.metrics}>
           <div>
             <small>Yeni talepler</small>
-            <strong>{counts.requested}</strong>
+            <strong>{counts?.requested ?? '—'}</strong>
           </div>
           <div>
             <small>Onaylanan</small>
-            <strong>{counts.approved}</strong>
+            <strong>{counts?.approved ?? '—'}</strong>
           </div>
           <div>
             <small>Ürün teslim alındı</small>
-            <strong>{counts.received}</strong>
+            <strong>{counts?.received ?? '—'}</strong>
           </div>
           <div>
             <small>Kapatılan</small>
-            <strong>{counts.closed}</strong>
+            <strong>{counts?.closed ?? '—'}</strong>
           </div>
         </div>
-        <div className={styles.filterBar}>
-          <label>
-            <Search size={16} />
+        <form
+          action="/admin/iadeler"
+          method="get"
+          key={JSON.stringify(search)}
+          className={filterStyles.filters}
+        >
+          <label className={filterStyles.field}>
+            Sipariş, müşteri veya ürün ara
             <input
-              placeholder="Sipariş, müşteri veya ürün ara"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              name="q"
+              maxLength={100}
+              defaultValue={search.q}
+              placeholder="Sipariş no, müşteri, telefon veya ürün"
             />
           </label>
-          <select
-            aria-label="Talep durumuna göre filtrele"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as ReturnStatus | 'all')}
-          >
-            <option value="all">Tüm durumlar</option>
-            {(Object.keys(RETURN_STATUS) as ReturnStatus[]).map((s) => (
-              <option key={s} value={s}>
-                {RETURN_STATUS[s]}
-              </option>
-            ))}
-          </select>
-        </div>
+          <label className={filterStyles.field}>
+            Talep durumu
+            <select name="status" defaultValue={search.status}>
+              <option value="all">Tüm durumlar</option>
+              {(Object.keys(RETURN_STATUS) as ReturnStatus[]).map((s) => (
+                <option key={s} value={s}>
+                  {RETURN_STATUS[s]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={filterStyles.field}>
+            Talep türü
+            <select name="kind" defaultValue={search.kind}>
+              <option value="all">İade ve değişim</option>
+              <option value="return">İade</option>
+              <option value="exchange">Değişim</option>
+            </select>
+          </label>
+          <button type="submit" className={filterStyles.reset}>
+            Ara / Filtrele
+          </button>
+          <Link href="/admin/iadeler" className={filterStyles.reset}>
+            Filtreleri temizle
+          </Link>
+        </form>
         <p className={styles.count}>
-          {filtered.length} / {entries.length} talep gösteriliyor · Son 200 kayıt
+          Özetler tüm talepleri kapsar.{' '}
+          {result
+            ? `${entries.length} / ${result.total} talep · Sayfa ${result.page} / ${Math.max(1, Math.ceil(result.total / result.pageSize))}`
+            : 'İade listesi yüklenemedi.'}
         </p>
-        {filtered.length === 0 && (
+        {result && entries.length === 0 && (
           <div className={styles.empty}>
             <RotateCcw size={30} />
             <p>Henüz bu filtreye uygun iade/değişim talebi yok.</p>
           </div>
         )}
         <div className={styles.list}>
-          {filtered.map((entry) => {
+          {entries.map((entry) => {
             const canRestock = Boolean(
               entry.order?.inventory_deducted_at && !entry.order.inventory_restored_at,
             );
@@ -251,7 +266,7 @@ export function AdminReturns({
                         <button
                           type="button"
                           className="button button-primary"
-                          disabled={busy}
+                          disabled={busy || refreshing}
                           onClick={() => openForm(entry.id, 'approve')}
                         >
                           Talebi onayla
@@ -259,7 +274,7 @@ export function AdminReturns({
                         <button
                           type="button"
                           className="button button-outline"
-                          disabled={busy}
+                          disabled={busy || refreshing}
                           onClick={() => openForm(entry.id, 'reject')}
                         >
                           Reddet
@@ -270,7 +285,7 @@ export function AdminReturns({
                       <button
                         type="button"
                         className="button button-primary"
-                        disabled={busy}
+                        disabled={busy || refreshing}
                         onClick={() => openForm(entry.id, 'receive')}
                       >
                         Ürün teslim alındı
@@ -280,7 +295,7 @@ export function AdminReturns({
                       <button
                         type="button"
                         className="button button-primary"
-                        disabled={busy}
+                        disabled={busy || refreshing}
                         onClick={() => openForm(entry.id, 'close')}
                       >
                         Fiziksel kontrol ve kapanış
@@ -377,10 +392,19 @@ export function AdminReturns({
                       />
                     </label>
                     <div className={styles.actions}>
-                      <button type="button" className="button button-outline" onClick={closeForm}>
+                      <button
+                        type="button"
+                        className="button button-outline"
+                        disabled={busy || refreshing}
+                        onClick={closeForm}
+                      >
                         Vazgeç
                       </button>
-                      <button className="button button-primary" type="submit" disabled={busy}>
+                      <button
+                        className="button button-primary"
+                        type="submit"
+                        disabled={busy || refreshing}
+                      >
                         {busy ? 'Kaydediliyor...' : 'İşlemi kaydet'}
                       </button>
                     </div>
@@ -399,6 +423,20 @@ export function AdminReturns({
             );
           })}
         </div>
+        {result && (result.hasPrevious || result.hasNext) && (
+          <nav className={filterStyles.filters} aria-label="İade sayfaları">
+            {result.hasPrevious && (
+              <Link className={filterStyles.reset} href={returnSearchHref(search, result.page - 1)}>
+                Önceki sayfa
+              </Link>
+            )}
+            {result.hasNext && (
+              <Link className={filterStyles.reset} href={returnSearchHref(search, result.page + 1)}>
+                Sonraki sayfa
+              </Link>
+            )}
+          </nav>
+        )}
       </section>
     </section>
   );

@@ -74,3 +74,16 @@ Yorum migration'ı Supabase'e 20261028091158 sürümüyle uygulandı; kaynak dos
 Sıradaki kapsam: iade/değişim listesinde sunucu araması, durum filtreleri ve sayfalama.
 
 Fatura migration'ı Supabase'e 20261028092446 sürümüyle uygulandı; dosya adı canlı migration defteriyle eşleşir. Authenticated yönetici rolü altında salt okunur kontrolde 6 sipariş, 3 bekleyen ve 3 eksik/eski kayıt doğrulandı. SECURITY INVOKER ve anonim execute kapalı. CI'da 52 uygulama testi, üretim derlemesi, temiz veritabanı kurulumu, tüm SQL regresyonları ve eşzamanlı sipariş testleri geçti. Canlı resmî belge kayıtları oluşturulmadı/değiştirilmedi.
+
+## Altıncı grup: iade/değişim araması ve sayfalama
+
+- Son 200 talep sınırı kaldırıldı. Sipariş numarası, müşteri/telefon ve ürün/varyant üzerinden arama; talep durumu ve iade/değişim türü filtreleri sunucuya taşındı. Sayfa başına 25 talep ve kararlı created_at/id sıralaması kullanılır. Filtreler URL'de korunur; yeni filtre ilk sayfaya döner, fazla büyük sayfa gerçek son sayfaya sıkıştırılır.
+- Özetler tüm taleplerden hesaplanır. Sipariş/ürün/fatura bilgileri ve işlem geçmişi yalnızca sayfadaki talepler için yüklenir. İşlem geçmişinin toplu 1000 kayıt kesintisi kaldırıldı; tarih ve kimliğe göre kararlı sıralanır.
+- admin_search_returns SECURITY INVOKER, boş search_path ve yönetici kontrolüyle mevcut RLS altında çalışır; anonim execute kapalıdır. Mevcut admin_handle_return_request mutasyon RPC'si ve fiziksel kontrol/muhasebe/atomik stok kuralları değişmez. Başarılı işlemden sonra liste ve özet sunucudan yenilenir; tekrar gönderim ve işlem sırasında form geçişi engellenir.
+- 54 uygulama testi, TypeScript ve üretim derlemesi geçti; mevcut 7 lint uyarısı. SQL regresyonları 205 talep, eski kayıt, durum/tür birleşimi, Türkçe arama, literal jokerler, 9 sayfada tekillik ve 1001 geçmiş kaydının tam yüklenmesini kapsar.
+- İş akışı testleri izole test veritabanında rollback içinde çalışır: onay/teslim alma stok artırmaz; teslim almadan kapatma, hasarlı ürünü stoğa ekleme ve fatura kontrolünü atlama engellenir; satılabilir kapanış stok iadesini bir kez yapar.
+- Yerel sahte verilerle 1440 px masaüstü ve 390 px mobil görünüm, kapanış formu, muhasebe alanı, koşullu stok seçimi ve işlem geçmişi incelendi. Canlı talep durumu veya stok değiştirilmedi; geçici önizleme route'u kaldırıldı.
+
+Bu liste gruplarından sonra kalan öncelikler: müşteri detayında 100 sipariş sınırı ve kategori sayımlarında ilk 2000 ürüne dayanılması; ardından ortak hata eşleme ve eski/demo bileşenlerin temizliği.
+
+İade migration'ı Supabase'e 20261028093522 sürümüyle uygulandı; dosya adı canlı migration defteriyle eşleşir. Authenticated yönetici rolüyle salt okunur kontrolde mevcut 1 kapalı talep ve doğru global sayımlar döndü. Fonksiyon SECURITY INVOKER, anonim execute kapalıdır. CI'da 54 uygulama testi, temiz Supabase kurulumu, tüm SQL regresyonları ve eşzamanlı sipariş kontrolleri geçti. Canlı iade durumları ve stok değiştirilmedi.
