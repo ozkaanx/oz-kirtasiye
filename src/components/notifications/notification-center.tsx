@@ -189,7 +189,7 @@ export function NotificationCenter({
             </article>
           ))}
         </div>
-      ) : (
+      ) : !error ? (
         <div className={styles.empty}>
           <BellOff size={34} aria-hidden="true" />
           <h3>{filter === 'unread' ? 'Okunmamış bildirim yok' : 'Henüz bildirimin yok'}</h3>
@@ -199,7 +199,7 @@ export function NotificationCenter({
               : 'Sipariş ve iade işlemlerindeki gelişmeler burada görünecek.'}
           </p>
         </div>
-      )}
+      ) : null}
       <p className={styles.limitNotice}>
         Son 100 bildirim gösteriliyor. Okunmamış sayaçları tüm kayıtları kapsar. Bildirimler
         uygulama açıkken yaklaşık 30 saniyede bir güncellenir.
