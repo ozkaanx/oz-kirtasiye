@@ -2,6 +2,7 @@ import { Clock3, RotateCcw, Truck } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
 import {
   ORDER_STATUS_LABELS as STATUS,
+  PAYMENT_STATUS_LABELS,
   orderDateTime as dateTime,
   type OrderStatus,
 } from '@/lib/admin-orders';
@@ -57,7 +58,9 @@ export function OrderRequestCard({
               <strong>Genel toplam: {formatPrice(order.total)}</strong>
             </>
           )}
-          <small>Ödeme kaydı: Tahsil edilmedi</small>
+          <small>
+            Ödeme: <strong>{PAYMENT_STATUS_LABELS[order.payment_status] ?? 'Durum doğrulanamadı'}</strong>
+          </small>
           {order.delivery_method === 'legacy' && (
             <small>Önceki sipariş · Kargo tutarı kaydedilmemiş</small>
           )}
