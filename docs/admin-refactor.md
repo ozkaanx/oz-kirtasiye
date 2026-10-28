@@ -48,3 +48,15 @@ Sıradaki grup: liste arama/filtre/sıralama ve sayfalamanın sunucuya taşınma
 Dağıtım sırası: admin_product_search_pagination migration önce uygulanmalı, ardından yeni uygulama sürümü yayınlanmalıdır. Bu migration ürün veya stok verilerini değiştirmez.
 
 Bu grubun doğrulaması: 47 uygulama testi ve temiz Supabase kurulumu üzerindeki veritabanı regresyonları CI'da geçti. Migration Supabase'e 20261028090127 sürümüyle uygulandı; dosya adı canlı migration defteriyle eşleştirildi. Canlı katalogda authenticated yönetici rolü altında salt okunur sorgu, 4 ürün ve toplam 48 stok sonucunu doğruladı. Fonksiyon security invoker, anonim execute yetkisi kapalıdır. Ürün/stok verisi değiştirilmedi.
+
+## Dördüncü grup: yorum araması ve sayfalama
+
+- Yorum yönetimi ürün adı/yorum metni aramasını ve onay durumunu URL üzerinden sunucuya gönderir. İlk 1000 kayıt sınırı kaldırıldı; sayfa başına 25 yorum gelir. Yeni arama veya durum değişimi ilk sayfaya döner, önceki/sonraki bağlantılar arama ve durumu korur.
+- Toplam/bekleyen/onaylı/reddedilen sayıları tüm veriden; ortalama yalnızca tüm onaylı yorumlardan hesaplanır. Kayıt yüklenemezse sıfır yerine yükleme hatası ve boş özet gösterilir.
+- Moderasyon mevcut moderate_product_review RPC üzerinden sürer. Başarılı işlemden sonra sunucu yenilenir; filtre sonucu, sayımlar, ortalama ve son sayfa sınırı tekrar hesaplanır. Eşzamanlı tıklamalar ve yenileme sırasında tekrar işlem engellenir. Satın alma doğrulaması değiştirilmez.
+- admin_search_reviews SECURITY INVOKER, boş search_path ve yönetici kontrolü kullanır. Anonim execute kapalıdır; yanıt müşteri kimliğini içermez. Arama Türkçe harfleri normalize eder ve jokerleri literal kabul eder; sıralama created_at/id ile kararlıdır.
+- 49 uygulama testi ve üretim derlemesi geçti; mevcut 7 lint uyarısı kaldı. Yeni SQL testleri 1005 yorum, durum filtreleri, eski kayıt araması, 41 sayfada tekillik, yetkisiz erişim ve gerçek moderasyon sonrası sayımları kapsar. Yerel sahte verilerle masaüstü/mobil yerleşim ve filtre/sayfa bağlantıları incelendi; geçici önizleme route'u kaldırıldı.
+
+Sıradaki kapsam: fatura listesinde sipariş/müşteri/tarih araması ve sayfalama; ardından iade listesi. Yorumlar için yeni migration uygulama dağıtımından önce uygulanmalıdır.
+
+Yorum migration'ı Supabase'e 20261028091158 sürümüyle uygulandı; kaynak dosya adı canlı defterle eşleşir. Authenticated yönetici rolüyle canlı salt okunur sorgu 1 onaylı yorum ve ortalama 5 sonucunu verdi. Fonksiyon SECURITY INVOKER ve anonim execute kapalıdır. Canlı yorum durumları değiştirilmedi. Temiz kurulum SQL regresyonları ve 49 uygulama testi CI'da geçti; eski kayıt test fikstürü ayrıca 2000 tarihli bir yorumla güçlendirildi.

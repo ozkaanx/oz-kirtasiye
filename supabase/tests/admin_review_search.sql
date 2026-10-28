@@ -10,7 +10,7 @@ insert into public.product_reviews(id,product_id,user_id,rating,body,status,crea
 select ('93000000-0000-0000-0000-'||lpad(n::text,12,'0'))::uuid,('92000000-0000-0000-0000-'||lpad(n::text,12,'0'))::uuid,
  '91000000-0000-0000-0000-000000000002',case when n%3=2 then 4 else 2 end,
  case when n=1 then 'REVFIXTURE İPEK IŞIK %_' when n=1005 then 'REVFIXTURE UNIQUE-LAST-1005' else 'REVFIXTURE Customer experience '||n end,
- case n%3 when 1 then 'pending' when 2 then 'approved' else 'rejected' end,'2026-01-01T12:00:00.123456Z' from generate_series(1,1005)n;
+ case n%3 when 1 then 'pending' when 2 then 'approved' else 'rejected' end,case when n=1005 then '2000-01-01T12:00:00Z'::timestamptz else '2026-01-01T12:00:00.123456Z'::timestamptz end from generate_series(1,1005)n;
 select pg_temp.assert_true(not has_function_privilege('anon','public.admin_search_reviews(text,text,integer)','execute'),'anonymous cannot execute admin review search');
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"91000000-0000-0000-0000-000000000002"}',true);
