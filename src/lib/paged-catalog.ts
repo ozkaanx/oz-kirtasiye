@@ -31,18 +31,26 @@ export async function getPagedCatalog(filters: CatalogFilters, requestedPage: nu
   const readPage = (page: number) =>
     service.rpc('catalog_search_page', catalogPageArgs(filters, page));
 
+  // Invalid price URLs used to show no products instead of an error page.
+  const minimum = filters.min === '' ? null : Number(filters.min);
+  const maximum = filters.max === '' ? null : Number(filters.max);
+  const invalidPriceRange = minimum !== null && maximum !== null && minimum > maximum;
   const [firstPage, facetResponse] = await Promise.all([
-    readPage(requestedPage),
+    invalidPriceRange ? Promise.resolve(null) : readPage(requestedPage),
     service.rpc('catalog_category_facets', { p_category: filters.category }),
   ]);
-  if (firstPage.error || facetResponse.error) {
-    console.error('Katalog sorgusu başarısız:', firstPage.error?.code ?? facetResponse.error?.code);
+  if (firstPage?.error || facetResponse.error) {
+    console.error('Katalog sorgusu başarısız:', firstPage?.error?.code ?? facetResponse.error?.code);
     throw new Error('Ürünler şu anda yüklenemiyor.');
   }
 
-  const firstMatches = (firstPage.data ?? []) as CatalogPageMatch[];
+  const facet = ((facetResponse.data ?? []) as FacetRow[])[0];
+  const facets = { colors: facet?.colors ?? [], sizes: facet?.sizes ?? [] };
+  if (invalidPriceRange) return { ...empty, facets };
+
+  const firstMatches = (firstPage?.data ?? []) as CatalogPageMatch[];
   const { total, pageCount, currentPage } = catalogPageMeta(firstMatches, requestedPage);
-  const response = currentPage === requestedPage ? firstPage : await readPage(currentPage);
+  const response = currentPage === requestedPage ? firstPage! : await readPage(currentPage);
   if (response.error) {
     console.error('Katalog sayfası okunamadı:', response.error.code);
     throw new Error('Ürünler şu anda yüklenemiyor.');
@@ -51,9 +59,6 @@ export async function getPagedCatalog(filters: CatalogFilters, requestedPage: nu
   const ids = matches
     .map((item) => item.product_id)
     .filter((id): id is string => id !== null);
-  const facet = ((facetResponse.data ?? []) as FacetRow[])[0];
-  const facets = { colors: facet?.colors ?? [], sizes: facet?.sizes ?? [] };
-
   if (!ids.length) return { ...empty, total, pageCount, currentPage, facets };
   const supabase = await createServerSupabase();
   const { data, error } = await supabase
