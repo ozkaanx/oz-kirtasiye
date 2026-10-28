@@ -260,3 +260,8 @@
     padding: 14px;
   }
 }
+
+/* Avoid a card-inside-card layout in the shared desktop account panel. */
+@media (min-width: 731px) {
+  .customerCard { max-width: none; border: 0; border-radius: 0; padding: 0; }
+}
