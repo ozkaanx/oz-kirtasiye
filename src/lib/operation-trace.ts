@@ -6,6 +6,7 @@ type Operation =
   | 'admin_order_search'
   | 'admin_product_search'
   | 'admin_review_search'
+  | 'admin_invoice_search'
   | 'admin_order_action';
 type Event = 'unavailable' | 'database_error' | 'empty_result' | 'unexpected';
 
