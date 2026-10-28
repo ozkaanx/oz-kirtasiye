@@ -1,4 +1,5 @@
 'use client';
+import { AdminDialog } from './admin-dialog';
 
 import { type FormEvent, useMemo, useState } from 'react';
 import Image from 'next/image';
@@ -307,147 +308,134 @@ export function AdminCategories({ categories, productCounts, loadError }: Props)
       </div>
 
       {editing && (
-        <div
-          className="admin-modal-backdrop"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !pending) setEditing(null);
-          }}
+        <AdminDialog
+          className="admin-modal admin-modal-large"
+          label="Kategori düzenleme formu"
+          busy={pending}
+          onClose={() => setEditing(null)}
         >
-          <div
-            className="admin-modal admin-modal-large"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Kategori düzenleme formu"
-          >
-            <div className="admin-modal-heading">
-              <h2>{editing === 'new' ? 'Yeni kategori' : 'Kategori düzenle'}</h2>
-              <button
-                type="button"
-                aria-label="Kapat"
-                disabled={pending}
-                onClick={() => setEditing(null)}
+          <div className="admin-modal-heading">
+            <h2>{editing === 'new' ? 'Yeni kategori' : 'Kategori düzenle'}</h2>
+            <button
+              type="button"
+              aria-label="Kapat"
+              disabled={pending}
+              onClick={() => setEditing(null)}
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <form className="admin-product-form" onSubmit={save}>
+            <label className="admin-field">
+              Kategori adı *
+              <input
+                required
+                maxLength={100}
+                value={form.name}
+                onChange={(event) =>
+                  setForm((old) => ({
+                    ...old,
+                    name: event.target.value,
+                    slug: editing === 'new' ? slugifyTurkish(event.target.value) : old.slug,
+                  }))
+                }
+              />
+            </label>
+            <label className="admin-field">
+              URL (slug) *
+              <input
+                required
+                maxLength={120}
+                value={form.slug}
+                onChange={(event) => setForm((old) => ({ ...old, slug: event.target.value }))}
+              />
+            </label>
+            <label className="admin-field">
+              Üst kategori
+              <select
+                value={form.parent_id}
+                onChange={(event) => setForm((old) => ({ ...old, parent_id: event.target.value }))}
               >
-                <X size={20} />
-              </button>
-            </div>
-            <form className="admin-product-form" onSubmit={save}>
-              <label className="admin-field">
-                Kategori adı *
-                <input
-                  required
-                  maxLength={100}
-                  value={form.name}
-                  onChange={(event) =>
-                    setForm((old) => ({
-                      ...old,
-                      name: event.target.value,
-                      slug: editing === 'new' ? slugifyTurkish(event.target.value) : old.slug,
-                    }))
-                  }
-                />
-              </label>
-              <label className="admin-field">
-                URL (slug) *
-                <input
-                  required
-                  maxLength={120}
-                  value={form.slug}
-                  onChange={(event) => setForm((old) => ({ ...old, slug: event.target.value }))}
-                />
-              </label>
-              <label className="admin-field">
-                Üst kategori
-                <select
-                  value={form.parent_id}
-                  onChange={(event) =>
-                    setForm((old) => ({ ...old, parent_id: event.target.value }))
-                  }
-                >
-                  <option value="">Ana kategori (üst kategori yok)</option>
-                  {ordered
-                    .filter(({ category }) => !blockedParents.has(category.id))
-                    .map(({ category, depth }) => (
-                      <option key={category.id} value={category.id}>
-                        {'— '.repeat(depth)}
-                        {category.name}
-                      </option>
-                    ))}
-                </select>
-              </label>
-              <label className="admin-field">
-                Görsel
-                <select
-                  value={form.image_path}
-                  onChange={(event) =>
-                    setForm((old) => ({ ...old, image_path: event.target.value }))
-                  }
-                >
-                  <option value="">Otomatik seç</option>
-                  {CATEGORY_ARTWORK.map((artwork) => (
-                    <option key={artwork.path} value={artwork.path}>
-                      {artwork.label}
+                <option value="">Ana kategori (üst kategori yok)</option>
+                {ordered
+                  .filter(({ category }) => !blockedParents.has(category.id))
+                  .map(({ category, depth }) => (
+                    <option key={category.id} value={category.id}>
+                      {'— '.repeat(depth)}
+                      {category.name}
                     </option>
                   ))}
-                </select>
-              </label>
-              <label className="admin-field">
-                Sıra numarası *
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  required
-                  value={form.sort_order}
-                  onChange={(event) =>
-                    setForm((old) => ({ ...old, sort_order: event.target.value }))
-                  }
-                />
-              </label>
-              <div className="admin-category-preview">
-                <Image
-                  src={categoryArtwork(preview)}
-                  width={58}
-                  height={58}
-                  alt="Kategori görseli önizlemesi"
-                />
-                <span>Seçilen kategori görseli</span>
-              </div>
-              <label className="admin-field admin-form-wide">
-                Açıklama
-                <textarea
-                  rows={3}
-                  maxLength={500}
-                  value={form.description}
-                  onChange={(event) =>
-                    setForm((old) => ({ ...old, description: event.target.value }))
-                  }
-                />
-              </label>
-              <label className="admin-checkbox admin-form-wide">
-                <input
-                  type="checkbox"
-                  checked={form.is_active}
-                  onChange={(event) =>
-                    setForm((old) => ({ ...old, is_active: event.target.checked }))
-                  }
-                />
-                Sitede yayınla
-              </label>
-              {error && (
-                <p role="alert" className="admin-form-error admin-form-wide">
-                  {error}
-                </p>
-              )}
-              <button
-                type="submit"
-                disabled={pending}
-                className="button button-primary admin-form-wide"
+              </select>
+            </label>
+            <label className="admin-field">
+              Görsel
+              <select
+                value={form.image_path}
+                onChange={(event) => setForm((old) => ({ ...old, image_path: event.target.value }))}
               >
-                <Check size={18} /> {pending ? 'Kaydediliyor...' : 'Kategoriyi kaydet'}
-              </button>
-            </form>
-          </div>
-        </div>
+                <option value="">Otomatik seç</option>
+                {CATEGORY_ARTWORK.map((artwork) => (
+                  <option key={artwork.path} value={artwork.path}>
+                    {artwork.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="admin-field">
+              Sıra numarası *
+              <input
+                type="number"
+                min="0"
+                step="1"
+                required
+                value={form.sort_order}
+                onChange={(event) => setForm((old) => ({ ...old, sort_order: event.target.value }))}
+              />
+            </label>
+            <div className="admin-category-preview">
+              <Image
+                src={categoryArtwork(preview)}
+                width={58}
+                height={58}
+                alt="Kategori görseli önizlemesi"
+              />
+              <span>Seçilen kategori görseli</span>
+            </div>
+            <label className="admin-field admin-form-wide">
+              Açıklama
+              <textarea
+                rows={3}
+                maxLength={500}
+                value={form.description}
+                onChange={(event) =>
+                  setForm((old) => ({ ...old, description: event.target.value }))
+                }
+              />
+            </label>
+            <label className="admin-checkbox admin-form-wide">
+              <input
+                type="checkbox"
+                checked={form.is_active}
+                onChange={(event) =>
+                  setForm((old) => ({ ...old, is_active: event.target.checked }))
+                }
+              />
+              Sitede yayınla
+            </label>
+            {error && (
+              <p role="alert" className="admin-form-error admin-form-wide">
+                {error}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={pending}
+              className="button button-primary admin-form-wide"
+            >
+              <Check size={18} /> {pending ? 'Kaydediliyor...' : 'Kategoriyi kaydet'}
+            </button>
+          </form>
+        </AdminDialog>
       )}
     </>
   );
