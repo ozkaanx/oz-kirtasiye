@@ -296,7 +296,7 @@ export function CustomerAccount({
             Alışverişe dön <ArrowRight size={16} />
           </Link>
         </nav>
-        <div className={styles.panel} id="account-content-panel" aria-label="Hesap içeriği">
+        <div className={styles.panel} id="account-content-panel" role="region" aria-label="Hesap içeriği">
           {loadError && (
             <p role="alert" className={styles.error}>{loadError}</p>
           )}
@@ -312,16 +312,16 @@ export function CustomerAccount({
           )}
           {tab === 'overview' && (
             <>
-              <div className={styles.quickGrid} aria-label="Hesap özeti">
+              <div className={styles.quickGrid} role="group" aria-label="Hesap özeti">
                 <button type="button" disabled={busy} onClick={() => changeTab('orders')} className={styles.quickCard}>
                   <span className={styles.quickIcon}><Package size={20} aria-hidden="true" /></span>
-                  <strong>{initialOrders.length}</strong>
+                  <strong>{loadError ? '—' : initialOrders.length}</strong>
                   <span>Son sipariş taleplerim</span>
                   <ArrowRight size={17} className={styles.quickArrow} aria-hidden="true" />
                 </button>
                 <button type="button" disabled={busy} onClick={() => changeTab('addresses')} className={styles.quickCard}>
                   <span className={styles.quickIcon}><MapPin size={20} aria-hidden="true" /></span>
-                  <strong>{addresses.length}</strong>
+                  <strong>{loadError ? '—' : addresses.length}</strong>
                   <span>Kayıtlı adreslerim</span>
                   <ArrowRight size={17} className={styles.quickArrow} aria-hidden="true" />
                 </button>
@@ -514,7 +514,7 @@ export function CustomerAccount({
                 </div>
               )}
               <div className={styles.addressList}>
-                {addresses.length === 0 && (
+                {addresses.length === 0 && !loadError && (
                   <div className={styles.empty}>
                     <MapPin size={28} />
                     <h3>Henüz kayıtlı adresin yok</h3>
@@ -573,7 +573,7 @@ export function CustomerAccount({
                 </div>
                 <Package size={25} />
               </div>
-              {initialOrders.length === 0 && (
+              {initialOrders.length === 0 && !loadError && (
                 <div className={styles.empty}>
                   <Package size={28} />
                   <h3>Henüz siparişin yok</h3>
