@@ -1,11 +1,30 @@
 export type OrderStatus =
   | 'new'
   | 'contacted'
+  | 'awaiting_payment'
+  | 'paid'
   | 'processing'
   | 'shipped'
   | 'delivered'
   | 'completed' // Historical state from the previous implementation.
   | 'cancelled';
+export type OrderPaymentStatus =
+  | 'not_collected'
+  | 'pending'
+  | 'paid'
+  | 'failed'
+  | 'expired'
+  | 'requires_review';
+
+export const PAYMENT_STATUS_LABELS: Record<OrderPaymentStatus, string> = {
+  not_collected: 'Tahsil edilmedi',
+  pending: 'Ödeme bekleniyor',
+  paid: 'Ödeme alındı',
+  failed: 'Ödeme başarısız',
+  expired: 'Ödeme süresi doldu',
+  requires_review: 'Ödeme inceleniyor',
+};
+
 export type OrderAction = 'contact' | 'prepare' | 'ship' | 'deliver' | 'cancel' | 'pickup_collect';
 type OrderItem = {
   id: string;
@@ -32,7 +51,7 @@ export type AdminOrderRequest = {
   address: string;
   note: string | null;
   status: OrderStatus;
-  payment_status: 'not_collected';
+  payment_status: OrderPaymentStatus;
   subtotal: number;
   delivery_method: 'legacy' | 'shipping' | 'pickup';
   shipping_fee: number;
@@ -55,6 +74,8 @@ export type AdminOrderRequest = {
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   new: 'Yeni talep',
   contacted: 'Müşteriyle görüşüldü',
+  awaiting_payment: 'Ödeme bekleniyor',
+  paid: 'Ödeme alındı · Hazırlık bekliyor',
   processing: 'Hazırlanıyor',
   shipped: 'Kargoya verildi',
   delivered: 'Teslim edildi',
