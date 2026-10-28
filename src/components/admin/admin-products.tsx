@@ -1,5 +1,6 @@
 'use client';
 
+import type { ProductSearch, ProductSearchMeta } from '@/lib/admin-product-search';
 import { useState } from 'react';
 import Link from 'next/link';
 import { Activity, Boxes, ClipboardList, FolderTree, Package, Plus } from 'lucide-react';
@@ -13,21 +14,19 @@ export function AdminProducts({
   categories,
   movements,
   loadError,
+  search,
+  result,
 }: {
   products: Product[];
   categories: Category[];
   movements: StockEntry[];
   loadError: string | null;
+  search: ProductSearch;
+  result: ProductSearchMeta | null;
 }) {
   const [editing, setEditing] = useState<Product | null | 'new'>(null);
   const [selected, setSelected] = useState<Product | null>(null);
   const [notice, setNotice] = useState('');
-
-  const low = products.filter(
-    (p) => p.stock_quantity > 0 && p.stock_quantity <= p.low_stock_threshold,
-  ).length;
-  const zero = products.filter((p) => p.stock_quantity === 0).length;
-  const total = products.reduce((sum, p) => sum + p.stock_quantity, 0);
 
   function startCreate() {
     setNotice('');
@@ -69,30 +68,33 @@ export function AdminProducts({
             {notice}
           </p>
         )}
+        <p className="admin-category-help">Tüm katalog özeti</p>
         <div className="admin-stats">
           <div>
             <Package size={22} />
             <span>Ürün sayısı</span>
-            <strong>{products.length}</strong>
+            <strong>{result?.stats.total ?? '—'}</strong>
           </div>
           <div>
             <Boxes size={22} />
             <span>Toplam stok</span>
-            <strong>{total}</strong>
+            <strong>{result?.stats.stock ?? '—'}</strong>
           </div>
           <div>
             <Activity size={22} />
             <span>Stok az</span>
-            <strong>{low}</strong>
+            <strong>{result?.stats.low ?? '—'}</strong>
           </div>
           <div>
             <ClipboardList size={22} />
             <span>Stokta yok</span>
-            <strong>{zero}</strong>
+            <strong>{result?.stats.out ?? '—'}</strong>
           </div>
         </div>
         <AdminProductList
           products={products}
+          result={result}
+          search={search}
           categories={categories}
           movements={movements}
           onEdit={startEdit}
