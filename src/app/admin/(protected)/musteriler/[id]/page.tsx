@@ -95,18 +95,24 @@ export default async function CustomerDetailPage({
       )}
       <div className={styles.profileGrid}>
         <div className={styles.profileCard}>
-          <ShoppingBag size={21} />
-          <span>Toplam sipariş talebi</span>
+          <div className={styles.profileCardTitle}>
+            <ShoppingBag size={21} />
+            <span>Toplam sipariş talebi</span>
+          </div>
           <strong>{result?.total ?? '—'}</strong>
         </div>
         <div className={styles.profileCard}>
-          <Repeat2 size={21} />
-          <span>İptal edilmemiş talepler (tümü)</span>
+          <div className={styles.profileCardTitle}>
+            <Repeat2 size={21} />
+            <span>İptal edilmemiş talepler (tümü)</span>
+          </div>
           <strong>{result?.active ?? '—'}</strong>
         </div>
         <div className={styles.profileCard}>
-          <TicketPercent size={21} />
-          <span>İptal edilmemiş talep tutarı (tümü)</span>
+          <div className={styles.profileCardTitle}>
+            <TicketPercent size={21} />
+            <span>İptal edilmemiş talep tutarı (tümü)</span>
+          </div>
           <strong>{result ? formatPrice(result.amount) : '—'}</strong>
         </div>
       </div>
