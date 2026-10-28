@@ -3,11 +3,12 @@
 import type { ProductSearch, ProductSearchMeta } from '@/lib/admin-product-search';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Activity, Boxes, ClipboardList, FolderTree, Package, Plus } from 'lucide-react';
+import { Activity, Boxes, ClipboardList, FolderTree, FileSpreadsheet, Package, Plus } from 'lucide-react';
 import type { Category, Product, StockEntry } from './admin-product-types';
 import { AdminProductList } from './admin-product-list';
 import { AdminProductEditor } from './admin-product-editor';
 import { AdminProductStockDialog } from './admin-product-stock-dialog';
+import { AdminProductImport } from './admin-product-import';
 
 export function AdminProducts({
   products,
@@ -26,6 +27,7 @@ export function AdminProducts({
 }) {
   const [editing, setEditing] = useState<Product | null | 'new'>(null);
   const [selected, setSelected] = useState<Product | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [notice, setNotice] = useState('');
 
   function startCreate() {
@@ -54,9 +56,14 @@ export function AdminProducts({
             </h1>
             <p>Manuel stok ve ürün düzenleme işlemleri Supabase&apos;e kaydedilir.</p>
           </div>
-          <button type="button" className="button button-primary" onClick={startCreate}>
-            <Plus size={17} /> Yeni ürün ekle
-          </button>
+          <div className="admin-action-group">
+            <button type="button" className="button button-secondary" onClick={() => setImportOpen(true)}>
+              <FileSpreadsheet size={17} /> Excel / CSV aktar
+            </button>
+            <button type="button" className="button button-primary" onClick={startCreate}>
+              <Plus size={17} /> Yeni ürün ekle
+            </button>
+          </div>
         </div>
         {loadError && (
           <p role="alert" className="admin-form-error">
@@ -110,6 +117,12 @@ export function AdminProducts({
         </div>
       </div>
 
+      {importOpen && (
+        <AdminProductImport
+          onClose={() => setImportOpen(false)}
+          onSaved={(message) => setNotice(message)}
+        />
+      )}
       {editing && (
         <AdminProductEditor
           key={editing === 'new' ? 'new' : editing.id}
