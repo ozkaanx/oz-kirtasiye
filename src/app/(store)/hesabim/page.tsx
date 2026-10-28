@@ -3,11 +3,18 @@ import { redirect } from 'next/navigation';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { CustomerAccount } from '@/components/account/customer-account';
 import type { CustomerAddress, CustomerOrder, CustomerProfile } from '@/lib/customer';
+import { parseAccountTab } from '@/lib/account-ui';
 
 export const metadata: Metadata = { title: 'Hesabım', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string | string[] }>;
+}) {
+  const { tab } = await searchParams;
+  const initialTab = parseAccountTab(tab);
   const supabase = await createServerSupabase();
   const {
     data: { user },
@@ -79,6 +86,7 @@ export default async function AccountPage() {
 
   return (
     <CustomerAccount
+      initialTab={initialTab}
       userId={user.id}
       email={user.email ?? ''}
       initialProfile={
