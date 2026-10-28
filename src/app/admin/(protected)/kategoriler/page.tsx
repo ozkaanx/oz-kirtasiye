@@ -1,36 +1,33 @@
 import type { Metadata } from 'next';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { AdminCategories } from '@/components/admin/admin-categories';
-
+import type { CategoryCatalog } from '@/lib/admin-customer-catalog';
+import { operationTrace } from '@/lib/operation-trace';
 export const metadata: Metadata = {
   title: 'Kategori Yönetimi',
   robots: { index: false, follow: false },
 };
 export const dynamic = 'force-dynamic';
-
 export default async function AdminCategoriesPage() {
-  const supabase = await createServerSupabase();
-  const [{ data: categories, error: categoryError }, { data: products, error: productError }] =
-    await Promise.all([
-      supabase
-        .from('categories')
-        .select('id,parent_id,name,slug,description,image_path,sort_order,is_active')
-        .order('sort_order', { ascending: true }),
-      supabase.from('products').select('category_id').limit(2000),
-    ]);
-
-  const productCounts: Record<string, number> = {};
-  (products ?? []).forEach((product) => {
-    if (product.category_id) {
-      productCounts[product.category_id] = (productCounts[product.category_id] ?? 0) + 1;
-    }
-  });
-
+  const trace = operationTrace('admin_category_catalog');
+  let result: CategoryCatalog | null = null;
+  let loadError: string | null = null;
+  try {
+    const db = await createServerSupabase();
+    const { data, error } = await db.rpc('admin_category_catalog');
+    if (error || !data || !Array.isArray(data.categories) || !data.productCounts) {
+      trace.error(error ? 'database_error' : 'empty_result', error?.code);
+      loadError = 'Kategoriler yüklenemedi. Tekrar deneyin. Takip kodu: ' + trace.requestId;
+    } else result = data as CategoryCatalog;
+  } catch {
+    trace.error('unexpected');
+    loadError = 'Kategori servisine ulaşılamadı. Takip kodu: ' + trace.requestId;
+  }
   return (
     <AdminCategories
-      categories={categories ?? []}
-      productCounts={productCounts}
-      loadError={categoryError?.message ?? productError?.message ?? null}
+      categories={result?.categories ?? []}
+      productCounts={result?.productCounts ?? null}
+      loadError={loadError}
     />
   );
 }

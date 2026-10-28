@@ -8,6 +8,8 @@ type Operation =
   | 'admin_review_search'
   | 'admin_invoice_search'
   | 'admin_return_search'
+  | 'admin_customer_detail'
+  | 'admin_category_catalog'
   | 'admin_order_action';
 type Event = 'unavailable' | 'database_error' | 'empty_result' | 'unexpected';
 

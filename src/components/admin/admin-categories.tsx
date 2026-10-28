@@ -37,7 +37,7 @@ const EMPTY_FORM: FormData = {
 
 type Props = {
   categories: StoreCategory[];
-  productCounts: Record<string, number>;
+  productCounts: Record<string, number> | null;
   loadError: string | null;
 };
 
@@ -195,17 +195,17 @@ export function AdminCategories({ categories, productCounts, loadError }: Props)
         <div className="admin-category-summary">
           <div>
             <FolderTree size={22} />
-            <strong>{categories.length}</strong>
+            <strong>{productCounts ? categories.length : '—'}</strong>
             <span>Toplam kategori</span>
           </div>
           <div>
             <Check size={22} />
-            <strong>{categories.filter((c) => c.is_active).length}</strong>
+            <strong>{productCounts ? categories.filter((c) => c.is_active).length : '—'}</strong>
             <span>Aktif kategori</span>
           </div>
           <div>
             <Boxes size={22} />
-            <strong>{categories.filter((c) => c.parent_id).length}</strong>
+            <strong>{productCounts ? categories.filter((c) => c.parent_id).length : '—'}</strong>
             <span>Alt kategori</span>
           </div>
         </div>
@@ -219,7 +219,10 @@ export function AdminCategories({ categories, productCounts, loadError }: Props)
                 onChange={(event) => setSearch(event.target.value)}
               />
             </div>
-            <span>Alt kategori oluşturmak için satırdaki + butonunu kullan.</span>
+            <span>
+              Ürün sayıları doğrudan kategoriye bağlı tüm ürünleri kapsar; alt kategoriler ayrı
+              sayılır.
+            </span>
           </div>
           {rows.length ? (
             <div className="admin-category-table-wrap">
@@ -249,7 +252,7 @@ export function AdminCategories({ categories, productCounts, loadError }: Props)
                           </span>
                         </div>
                       </td>
-                      <td>{productCounts[category.id] ?? 0}</td>
+                      <td>{productCounts ? (productCounts[category.id] ?? 0) : '—'}</td>
                       <td>{category.sort_order}</td>
                       <td>
                         <span className={`admin-status ${category.is_active ? 'in' : 'out'}`}>
