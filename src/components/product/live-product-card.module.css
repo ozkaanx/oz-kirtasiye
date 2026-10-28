@@ -3,9 +3,13 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 .content {
-  display: block;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
   color: inherit;
   text-decoration: none;
   border-radius: 0;
@@ -29,6 +33,12 @@
 .information {
   padding: 12px 0 0;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+}
+.information > div {
+  margin-top: auto;
 }
 .information h3 {
   font-size: 15px;
@@ -91,7 +101,8 @@
   }
   .information h3 {
     font-size: 13px;
-    margin-bottom: 10px;
+    min-height: 3em;
+    margin-bottom: 14px;
   }
   .favorite {
     top: 3px;
@@ -123,12 +134,25 @@
   white-space: nowrap;
 }
 @media (max-width: 600px) {
+  .card {
+    min-width: 0;
+  }
   .purchase {
-    margin-top: 10px;
+    /* Do not override the flexible card layout with uneven button positions. */
+    margin-top: 0;
+    padding-top: 12px;
   }
   .purchase :global(.button) {
-    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 46px;
+    padding: 11px 6px;
     font-size: 13px;
+    line-height: 1.25;
+    white-space: normal;
+    text-align: center;
   }
 }
 @media (prefers-reduced-motion: reduce) {
