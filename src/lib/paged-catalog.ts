@@ -1,24 +1,74 @@
-import { catalogFacets, filterCatalogProducts, type CatalogFilters } from '@/lib/catalog-filters';
-import type { StoreCategory } from '@/lib/category-utils';
-import { getAllCatalogProducts } from '@/lib/real-catalog';
+import type { CatalogFilters } from '@/lib/catalog-filters';
+import {
+  catalogPageArgs,
+  catalogPageMeta,
+  CATALOG_PAGE_SIZE,
+  projectCatalogPage,
+  type CatalogPageMatch,
+} from '@/lib/catalog-page-helpers';
+import { PRODUCT_FIELDS, transformRows, type ProductRow } from '@/lib/real-catalog';
+import { hasSupabaseConfig } from '@/lib/supabase/config';
+import { createOrderServerClient } from '@/lib/supabase/order-server';
+import { createServerSupabase } from '@/lib/supabase/server';
 
-export const CATALOG_PAGE_SIZE = 24;
+export { parseCatalogPage } from '@/lib/catalog-page-helpers';
+export { CATALOG_PAGE_SIZE } from '@/lib/catalog-page-helpers';
 
-export function parseCatalogPage(value: string | null): number {
-  if (!value || !/^[1-9]\d{0,5}$/.test(value)) return 1;
-  return Math.min(Number(value), 100000);
-}
+type FacetRow = { colors: string[] | null; sizes: string[] | null };
 
-export async function getPagedCatalog(filters: CatalogFilters, page: number, categories: StoreCategory[]) {
-  const products = await getAllCatalogProducts();
-  const facets = catalogFacets(products, categories, filters.category);
-  const filtered = filterCatalogProducts(products, categories, filters);
-  const total = filtered.length;
-  const pageCount = Math.max(1, Math.ceil(total / CATALOG_PAGE_SIZE));
-  const currentPage = Math.min(Math.max(1, page), pageCount);
-  const start = (currentPage - 1) * CATALOG_PAGE_SIZE;
+export async function getPagedCatalog(filters: CatalogFilters, requestedPage: number) {
+  const empty = {
+    products: [],
+    total: 0,
+    pageCount: 1,
+    currentPage: 1,
+    facets: { colors: [] as string[], sizes: [] as string[] },
+  };
+  if (!hasSupabaseConfig()) return empty;
+
+  // Both RPCs are service-role-only; filter/discount internals never enter the browser.
+  const service = createOrderServerClient();
+  const readPage = (page: number) =>
+    service.rpc('catalog_search_page', catalogPageArgs(filters, page));
+
+  const [firstPage, facetResponse] = await Promise.all([
+    readPage(requestedPage),
+    service.rpc('catalog_category_facets', { p_category: filters.category }),
+  ]);
+  if (firstPage.error || facetResponse.error) {
+    console.error('Katalog sorgusu başarısız:', firstPage.error?.code ?? facetResponse.error?.code);
+    throw new Error('Ürünler şu anda yüklenemiyor.');
+  }
+
+  const firstMatches = (firstPage.data ?? []) as CatalogPageMatch[];
+  const { total, pageCount, currentPage } = catalogPageMeta(firstMatches, requestedPage);
+  const response = currentPage === requestedPage ? firstPage : await readPage(currentPage);
+  if (response.error) {
+    console.error('Katalog sayfası okunamadı:', response.error.code);
+    throw new Error('Ürünler şu anda yüklenemiyor.');
+  }
+  const matches = (response.data ?? []) as CatalogPageMatch[];
+  const ids = matches
+    .map((item) => item.product_id)
+    .filter((id): id is string => id !== null);
+  const facet = ((facetResponse.data ?? []) as FacetRow[])[0];
+  const facets = { colors: facet?.colors ?? [], sizes: facet?.sizes ?? [] };
+
+  if (!ids.length) return { ...empty, total, pageCount, currentPage, facets };
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase
+    .from('products')
+    .select(PRODUCT_FIELDS)
+    .eq('is_active', true)
+    .in('id', ids)
+    .limit(CATALOG_PAGE_SIZE);
+  if (error) {
+    console.error('Katalog ürün detayları okunamadı:', error.code);
+    throw new Error('Ürünler şu anda yüklenemiyor.');
+  }
+  const loaded = await transformRows((data ?? []) as ProductRow[]);
   return {
-    products: filtered.slice(start, start + CATALOG_PAGE_SIZE),
+    products: projectCatalogPage(matches, loaded),
     total,
     pageCount,
     currentPage,
