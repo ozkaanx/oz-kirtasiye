@@ -13,6 +13,9 @@ const storageUrl = (() => {
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Keep the floating Next.js development badge off mobile product actions.
+  // Build/runtime errors still surface in dev tools.
+  devIndicators: false,
   // Allow the explicitly trusted LAN hostname when testing next dev on a phone.
   // Add LOCAL_DEV_HOST to .env.local if your computer receives a new IP address.
   allowedDevOrigins:
