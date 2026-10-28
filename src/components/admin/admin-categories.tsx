@@ -2,21 +2,11 @@
 
 import { type FormEvent, useMemo, useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+
 import { useRouter } from 'next/navigation';
-import {
-  ArrowLeft,
-  Boxes,
-  Check,
-  ChevronRight,
-  FolderTree,
-  LogOut,
-  Pencil,
-  Plus,
-  X,
-} from 'lucide-react';
+import { Boxes, Check, ChevronRight, FolderTree, Pencil, Plus, X } from 'lucide-react';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
-import { AdminSidebar } from '@/components/admin/admin-sidebar';
+
 import {
   CATEGORY_ARTWORK,
   categoryArtwork,
@@ -165,12 +155,6 @@ export function AdminCategories({ categories, productCounts, loadError }: Props)
     }
   }
 
-  async function logout() {
-    await createBrowserSupabase().auth.signOut();
-    router.replace('/admin/giris');
-    router.refresh();
-  }
-
   const preview: StoreCategory = {
     id: '',
     parent_id: null,
@@ -183,152 +167,142 @@ export function AdminCategories({ categories, productCounts, loadError }: Props)
   };
 
   return (
-    <div className="admin-shell">
-      <AdminSidebar />
-      <div className="admin-main">
-        <div className="admin-top">
-          <Link href="/admin/urunler">
-            <ArrowLeft size={16} /> Ürün yönetimine dön
-          </Link>
-          <button className="admin-logout" type="button" onClick={logout}>
-            <LogOut size={16} /> Çıkış yap
+    <>
+      <div className="admin-body">
+        <div className="admin-page-heading">
+          <div>
+            <span className="section-eyebrow">ÖZ KIRTASİYE · GERÇEK VERİLER</span>
+            <h1>
+              Kategori yönetimi<span className="orange-dot">.</span>
+            </h1>
+            <p>Ana kategorileri ve alt kategorileri buradan yönetebilirsin.</p>
+          </div>
+          <button type="button" className="button button-primary" onClick={() => create()}>
+            <Plus size={17} /> Yeni kategori
           </button>
         </div>
-        <div className="admin-body">
-          <div className="admin-page-heading">
-            <div>
-              <span className="section-eyebrow">ÖZ KIRTASİYE · GERÇEK VERİLER</span>
-              <h1>
-                Kategori yönetimi<span className="orange-dot">.</span>
-              </h1>
-              <p>Ana kategorileri ve alt kategorileri buradan yönetebilirsin.</p>
-            </div>
-            <button type="button" className="button button-primary" onClick={() => create()}>
-              <Plus size={17} /> Yeni kategori
-            </button>
-          </div>
-          {loadError && <p className="admin-form-error">Veri okuma hatası: {loadError}</p>}
-          {notice && (
-            <p className="admin-form-success" role="status">
-              {notice}
-            </p>
-          )}
-          {!editing && error && (
-            <p className="admin-form-error" role="alert">
-              {error}
-            </p>
-          )}
-          <div className="admin-category-summary">
-            <div>
-              <FolderTree size={22} />
-              <strong>{categories.length}</strong>
-              <span>Toplam kategori</span>
-            </div>
-            <div>
-              <Check size={22} />
-              <strong>{categories.filter((c) => c.is_active).length}</strong>
-              <span>Aktif kategori</span>
-            </div>
-            <div>
-              <Boxes size={22} />
-              <strong>{categories.filter((c) => c.parent_id).length}</strong>
-              <span>Alt kategori</span>
-            </div>
-          </div>
-          <div className="admin-content-box">
-            <div className="admin-category-toolbar">
-              <div className="admin-search">
-                <input
-                  aria-label="Kategori ara"
-                  placeholder="Kategori ara..."
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-              </div>
-              <span>Alt kategori oluşturmak için satırdaki + butonunu kullan.</span>
-            </div>
-            {rows.length ? (
-              <div className="admin-category-table-wrap">
-                <table className="admin-table admin-category-table">
-                  <thead>
-                    <tr>
-                      <th>KATEGORİ</th>
-                      <th>ÜRÜN</th>
-                      <th>SIRA</th>
-                      <th>DURUM</th>
-                      <th>İŞLEM</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map(({ category, depth }) => (
-                      <tr key={category.id}>
-                        <td>
-                          <div
-                            className="admin-category-name"
-                            style={{ paddingLeft: `${depth * 21}px` }}
-                          >
-                            {depth > 0 && <ChevronRight size={14} color="#a4a8b1" />}
-                            <Image src={categoryArtwork(category)} width={40} height={40} alt="" />
-                            <span>
-                              <strong>{category.name}</strong>
-                              <small>/{category.slug}</small>
-                            </span>
-                          </div>
-                        </td>
-                        <td>{productCounts[category.id] ?? 0}</td>
-                        <td>{category.sort_order}</td>
-                        <td>
-                          <span className={`admin-status ${category.is_active ? 'in' : 'out'}`}>
-                            {category.is_active ? 'Aktif' : 'Pasif'}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="admin-action-group">
-                            <button
-                              className="admin-edit"
-                              type="button"
-                              onClick={() => edit(category)}
-                            >
-                              <Pencil size={14} /> Düzenle
-                            </button>
-                            <button
-                              className="admin-edit"
-                              type="button"
-                              title="Alt kategori ekle"
-                              aria-label={`${category.name} alt kategorisi ekle`}
-                              onClick={() => create(category.id)}
-                            >
-                              <Plus size={14} /> Alt kategori
-                            </button>
-                            <button
-                              className="admin-edit"
-                              type="button"
-                              disabled={pending}
-                              onClick={() => toggleActive(category)}
-                            >
-                              {category.is_active ? 'Pasifleştir' : 'Aktifleştir'}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="admin-no-results">
-                <FolderTree size={32} />
-                <h3>{search ? 'Aradığın kategori bulunamadı' : 'Henüz kategori oluşturulmadı'}</h3>
-                {!search && <p>Önce ana kategori, ardından istersen alt kategorilerini ekle.</p>}
-              </div>
-            )}
-          </div>
-          <p className="admin-category-help">
-            Pasif kategoriler ve bu kategorilerin alt kategorileri müşteriye gösterilmez. Ancak
-            kategorideki ürünlerin yayın durumu ayrıca ürün yönetiminden değiştirilmelidir.
+        {loadError && <p className="admin-form-error">Veri okuma hatası: {loadError}</p>}
+        {notice && (
+          <p className="admin-form-success" role="status">
+            {notice}
           </p>
+        )}
+        {!editing && error && (
+          <p className="admin-form-error" role="alert">
+            {error}
+          </p>
+        )}
+        <div className="admin-category-summary">
+          <div>
+            <FolderTree size={22} />
+            <strong>{categories.length}</strong>
+            <span>Toplam kategori</span>
+          </div>
+          <div>
+            <Check size={22} />
+            <strong>{categories.filter((c) => c.is_active).length}</strong>
+            <span>Aktif kategori</span>
+          </div>
+          <div>
+            <Boxes size={22} />
+            <strong>{categories.filter((c) => c.parent_id).length}</strong>
+            <span>Alt kategori</span>
+          </div>
         </div>
+        <div className="admin-content-box">
+          <div className="admin-category-toolbar">
+            <div className="admin-search">
+              <input
+                aria-label="Kategori ara"
+                placeholder="Kategori ara..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+            <span>Alt kategori oluşturmak için satırdaki + butonunu kullan.</span>
+          </div>
+          {rows.length ? (
+            <div className="admin-category-table-wrap">
+              <table className="admin-table admin-category-table">
+                <thead>
+                  <tr>
+                    <th>KATEGORİ</th>
+                    <th>ÜRÜN</th>
+                    <th>SIRA</th>
+                    <th>DURUM</th>
+                    <th>İŞLEM</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map(({ category, depth }) => (
+                    <tr key={category.id}>
+                      <td>
+                        <div
+                          className="admin-category-name"
+                          style={{ paddingLeft: `${depth * 21}px` }}
+                        >
+                          {depth > 0 && <ChevronRight size={14} color="#a4a8b1" />}
+                          <Image src={categoryArtwork(category)} width={40} height={40} alt="" />
+                          <span>
+                            <strong>{category.name}</strong>
+                            <small>/{category.slug}</small>
+                          </span>
+                        </div>
+                      </td>
+                      <td>{productCounts[category.id] ?? 0}</td>
+                      <td>{category.sort_order}</td>
+                      <td>
+                        <span className={`admin-status ${category.is_active ? 'in' : 'out'}`}>
+                          {category.is_active ? 'Aktif' : 'Pasif'}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="admin-action-group">
+                          <button
+                            className="admin-edit"
+                            type="button"
+                            onClick={() => edit(category)}
+                          >
+                            <Pencil size={14} /> Düzenle
+                          </button>
+                          <button
+                            className="admin-edit"
+                            type="button"
+                            title="Alt kategori ekle"
+                            aria-label={`${category.name} alt kategorisi ekle`}
+                            onClick={() => create(category.id)}
+                          >
+                            <Plus size={14} /> Alt kategori
+                          </button>
+                          <button
+                            className="admin-edit"
+                            type="button"
+                            disabled={pending}
+                            onClick={() => toggleActive(category)}
+                          >
+                            {category.is_active ? 'Pasifleştir' : 'Aktifleştir'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="admin-no-results">
+              <FolderTree size={32} />
+              <h3>{search ? 'Aradığın kategori bulunamadı' : 'Henüz kategori oluşturulmadı'}</h3>
+              {!search && <p>Önce ana kategori, ardından istersen alt kategorilerini ekle.</p>}
+            </div>
+          )}
+        </div>
+        <p className="admin-category-help">
+          Pasif kategoriler ve bu kategorilerin alt kategorileri müşteriye gösterilmez. Ancak
+          kategorideki ürünlerin yayın durumu ayrıca ürün yönetiminden değiştirilmelidir.
+        </p>
       </div>
+
       {editing && (
         <div
           className="admin-modal-backdrop"
@@ -472,6 +446,6 @@ export function AdminCategories({ categories, productCounts, loadError }: Props)
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

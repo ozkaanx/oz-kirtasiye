@@ -1,11 +1,11 @@
 'use client';
 
 import { useMemo, useState, type FormEvent } from 'react';
-import Link from 'next/link';
+
 import { useClock } from '@/lib/use-clock';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, LogOut, Megaphone, PlusCircle, ShieldCheck } from 'lucide-react';
-import { AdminSidebar } from '@/components/admin/admin-sidebar';
+import { Megaphone, PlusCircle, ShieldCheck } from 'lucide-react';
+
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 import { formatPrice } from '@/lib/format';
 import styles from './admin-coupons.module.css';
@@ -162,261 +162,240 @@ export function AdminAutoCampaigns({
       setBusy(false);
     }
   }
-  async function logout() {
-    await createBrowserSupabase().auth.signOut();
-    router.push('/admin/giris');
-    router.refresh();
-  }
+
   return (
-    <div className="admin-shell">
-      <AdminSidebar />
-      <main className="admin-main">
-        <header className="admin-top">
-          <Link href="/">
-            <ArrowLeft size={16} /> Mağazaya dön
-          </Link>
-          <button type="button" className="admin-logout" onClick={() => void logout()}>
-            <LogOut size={16} /> Çıkış yap
-          </button>
-        </header>
-        <div className="admin-body">
-          <div className="admin-page-heading">
-            <div>
-              <span className="section-eyebrow">ÖZ KIRTASİYE · KAMPANYALAR</span>
-              <h1>
-                Otomatik kampanyalar<span className="orange-dot">.</span>
-              </h1>
-              <p>Kupon kodu gerektirmeyen ürün, kategori ve sepet indirimleri.</p>
-            </div>
-          </div>
-          <div className={styles.notice}>
-            <ShieldCheck size={19} />
-            <span>
-              <strong>Çift indirim yok.</strong> Kuponla veya başka kampanyayla çakışırsa en yüksek
-              indirim seçilir. Kategori kampanyaları alt kategorileri de kapsar. Bu ekran ödeme
-              tahsil etmez.
-            </span>
-          </div>
-          {loadError && (
-            <p className={styles.error} role="alert">
-              Kampanyalar yüklenemedi: {loadError}
-            </p>
-          )}
-          {error && (
-            <p className={styles.error} role="alert">
-              {error}
-            </p>
-          )}
-          {message && (
-            <p className={styles.success} role="status">
-              {message}
-            </p>
-          )}
-          <div className={styles.layout}>
-            <section className={styles.panel}>
-              <h2>
-                <PlusCircle size={19} /> Yeni kampanya
-              </h2>
-              <form className={styles.form} onSubmit={(e) => void create(e)}>
-                <label>
-                  Kampanya adı
-                  <input
-                    required
-                    minLength={3}
-                    maxLength={100}
-                    placeholder="Defterlerde %15 indirim"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </label>
-                <div className={styles.two}>
-                  <label>
-                    Kapsam
-                    <select
-                      value={scope}
-                      onChange={(e) => {
-                        setScope(e.target.value as Scope);
-                        setTarget('');
-                      }}
-                    >
-                      <option value="category">Kategori</option>
-                      <option value="product">Ürün</option>
-                      <option value="order">Tüm sepet</option>
-                    </select>
-                  </label>
-                  {scope !== 'order' && (
-                    <label>
-                      {scope === 'category' ? 'Kategori' : 'Ürün'}
-                      <select required value={target} onChange={(e) => setTarget(e.target.value)}>
-                        <option value="">Seçiniz</option>
-                        {options.map((o) => (
-                          <option value={o.id} key={o.id}>
-                            {o.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  )}
-                </div>
-                <div className={styles.two}>
-                  <label>
-                    İndirim
-                    <select value={type} onChange={(e) => setType(e.target.value as DiscountType)}>
-                      <option value="percent">Yüzde (%)</option>
-                      <option value="fixed">Sabit TL</option>
-                    </select>
-                  </label>
-                  <label>
-                    Değer
-                    <input
-                      required
-                      type="number"
-                      min="0.01"
-                      max={type === 'percent' ? 100 : 999999.99}
-                      step="0.01"
-                      value={value}
-                      onChange={(e) => setValue(e.target.value)}
-                    />
-                  </label>
-                </div>
-                <div className={styles.two}>
-                  <label>
-                    Min. sepet ürün tutarı (TL)
-                    <input
-                      required
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={min}
-                      onChange={(e) => setMin(e.target.value)}
-                    />
-                  </label>
-                  <label>
-                    Maks. indirim (TL)<small>Yalnızca yüzde için</small>
-                    <input
-                      disabled={type === 'fixed'}
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={cap}
-                      placeholder="Sınırsız"
-                      onChange={(e) => setCap(e.target.value)}
-                    />
-                  </label>
-                </div>
-                <div className={styles.two}>
-                  <label>
-                    Başlangıç
-                    <input
-                      type="datetime-local"
-                      value={start}
-                      onChange={(e) => setStart(e.target.value)}
-                    />
-                  </label>
-                  <label>
-                    Bitiş (isteğe bağlı)
-                    <input
-                      type="datetime-local"
-                      value={end}
-                      onChange={(e) => setEnd(e.target.value)}
-                    />
-                  </label>
-                </div>
-                <label>
-                  Öncelik (eşit indirimde)
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="1"
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value)}
-                  />
-                </label>
-                <button className={styles.primary} type="submit" disabled={busy}>
-                  {busy ? 'Kaydediliyor...' : 'Kampanya oluştur'}
-                </button>
-              </form>
-            </section>
-            <section className={styles.panel}>
-              <div className={styles.heading}>
-                <h2>
-                  <Megaphone size={19} /> Kampanya listesi
-                </h2>
-                <strong>{campaigns.length} kampanya</strong>
-              </div>
-              <input
-                className={styles.search}
-                aria-label="Kampanya ara"
-                placeholder="Kampanya ara"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <div className={styles.stack}>
-                {visible.length === 0 && <p className={styles.empty}>Kampanya bulunamadı.</p>}
-                {visible.map((c) => {
-                  const expired = !!c.expires_at && new Date(c.expires_at).getTime() <= now;
-                  const future = new Date(c.starts_at).getTime() > now;
-                  const active = c.is_active && !expired && !future;
-                  return (
-                    <article key={c.id} className={styles.card}>
-                      <div className={styles.cardTop}>
-                        <strong>{c.name}</strong>
-                        <span className={styles.tag} data-active={active}>
-                          {!c.is_active
-                            ? 'Durduruldu'
-                            : expired
-                              ? 'Süresi doldu'
-                              : future
-                                ? 'Başlayacak'
-                                : 'Aktif'}
-                        </span>
-                      </div>
-                      <p>{targetName(c)}</p>
-                      <div className={styles.grid}>
-                        <span>
-                          İndirim
-                          <strong>
-                            {c.discount_type === 'percent'
-                              ? `%${c.discount_value}`
-                              : formatPrice(c.discount_value)}
-                          </strong>
-                        </span>
-                        <span>
-                          Min. sepet<strong>{formatPrice(c.min_subtotal)}</strong>
-                        </span>
-                        <span>
-                          Başlangıç<strong>{showDate(c.starts_at)}</strong>
-                        </span>
-                        <span>
-                          Bitiş<strong>{showDate(c.expires_at)}</strong>
-                        </span>
-                        <span>
-                          Öncelik<strong>{c.priority}</strong>
-                        </span>
-                        <span>
-                          Üst sınır
-                          <strong>
-                            {c.max_discount === null ? 'Yok' : formatPrice(c.max_discount)}
-                          </strong>
-                        </span>
-                      </div>
-                      <button
-                        className={styles.toggle}
-                        type="button"
-                        disabled={busy}
-                        onClick={() => void toggle(c)}
-                      >
-                        {c.is_active ? 'Kampanyayı durdur' : 'Yeniden etkinleştir'}
-                      </button>
-                    </article>
-                  );
-                })}
-              </div>
-            </section>
-          </div>
+    <div className="admin-body">
+      <div className="admin-page-heading">
+        <div>
+          <span className="section-eyebrow">ÖZ KIRTASİYE · KAMPANYALAR</span>
+          <h1>
+            Otomatik kampanyalar<span className="orange-dot">.</span>
+          </h1>
+          <p>Kupon kodu gerektirmeyen ürün, kategori ve sepet indirimleri.</p>
         </div>
-      </main>
+      </div>
+      <div className={styles.notice}>
+        <ShieldCheck size={19} />
+        <span>
+          <strong>Çift indirim yok.</strong> Kuponla veya başka kampanyayla çakışırsa en yüksek
+          indirim seçilir. Kategori kampanyaları alt kategorileri de kapsar. Bu ekran ödeme tahsil
+          etmez.
+        </span>
+      </div>
+      {loadError && (
+        <p className={styles.error} role="alert">
+          Kampanyalar yüklenemedi: {loadError}
+        </p>
+      )}
+      {error && (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      )}
+      {message && (
+        <p className={styles.success} role="status">
+          {message}
+        </p>
+      )}
+      <div className={styles.layout}>
+        <section className={styles.panel}>
+          <h2>
+            <PlusCircle size={19} /> Yeni kampanya
+          </h2>
+          <form className={styles.form} onSubmit={(e) => void create(e)}>
+            <label>
+              Kampanya adı
+              <input
+                required
+                minLength={3}
+                maxLength={100}
+                placeholder="Defterlerde %15 indirim"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </label>
+            <div className={styles.two}>
+              <label>
+                Kapsam
+                <select
+                  value={scope}
+                  onChange={(e) => {
+                    setScope(e.target.value as Scope);
+                    setTarget('');
+                  }}
+                >
+                  <option value="category">Kategori</option>
+                  <option value="product">Ürün</option>
+                  <option value="order">Tüm sepet</option>
+                </select>
+              </label>
+              {scope !== 'order' && (
+                <label>
+                  {scope === 'category' ? 'Kategori' : 'Ürün'}
+                  <select required value={target} onChange={(e) => setTarget(e.target.value)}>
+                    <option value="">Seçiniz</option>
+                    {options.map((o) => (
+                      <option value={o.id} key={o.id}>
+                        {o.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
+            <div className={styles.two}>
+              <label>
+                İndirim
+                <select value={type} onChange={(e) => setType(e.target.value as DiscountType)}>
+                  <option value="percent">Yüzde (%)</option>
+                  <option value="fixed">Sabit TL</option>
+                </select>
+              </label>
+              <label>
+                Değer
+                <input
+                  required
+                  type="number"
+                  min="0.01"
+                  max={type === 'percent' ? 100 : 999999.99}
+                  step="0.01"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                />
+              </label>
+            </div>
+            <div className={styles.two}>
+              <label>
+                Min. sepet ürün tutarı (TL)
+                <input
+                  required
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={min}
+                  onChange={(e) => setMin(e.target.value)}
+                />
+              </label>
+              <label>
+                Maks. indirim (TL)<small>Yalnızca yüzde için</small>
+                <input
+                  disabled={type === 'fixed'}
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={cap}
+                  placeholder="Sınırsız"
+                  onChange={(e) => setCap(e.target.value)}
+                />
+              </label>
+            </div>
+            <div className={styles.two}>
+              <label>
+                Başlangıç
+                <input
+                  type="datetime-local"
+                  value={start}
+                  onChange={(e) => setStart(e.target.value)}
+                />
+              </label>
+              <label>
+                Bitiş (isteğe bağlı)
+                <input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
+              </label>
+            </div>
+            <label>
+              Öncelik (eşit indirimde)
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+              />
+            </label>
+            <button className={styles.primary} type="submit" disabled={busy}>
+              {busy ? 'Kaydediliyor...' : 'Kampanya oluştur'}
+            </button>
+          </form>
+        </section>
+        <section className={styles.panel}>
+          <div className={styles.heading}>
+            <h2>
+              <Megaphone size={19} /> Kampanya listesi
+            </h2>
+            <strong>{campaigns.length} kampanya</strong>
+          </div>
+          <input
+            className={styles.search}
+            aria-label="Kampanya ara"
+            placeholder="Kampanya ara"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <div className={styles.stack}>
+            {visible.length === 0 && <p className={styles.empty}>Kampanya bulunamadı.</p>}
+            {visible.map((c) => {
+              const expired = !!c.expires_at && new Date(c.expires_at).getTime() <= now;
+              const future = new Date(c.starts_at).getTime() > now;
+              const active = c.is_active && !expired && !future;
+              return (
+                <article key={c.id} className={styles.card}>
+                  <div className={styles.cardTop}>
+                    <strong>{c.name}</strong>
+                    <span className={styles.tag} data-active={active}>
+                      {!c.is_active
+                        ? 'Durduruldu'
+                        : expired
+                          ? 'Süresi doldu'
+                          : future
+                            ? 'Başlayacak'
+                            : 'Aktif'}
+                    </span>
+                  </div>
+                  <p>{targetName(c)}</p>
+                  <div className={styles.grid}>
+                    <span>
+                      İndirim
+                      <strong>
+                        {c.discount_type === 'percent'
+                          ? `%${c.discount_value}`
+                          : formatPrice(c.discount_value)}
+                      </strong>
+                    </span>
+                    <span>
+                      Min. sepet<strong>{formatPrice(c.min_subtotal)}</strong>
+                    </span>
+                    <span>
+                      Başlangıç<strong>{showDate(c.starts_at)}</strong>
+                    </span>
+                    <span>
+                      Bitiş<strong>{showDate(c.expires_at)}</strong>
+                    </span>
+                    <span>
+                      Öncelik<strong>{c.priority}</strong>
+                    </span>
+                    <span>
+                      Üst sınır
+                      <strong>
+                        {c.max_discount === null ? 'Yok' : formatPrice(c.max_discount)}
+                      </strong>
+                    </span>
+                  </div>
+                  <button
+                    className={styles.toggle}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void toggle(c)}
+                  >
+                    {c.is_active ? 'Kampanyayı durdur' : 'Yeniden etkinleştir'}
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

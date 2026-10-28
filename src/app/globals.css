@@ -4508,11 +4508,13 @@ a:focus-visible {
     z-index: 121;
     overflow-y: auto;
     transform: translateX(-103%);
+    visibility: hidden;
     transition: transform 0.2s ease;
     box-shadow: 8px 0 25px #0002;
   }
   .admin-sidebar.is-open {
     transform: translateX(0);
+    visibility: visible;
   }
   .admin-sidebar-backdrop {
     display: block;

@@ -3,17 +3,8 @@
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  ArrowLeft,
-  ClipboardList,
-  Clock3,
-  LogOut,
-  PhoneCall,
-  PackageCheck,
-  Truck,
-} from 'lucide-react';
-import { createBrowserSupabase } from '@/lib/supabase/browser';
-import { AdminSidebar } from '@/components/admin/admin-sidebar';
+import { ClipboardList, Clock3, PhoneCall, PackageCheck, Truck } from 'lucide-react';
+
 import filterStyles from './admin-list-filters.module.css';
 
 import {
@@ -100,151 +91,131 @@ export function AdminOrderRequests({
     }
   }
 
-  async function logout() {
-    await createBrowserSupabase().auth.signOut();
-    router.replace('/admin/giris');
-    router.refresh();
-  }
-
   return (
-    <div className="admin-shell">
-      <AdminSidebar />
-
-      <div className="admin-main">
-        <div className="admin-top">
-          <Link href="/">
-            <ArrowLeft size={16} /> Mağazaya dön
-          </Link>
-          <button className="admin-logout" onClick={() => void logout()}>
-            <LogOut size={16} /> Çıkış yap
-          </button>
-        </div>
-        <div className="admin-body">
-          <div className="admin-page-heading">
-            <div>
-              <span className="section-eyebrow">ÖZ KIRTASİYE · OPERASYON</span>
-              <h1>
-                Sipariş yönetimi<span className="orange-dot">.</span>
-              </h1>
-              <p>Sipariş talebi, stok hazırlığı ve kargo sürecini tek ekrandan yönet.</p>
-            </div>
-          </div>
-          <div className="order-operation-notice">
-            <Clock3 size={19} />
-            <span>
-              <strong>Online ödeme bağlı değil.</strong> Buradaki siparişler ödeme talebi
-              niteliğindedir; “hazırlanıyor” veya “teslim edildi” durumları tahsilat yapmaz. PayTR
-              daha sonra ayrı entegre edilecek.
-            </span>
-          </div>
-          {loadError && (
-            <p className="admin-form-error" role="alert">
-              {loadError}
-            </p>
-          )}
-          {error && (
-            <p className="admin-form-error" role="alert">
-              {error}
-            </p>
-          )}
-          {success && (
-            <p className="admin-form-success" role="status">
-              {success}
-            </p>
-          )}
-
-          {result && (
-            <div className="admin-stats">
-              <div>
-                <ClipboardList size={22} />
-                <span>Toplam talep</span>
-                <strong>{result.stats.total}</strong>
-              </div>
-              <div>
-                <PhoneCall size={22} />
-                <span>Görüşme bekleyen</span>
-                <strong>{result.stats.new}</strong>
-              </div>
-              <div>
-                <PackageCheck size={22} />
-                <span>Hazırlanıyor</span>
-                <strong>{result.stats.processing}</strong>
-              </div>
-              <div>
-                <Truck size={22} />
-                <span>Kargoda</span>
-                <strong>{result.stats.shipped}</strong>
-              </div>
-            </div>
-          )}
-
-          <div className="admin-content-box">
-            <OrderSearchFilters search={search} />
-            {result && (
-              <p className={filterStyles.result}>
-                Bu sayfada {requests.length} sipariş · Filtrelere uyan toplam {result.total} kayıt.
-                Tarihler İstanbul saatine göredir.
-              </p>
-            )}
-            {loadError && (
-              <button className="button button-secondary" onClick={() => router.refresh()}>
-                Tekrar dene
-              </button>
-            )}
-            {result && !requests.length && (
-              <div className="admin-no-results">
-                <ClipboardList size={38} />
-                <h3>Bu sayfada sipariş bulunamadı.</h3>
-                <Link href={orderSearchHref(search)}>İlk sayfaya dön</Link>
-              </div>
-            )}
-            <div className="order-request-list">
-              {requests.map((order) => (
-                <OrderRequestCard
-                  key={order.id}
-                  order={order}
-                  pending={!!pending}
-                  formKind={activeForm?.orderId === order.id ? activeForm.kind : null}
-                  onFormChange={(kind) => setActiveForm(kind ? { orderId: order.id, kind } : null)}
-                  onClearError={() => setError('')}
-                  onAction={updateOrder}
-                />
-              ))}
-            </div>
-            {result && requests.length > 0 && (
-              <nav aria-label="Sipariş sayfaları" className={filterStyles.pagination}>
-                {result.hasPrevious && (
-                  <Link
-                    className="button button-secondary"
-                    href={orderSearchHref(search, {
-                      direction: 'before',
-                      value: orderCursor(requests[0]),
-                    })}
-                  >
-                    Önceki sayfa
-                  </Link>
-                )}
-                {result.hasNext && (
-                  <Link
-                    className="button button-secondary"
-                    href={orderSearchHref(search, {
-                      direction: 'after',
-                      value: orderCursor(requests[requests.length - 1]),
-                    })}
-                  >
-                    Sonraki sayfa
-                  </Link>
-                )}
-              </nav>
-            )}
-          </div>
-          <p className="admin-category-help">
-            Stok yalnızca “Hazırlığa al” adımında düşer. Hazırlık aşamasındaki sipariş iptal
-            edilirse stok otomatik geri eklenir. Kargoya verilmiş ve teslim edilmiş siparişler için
-            otomatik stok iadesi yapılmaz. Ödeme tahsilatı veya PayTR iadesi bu ekranda yapılmaz.
-          </p>
+    <div className="admin-body">
+      <div className="admin-page-heading">
+        <div>
+          <span className="section-eyebrow">ÖZ KIRTASİYE · OPERASYON</span>
+          <h1>
+            Sipariş yönetimi<span className="orange-dot">.</span>
+          </h1>
+          <p>Sipariş talebi, stok hazırlığı ve kargo sürecini tek ekrandan yönet.</p>
         </div>
       </div>
+      <div className="order-operation-notice">
+        <Clock3 size={19} />
+        <span>
+          <strong>Online ödeme bağlı değil.</strong> Buradaki siparişler ödeme talebi
+          niteliğindedir; “hazırlanıyor” veya “teslim edildi” durumları tahsilat yapmaz. PayTR daha
+          sonra ayrı entegre edilecek.
+        </span>
+      </div>
+      {loadError && (
+        <p className="admin-form-error" role="alert">
+          {loadError}
+        </p>
+      )}
+      {error && (
+        <p className="admin-form-error" role="alert">
+          {error}
+        </p>
+      )}
+      {success && (
+        <p className="admin-form-success" role="status">
+          {success}
+        </p>
+      )}
+
+      {result && (
+        <div className="admin-stats">
+          <div>
+            <ClipboardList size={22} />
+            <span>Toplam talep</span>
+            <strong>{result.stats.total}</strong>
+          </div>
+          <div>
+            <PhoneCall size={22} />
+            <span>Görüşme bekleyen</span>
+            <strong>{result.stats.new}</strong>
+          </div>
+          <div>
+            <PackageCheck size={22} />
+            <span>Hazırlanıyor</span>
+            <strong>{result.stats.processing}</strong>
+          </div>
+          <div>
+            <Truck size={22} />
+            <span>Kargoda</span>
+            <strong>{result.stats.shipped}</strong>
+          </div>
+        </div>
+      )}
+
+      <div className="admin-content-box">
+        <OrderSearchFilters search={search} />
+        {result && (
+          <p className={filterStyles.result}>
+            Bu sayfada {requests.length} sipariş · Filtrelere uyan toplam {result.total} kayıt.
+            Tarihler İstanbul saatine göredir.
+          </p>
+        )}
+        {loadError && (
+          <button className="button button-secondary" onClick={() => router.refresh()}>
+            Tekrar dene
+          </button>
+        )}
+        {result && !requests.length && (
+          <div className="admin-no-results">
+            <ClipboardList size={38} />
+            <h3>Bu sayfada sipariş bulunamadı.</h3>
+            <Link href={orderSearchHref(search)}>İlk sayfaya dön</Link>
+          </div>
+        )}
+        <div className="order-request-list">
+          {requests.map((order) => (
+            <OrderRequestCard
+              key={order.id}
+              order={order}
+              pending={!!pending}
+              formKind={activeForm?.orderId === order.id ? activeForm.kind : null}
+              onFormChange={(kind) => setActiveForm(kind ? { orderId: order.id, kind } : null)}
+              onClearError={() => setError('')}
+              onAction={updateOrder}
+            />
+          ))}
+        </div>
+        {result && requests.length > 0 && (
+          <nav aria-label="Sipariş sayfaları" className={filterStyles.pagination}>
+            {result.hasPrevious && (
+              <Link
+                className="button button-secondary"
+                href={orderSearchHref(search, {
+                  direction: 'before',
+                  value: orderCursor(requests[0]),
+                })}
+              >
+                Önceki sayfa
+              </Link>
+            )}
+            {result.hasNext && (
+              <Link
+                className="button button-secondary"
+                href={orderSearchHref(search, {
+                  direction: 'after',
+                  value: orderCursor(requests[requests.length - 1]),
+                })}
+              >
+                Sonraki sayfa
+              </Link>
+            )}
+          </nav>
+        )}
+      </div>
+      <p className="admin-category-help">
+        Stok yalnızca “Hazırlığa al” adımında düşer. Hazırlık aşamasındaki sipariş iptal edilirse
+        stok otomatik geri eklenir. Kargoya verilmiş ve teslim edilmiş siparişler için otomatik stok
+        iadesi yapılmaz. Ödeme tahsilatı veya PayTR iadesi bu ekranda yapılmaz.
+      </p>
     </div>
   );
 }
