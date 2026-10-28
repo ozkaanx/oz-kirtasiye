@@ -1,58 +1,230 @@
-/* Keep structure identical on every route. Only color/background change for the active link. */
+/* Grouped admin navigation: compact, scannable, keyboard-accessible. */
+.sidebar:global(.admin-sidebar) {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100dvh;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 24px 13px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: #414955 transparent;
+}
+
+.brand {
+  flex: none;
+  margin-bottom: 10px;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.brand:focus-visible {
+  outline: 2px solid #ff9776;
+  outline-offset: 4px;
+}
+.caption {
+  margin: 12px 10px 20px;
+  color: #85909c;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 1.2px;
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+.group {
+  min-width: 0;
+}
+.groupHeading {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+.groupButton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 10px 11px;
+  color: #bbc2cb;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+.groupButton:hover,
+.groupButton:focus-visible {
+  color: #fff;
+  background: #2a313a;
+}
+.groupButton[data-selected='true'] {
+  color: #fff;
+  background: #272e37;
+  border-color: #353d47;
+}
+.groupIcon {
+  flex: none;
+  color: #aeb9c4;
+}
+.groupButton[data-selected='true'] .groupIcon,
+.groupButton[aria-expanded='true'] .groupIcon {
+  color: #ff7350;
+}
+.groupButton > span:first-of-type {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.chevron {
+  flex: none;
+  margin-left: auto;
+  color: #84919c;
+  transition: transform 160ms ease;
+}
+.groupButton[aria-expanded='true'] .chevron {
+  transform: rotate(180deg);
+}
+.groupItems {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+  margin: 5px 0 11px 21px;
+  padding-left: 9px;
+  border-left: 1px solid #343d48;
+}
+.groupItems[hidden] {
+  display: none;
+}
 .navLink {
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
+  grid-template-columns: 18px minmax(0, 1fr);
   align-items: center;
-  column-gap: 12px;
+  column-gap: 10px;
   width: 100%;
   min-width: 0;
-  min-height: 46px;
-  padding: 12px 13px;
-  border-radius: 10px;
-  color: #d0d3d8;
+  min-height: 40px;
+  padding: 9px 8px;
+  border-radius: 9px;
+  color: #cbd1d8;
   background-color: transparent;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  line-height: 20px;
+  line-height: 19px;
   text-align: left;
   text-decoration: none;
-  transition:
-    background-color 150ms ease,
-    color 150ms ease;
+  transition: background-color 140ms ease, color 140ms ease;
 }
-
 .navLink:hover,
 .navLink:focus-visible {
   color: #fff;
   background-color: #2b333e;
 }
-
 .navLink[aria-current='page'] {
   color: #fff;
-  background-color: #30363e;
+  background-color: #343b45;
+  font-weight: 800;
 }
-
 .navIcon {
   display: block;
-  width: 19px;
-  height: 19px;
+  width: 18px;
+  height: 18px;
   flex: none;
-  color: inherit;
+  color: #a4afba;
 }
-
 .navLink[aria-current='page'] .navIcon {
-  color: #ff643c;
+  color: #ff6945;
 }
-
 .navLabel {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
   overflow-wrap: break-word;
   font-size: inherit;
-  font-weight: inherit;
-  line-height: 20px;
+  line-height: inherit;
+}
+.groupButton:focus-visible,
+.navLink:focus-visible {
+  outline: 2px solid #ff8a65;
+  outline-offset: 2px;
+}
+
+.bottom {
+  margin-top: auto;
+  padding-top: 25px;
+}
+.footerNav {
+  border-top: 1px solid #343c46;
+  padding-top: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.footerLink {
+  min-height: 44px;
+  padding-left: 12px;
+  font-size: 12px;
+}
+.storeLink {
+  min-height: 45px;
+  margin-top: 7px;
+  border: 1px solid #3d4854;
+  padding-left: 12px;
+  font-size: 12px;
+}
+.storeLink:hover {
+  border-color: #596878;
+}
+.copyright {
+  color: #88929d;
+  font-size: 10px;
+  line-height: 1.5;
+  padding: 16px 7px 0;
+}
+
+@media (max-width: 950px) {
+  .sidebar:global(.admin-sidebar) {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(300px, 86vw);
+    height: 100dvh;
+    z-index: 121;
+    padding-top: 18px;
+    overflow-y: auto;
+    align-self: auto;
+  }
+  .brand {
+    margin-top: 14px;
+  }
+  .groupButton {
+    min-height: 48px;
+  }
+  .navLink {
+    min-height: 44px;
+    font-size: 13px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .groupButton,.navLink,.chevron {
+    transition: none;
+  }
 }
