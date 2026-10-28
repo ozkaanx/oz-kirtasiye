@@ -662,3 +662,87 @@
   .logout{min-height:44px}
 }
 @media(prefers-reduced-motion:reduce){.quickCard,.tab,.benefitsBanner{transition:none}}
+
+/* Compact order headers; native <details> handles keyboard and screen-reader interaction. */
+.orderAccordion {
+  min-width: 0;
+}
+.orderSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 10px;
+  padding: 5px 0;
+}
+.orderSummary::-webkit-details-marker {
+  display: none;
+}
+.orderSummary::marker {
+  content: '';
+}
+.orderSummary:focus-visible {
+  outline: 3px solid #ff9778;
+  outline-offset: 5px;
+}
+.orderSummary .orderHeading {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0;
+  min-width: 0;
+}
+.orderSummary .orderHeading > span {
+  min-width: 0;
+}
+.orderSummary .orderHeading strong {
+  overflow-wrap: anywhere;
+}
+.orderSummaryEnd {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 11px;
+  color: #292e37;
+}
+.orderSummaryEnd strong {
+  font-weight: 850;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.orderChevron {
+  color: #d35b39;
+  transition: transform .18s ease;
+}
+.orderAccordion[open] .orderChevron {
+  transform: rotate(180deg);
+}
+.orderExpanded {
+  border-top: 1px solid #e8ebf0;
+  padding-top: 12px;
+  margin-top: 14px;
+}
+@media (max-width: 730px) {
+  .orderSummary {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 9px;
+  }
+  .orderSummary .orderHeading {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .orderSummaryEnd {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .orderChevron {
+    transition: none;
+  }
+}

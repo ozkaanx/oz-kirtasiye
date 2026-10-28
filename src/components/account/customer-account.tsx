@@ -5,14 +5,13 @@ import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
-  Bell,
   BadgePercent,
   Check,
+  ChevronDown,
   Home,
   LogOut,
   MapPin,
   Package,
-  RotateCcw,
   Pencil,
   Plus,
   ShoppingBag,
@@ -24,7 +23,7 @@ import { useShop } from '@/context/shop-context';
 import { formatPrice } from '@/lib/format';
 import { orderStatusPresentation, paymentStatusPresentation, type AccountTab } from '@/lib/account-ui';
 import type { CustomerAddress, CustomerOrder, CustomerProfile } from '@/lib/customer';
-import { NotificationUnreadBadge } from '@/components/notifications/unread-badge';
+import { AccountSidebar } from './account-sidebar';
 import styles from './customer-account.module.css';
 import { OrderJourney } from './order-journey';
 
@@ -257,45 +256,7 @@ export function CustomerAccount({
         </button>
       </div>
       <div className={styles.shell}>
-        <nav className={styles.tabs} aria-label="Hesap menüsü">
-          {(
-            [
-              { id: 'overview', label: 'Profilim', icon: UserRound },
-              { id: 'addresses', label: 'Adreslerim', icon: MapPin },
-              { id: 'orders', label: 'Siparişlerim', icon: Package },
-            ] as const
-          ).map(({ id, label, icon: Icon }) => (
-            <button
-              type="button"
-              key={id}
-              className={`${styles.tab} ${tab === id ? styles.active : ''}`}
-              aria-pressed={tab === id}
-              aria-controls="account-content-panel"
-              disabled={busy}
-              onClick={() => changeTab(id)}
-            >
-              <Icon size={18} aria-hidden="true" />
-              <span>{label}</span>
-            </button>
-          ))}
-          <Link href="/hesabim/avantajlar" className={styles.tab}>
-            <BadgePercent size={18} aria-hidden="true" />
-            <span>Avantajlarım</span>
-            {couponCode && <span className={styles.menuHint}>Kod var</span>}
-          </Link>
-          <Link href="/hesabim/iade" className={styles.tab}>
-            <RotateCcw size={18} aria-hidden="true" />
-            <span>İade ve değişim</span>
-          </Link>
-          <Link href="/hesabim/bildirimler" className={styles.tab}>
-            <Bell size={18} aria-hidden="true" />
-            <span>Bildirimler</span>
-            <NotificationUnreadBadge audience="customer" />
-          </Link>
-          <Link href="/urunler" className={styles.shopLink}>
-            Alışverişe dön <ArrowRight size={16} />
-          </Link>
-        </nav>
+        <AccountSidebar active={tab} onAccountTabChange={changeTab} disabled={busy} />
         <div className={styles.panel} id="account-content-panel" role="region" aria-label="Hesap içeriği">
           {loadError && (
             <p role="alert" className={styles.error}>{loadError}</p>
@@ -587,66 +548,76 @@ export function CustomerAccount({
                 </div>
               )}
               <div className={styles.orderList}>
-                {initialOrders.map((order) => (
+                {initialOrders.map((order, index) => (
                   <article className={styles.orderCard} key={order.id}>
-                    <div className={styles.orderHeading}>
-                      <div>
-                        <strong>#{order.reference}</strong>
-                        <small>
-                          {new Date(order.created_at).toLocaleDateString('tr-TR', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          })}
-                        </small>
-                      </div>
-                      <span className={styles.status} data-tone={orderStatusPresentation(order.status).tone}>
-                        {orderStatusPresentation(order.status).label}
-                      </span>
-                    </div>
-                    <OrderJourney order={order} />
-                    {order.order_request_items.some(item => item.product_id) && (
-                      <div className={styles.repeatActions}>
-                        <button type="button" className="button button-outline" onClick={() => repeatOrder(order)}>
-                          <ShoppingBag size={16} /> Yeniden sepete ekle
-                        </button>
-                      </div>
-                    )}
-                    <div className={styles.orderItems}>
-                      {order.order_request_items?.map((line, index) => (
-                        <div key={`${order.id}-${index}`}>
+                    <details className={styles.orderAccordion} open={index === 0}>
+                      <summary className={styles.orderSummary}>
+                        <span className={styles.orderHeading}>
                           <span>
-                            {line.product_name}
-                            {line.variant_label ? ` — ${line.variant_label}` : ''} × {line.quantity}
+                            <strong>#{order.reference}</strong>
+                            <small>
+                              {new Date(order.created_at).toLocaleDateString('tr-TR', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                              })}
+                            </small>
                           </span>
-                          <b>{formatPrice(Number(line.line_total))}</b>
-                        </div>
-                      ))}
-                    </div>
-                    {Number(order.discount_amount) > 0 && (
-                      <p className={styles.orderDiscount}>
-                        {order.coupon_code
-                          ? `Kupon (${order.coupon_code})`
-                          : `Kampanya (${order.automatic_campaign_name})`}
-                        : −{formatPrice(Number(order.discount_amount))}
-                      </p>
-                    )}
-                    <div className={styles.orderFooter}>
-                      <small className={styles.paymentDescription}>
-                        {order.delivery_method === 'pickup' ? 'Mağazadan teslim' : 'Kargo'}
-                        <span className={styles.paymentStatus} data-tone={paymentStatusPresentation(order.payment_status).tone}>
-                          {paymentStatusPresentation(order.payment_status).label}
+                          <span className={styles.status} data-tone={orderStatusPresentation(order.status).tone}>
+                            {orderStatusPresentation(order.status).label}
+                          </span>
                         </span>
-                      </small>
-                      <strong>{formatPrice(Number(order.total))}</strong>
-                    </div>
-                    <p className={styles.invoiceNote}>
-                      {order.order_invoice_register?.status === 'issued'
-                        ? `Fatura kaydı: ${order.order_invoice_register.invoice_number ?? '—'} (${order.order_invoice_register.document_type === 'e_fatura' ? 'e-Fatura' : 'e-Arşiv'})`
-                        : order.order_invoice_register?.status === 'pending'
-                          ? 'Fatura: Resmî belge kaydı bekleniyor'
-                          : 'Fatura: Bu sipariş için elektronik belge bilgisi kayıtlı değil'}
-                    </p>
+                        <span className={styles.orderSummaryEnd}>
+                          <strong>{formatPrice(Number(order.total))}</strong>
+                          <ChevronDown size={20} className={styles.orderChevron} aria-hidden="true" />
+                        </span>
+                      </summary>
+                      <div className={styles.orderExpanded}>
+                        <OrderJourney order={order} />
+                        {order.order_request_items.some(item => item.product_id) && (
+                          <div className={styles.repeatActions}>
+                            <button type="button" className="button button-outline" onClick={() => repeatOrder(order)}>
+                              <ShoppingBag size={16} /> Yeniden sepete ekle
+                            </button>
+                          </div>
+                        )}
+                        <div className={styles.orderItems}>
+                          {order.order_request_items?.map((line, lineIndex) => (
+                            <div key={`${order.id}-${lineIndex}`}>
+                              <span>
+                                {line.product_name}
+                                {line.variant_label ? ` — ${line.variant_label}` : ''} × {line.quantity}
+                              </span>
+                              <b>{formatPrice(Number(line.line_total))}</b>
+                            </div>
+                          ))}
+                        </div>
+                        {Number(order.discount_amount) > 0 && (
+                          <p className={styles.orderDiscount}>
+                            {order.coupon_code
+                              ? `Kupon (${order.coupon_code})`
+                              : `Kampanya (${order.automatic_campaign_name})`}
+                            : −{formatPrice(Number(order.discount_amount))}
+                          </p>
+                        )}
+                        <div className={styles.orderFooter}>
+                          <small className={styles.paymentDescription}>
+                            {order.delivery_method === 'pickup' ? 'Mağazadan teslim' : 'Kargo'}
+                            <span className={styles.paymentStatus} data-tone={paymentStatusPresentation(order.payment_status).tone}>
+                              {paymentStatusPresentation(order.payment_status).label}
+                            </span>
+                          </small>
+                          <strong>{formatPrice(Number(order.total))}</strong>
+                        </div>
+                        <p className={styles.invoiceNote}>
+                          {order.order_invoice_register?.status === 'issued'
+                            ? `Fatura kaydı: ${order.order_invoice_register.invoice_number ?? '—'} (${order.order_invoice_register.document_type === 'e_fatura' ? 'e-Fatura' : 'e-Arşiv'})`
+                            : order.order_invoice_register?.status === 'pending'
+                              ? 'Fatura: Resmî belge kaydı bekleniyor'
+                              : 'Fatura: Bu sipariş için elektronik belge bilgisi kayıtlı değil'}
+                        </p>
+                      </div>
+                    </details>
                   </article>
                 ))}
               </div>
