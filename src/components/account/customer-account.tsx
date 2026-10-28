@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
   Bell,
@@ -74,6 +74,12 @@ export function CustomerAccount({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [busy, setBusy] = useState(false);
+  const addressTitleRef = useRef<HTMLInputElement>(null);
+  const addressFormOpen = addressForm !== null;
+
+  useEffect(() => {
+    if (addressFormOpen) addressTitleRef.current?.focus();
+  }, [addressFormOpen, editingId]);
 
   function message(errorText?: string, successText?: string) {
     setError(errorText ?? '');
@@ -307,13 +313,13 @@ export function CustomerAccount({
           {tab === 'overview' && (
             <>
               <div className={styles.quickGrid} aria-label="Hesap özeti">
-                <button type="button" onClick={() => changeTab('orders')} className={styles.quickCard}>
+                <button type="button" disabled={busy} onClick={() => changeTab('orders')} className={styles.quickCard}>
                   <span className={styles.quickIcon}><Package size={20} aria-hidden="true" /></span>
                   <strong>{initialOrders.length}</strong>
                   <span>Son sipariş taleplerim</span>
                   <ArrowRight size={17} className={styles.quickArrow} aria-hidden="true" />
                 </button>
-                <button type="button" onClick={() => changeTab('addresses')} className={styles.quickCard}>
+                <button type="button" disabled={busy} onClick={() => changeTab('addresses')} className={styles.quickCard}>
                   <span className={styles.quickIcon}><MapPin size={20} aria-hidden="true" /></span>
                   <strong>{addresses.length}</strong>
                   <span>Kayıtlı adreslerim</span>
@@ -338,7 +344,7 @@ export function CustomerAccount({
               <form onSubmit={saveProfile} className={`${styles.form} ${styles.profileForm}`}>
                 <label>
                   E-posta
-                  <input disabled value={email} type="email" />
+                  <input disabled value={email} type="email" autoComplete="email" />
                   <small>E-posta değişikliği bu ekrandan yapılmıyor.</small>
                 </label>
                 <div className={styles.formGrid}>
@@ -418,7 +424,8 @@ export function CustomerAccount({
                       <input
                         required
                         maxLength={40}
-                        value={addressForm.label}
+                        ref={addressTitleRef}
+                         value={addressForm.label}
                         onChange={(e) =>
                           setAddressForm((p) => p && { ...p, label: e.target.value })
                         }
