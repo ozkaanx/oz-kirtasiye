@@ -1,7 +1,7 @@
 'use client';
 
 import { cartLineKey } from '@/lib/cart-types';
-
+import Image from 'next/image';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -78,9 +78,15 @@ export function CartPage({ settings }: { settings: DeliverySettings }) {
               const product = products[cartLineKey(line.productId, line.variantId)];
               return (
                 <div key={cartLineKey(line.productId, line.variantId)} className="basket-item">
-                  <div className="basket-image">
+                  <div className="basket-image !d-flex !items-center !justify-center">
                     {product?.imageUrl ? (
-                      <img src={product.imageUrl} alt={product.name} />
+                      // <img src={product.imageUrl} alt={product.name} />
+                     <Image
+                       src={product.imageUrl}
+                       alt={product.name}
+                       width={55}
+                       height={55}
+                     />
                     ) : (
                       <Package size={55} color="#a9afb9" />
                     )}
