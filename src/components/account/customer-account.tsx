@@ -553,16 +553,16 @@ export function CustomerAccount({
                     <details className={styles.orderAccordion} open={index === 0}>
                       <summary className={styles.orderSummary}>
                         <span className={styles.orderHeading}>
-                      <span>
-                        <strong>#{order.reference}</strong>
-                        <small>
-                          {new Date(order.created_at).toLocaleDateString('tr-TR', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          })}
-                        </small>
-                      </span>
+                          <span>
+                            <strong>#{order.reference}</strong>
+                            <small>
+                              {new Date(order.created_at).toLocaleDateString('tr-TR', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                              })}
+                            </small>
+                          </span>
                           <span className={styles.status} data-tone={orderStatusPresentation(order.status).tone}>
                             {orderStatusPresentation(order.status).label}
                           </span>
@@ -574,48 +574,48 @@ export function CustomerAccount({
                       </summary>
                       <div className={styles.orderExpanded}>
                         <OrderJourney order={order} />
-                    {order.order_request_items.some(item => item.product_id) && (
-                      <div className={styles.repeatActions}>
-                        <button type="button" className="button button-outline" onClick={() => repeatOrder(order)}>
-                          <ShoppingBag size={16} /> Yeniden sepete ekle
-                        </button>
-                      </div>
-                    )}
-                    <div className={styles.orderItems}>
-                      {order.order_request_items?.map((line, index) => (
-                        <div key={`${order.id}-${index}`}>
-                          <span>
-                            {line.product_name}
-                            {line.variant_label ? ` — ${line.variant_label}` : ''} × {line.quantity}
-                          </span>
-                          <b>{formatPrice(Number(line.line_total))}</b>
+                        {order.order_request_items.some(item => item.product_id) && (
+                          <div className={styles.repeatActions}>
+                            <button type="button" className="button button-outline" onClick={() => repeatOrder(order)}>
+                              <ShoppingBag size={16} /> Yeniden sepete ekle
+                            </button>
+                          </div>
+                        )}
+                        <div className={styles.orderItems}>
+                          {order.order_request_items?.map((line, lineIndex) => (
+                            <div key={`${order.id}-${lineIndex}`}>
+                              <span>
+                                {line.product_name}
+                                {line.variant_label ? ` — ${line.variant_label}` : ''} × {line.quantity}
+                              </span>
+                              <b>{formatPrice(Number(line.line_total))}</b>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                    {Number(order.discount_amount) > 0 && (
-                      <p className={styles.orderDiscount}>
-                        {order.coupon_code
-                          ? `Kupon (${order.coupon_code})`
-                          : `Kampanya (${order.automatic_campaign_name})`}
-                        : −{formatPrice(Number(order.discount_amount))}
-                      </p>
-                    )}
-                    <div className={styles.orderFooter}>
-                      <small className={styles.paymentDescription}>
-                        {order.delivery_method === 'pickup' ? 'Mağazadan teslim' : 'Kargo'}
-                        <span className={styles.paymentStatus} data-tone={paymentStatusPresentation(order.payment_status).tone}>
-                          {paymentStatusPresentation(order.payment_status).label}
-                        </span>
-                      </small>
-                      <strong>{formatPrice(Number(order.total))}</strong>
-                    </div>
-                    <p className={styles.invoiceNote}>
-                      {order.order_invoice_register?.status === 'issued'
-                        ? `Fatura kaydı: ${order.order_invoice_register.invoice_number ?? '—'} (${order.order_invoice_register.document_type === 'e_fatura' ? 'e-Fatura' : 'e-Arşiv'})`
-                        : order.order_invoice_register?.status === 'pending'
-                          ? 'Fatura: Resmî belge kaydı bekleniyor'
-                          : 'Fatura: Bu sipariş için elektronik belge bilgisi kayıtlı değil'}
-                    </p>
+                        {Number(order.discount_amount) > 0 && (
+                          <p className={styles.orderDiscount}>
+                            {order.coupon_code
+                              ? `Kupon (${order.coupon_code})`
+                              : `Kampanya (${order.automatic_campaign_name})`}
+                            : −{formatPrice(Number(order.discount_amount))}
+                          </p>
+                        )}
+                        <div className={styles.orderFooter}>
+                          <small className={styles.paymentDescription}>
+                            {order.delivery_method === 'pickup' ? 'Mağazadan teslim' : 'Kargo'}
+                            <span className={styles.paymentStatus} data-tone={paymentStatusPresentation(order.payment_status).tone}>
+                              {paymentStatusPresentation(order.payment_status).label}
+                            </span>
+                          </small>
+                          <strong>{formatPrice(Number(order.total))}</strong>
+                        </div>
+                        <p className={styles.invoiceNote}>
+                          {order.order_invoice_register?.status === 'issued'
+                            ? `Fatura kaydı: ${order.order_invoice_register.invoice_number ?? '—'} (${order.order_invoice_register.document_type === 'e_fatura' ? 'e-Fatura' : 'e-Arşiv'})`
+                            : order.order_invoice_register?.status === 'pending'
+                              ? 'Fatura: Resmî belge kaydı bekleniyor'
+                              : 'Fatura: Bu sipariş için elektronik belge bilgisi kayıtlı değil'}
+                        </p>
                       </div>
                     </details>
                   </article>
