@@ -110,14 +110,14 @@
   outline-offset: 3px;
 }
 @media (max-width: 730px) {
-  .page {
+  .page.page {
     padding-top: 22px;
     padding-bottom: 64px;
   }
   .desktopHeader,.desktopSidebar {
     display: none;
   }
-  .panel {
+  .page .panel {
     padding: 0;
     border: 0;
     box-shadow: none;
