@@ -1,6 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useRef, useState, useTransition } from 'react';
+import Link from 'next/link';
+import {
+  invoiceSearchHref,
+  type InvoiceOrder,
+  type InvoiceSearch,
+  type InvoiceSearchResult,
+} from '@/lib/admin-invoice-search';
+import filterStyles from './admin-list-filters.module.css';
 
 import { useRouter } from 'next/navigation';
 import { FileCheck2, FileClock, FileWarning, Info } from 'lucide-react';
@@ -8,40 +16,6 @@ import { createBrowserSupabase } from '@/lib/supabase/browser';
 
 import { formatPrice } from '@/lib/format';
 import css from './admin-invoices.module.css';
-
-type InvoiceBilling = {
-  buyer_type: 'individual' | 'corporate';
-  recipient_name: string;
-  company_name: string | null;
-  tax_office: string | null;
-  tax_number: string | null;
-  city: string;
-  district: string;
-  address: string;
-};
-type InvoiceRecord = {
-  status: 'pending' | 'issued';
-  document_type: 'e_arsiv' | 'e_fatura' | null;
-  invoice_number: string | null;
-  issue_date: string | null;
-  provider: string | null;
-  recorded_at: string | null;
-};
-export type InvoiceOrder = {
-  id: string;
-  reference: string;
-  created_at: string;
-  customer_name: string;
-  phone: string;
-  status: string;
-  payment_status: string;
-  delivery_method: string;
-  total: number;
-  discount_amount: number;
-  coupon_code: string | null;
-  billing: InvoiceBilling | null;
-  invoice: InvoiceRecord | null;
-};
 
 function prettyDate(value: string) {
   return new Date(value).toLocaleDateString('tr-TR', {
@@ -52,15 +26,18 @@ function prettyDate(value: string) {
 const documentNames = { e_arsiv: 'e-Arşiv Fatura', e_fatura: 'e-Fatura' } as const;
 
 export function AdminInvoices({
-  orders,
+  result,
+  search,
   loadError,
 }: {
-  orders: InvoiceOrder[];
+  result: InvoiceSearchResult | null;
+  search: InvoiceSearch;
   loadError: string | null;
 }) {
   const router = useRouter();
-  const [filter, setFilter] = useState<'all' | 'pending' | 'issued' | 'legacy'>('all');
-  const [query, setQuery] = useState('');
+  const lock = useRef(false);
+  const [refreshing, startTransition] = useTransition();
+  const orders = result?.rows ?? [];
   const [expanded, setExpanded] = useState<string | null>(null);
   const [documentType, setDocumentType] = useState<'e_arsiv' | 'e_fatura'>('e_arsiv');
   const [invoiceNumber, setInvoiceNumber] = useState('');
@@ -69,34 +46,15 @@ export function AdminInvoices({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const pending = orders.filter((o) => o.invoice?.status === 'pending').length;
-  const issued = orders.filter((o) => o.invoice?.status === 'issued').length;
-  const legacy = orders.filter((o) => !o.billing).length;
-  const filtered = useMemo(() => {
-    const term = query.trim().toLocaleLowerCase('tr-TR');
-    return orders.filter((order) => {
-      if (filter === 'legacy' && order.billing) return false;
-      if (filter === 'pending' && order.invoice?.status !== 'pending') return false;
-      if (filter === 'issued' && order.invoice?.status !== 'issued') return false;
-      if (
-        term &&
-        !`${order.reference} ${order.customer_name} ${order.billing?.company_name ?? ''} ${order.invoice?.invoice_number ?? ''}`
-          .toLocaleLowerCase('tr-TR')
-          .includes(term)
-      )
-        return false;
-      return true;
-    });
-  }, [orders, query, filter]);
-
   async function saveInvoice(order: InvoiceOrder) {
-    if (busy) return;
+    if (lock.current || refreshing) return;
     if (
       !window.confirm(
         `Faturayı GİB/entegratör sisteminde gerçekten düzenledin mi? ${order.reference} için yalnızca resmî belge kaydını oluşturacağız.`,
       )
     )
       return;
+    lock.current = true;
     setError('');
     setSuccess('');
     setBusy(true);
@@ -114,10 +72,11 @@ export function AdminInvoices({
       setInvoiceNumber('');
       setIssueDate('');
       setProvider('');
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Fatura kaydı oluşturulamadı.');
     } finally {
+      lock.current = false;
       setBusy(false);
     }
   }
@@ -145,19 +104,19 @@ export function AdminInvoices({
       </div>
       <div className={css.summary}>
         <div className={css.stat}>
-          <strong>{pending}</strong>
+          <strong>{result?.stats.pending ?? '—'}</strong>
           <span>
             <FileClock size={14} /> Fatura kaydı bekleyen
           </span>
         </div>
         <div className={css.stat}>
-          <strong>{issued}</strong>
+          <strong>{result?.stats.issued ?? '—'}</strong>
           <span>
             <FileCheck2 size={14} /> Belge numarası kaydedilen
           </span>
         </div>
         <div className={css.stat}>
-          <strong>{legacy}</strong>
+          <strong>{result?.stats.legacy ?? '—'}</strong>
           <span>
             <FileWarning size={14} /> Eski sipariş / fatura bilgisi eksik
           </span>
@@ -178,30 +137,56 @@ export function AdminInvoices({
           {success}
         </p>
       )}
-      <div className={css.tools}>
-        <input
-          aria-label="Sipariş veya fatura ara"
-          placeholder="Sipariş no, müşteri, firma veya fatura no..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <select
-          aria-label="Fatura filtresi"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as typeof filter)}
-        >
-          <option value="all">Tüm faturalar</option>
-          <option value="pending">Kayıt bekleyen</option>
-          <option value="issued">Kesilmiş belge kaydı</option>
-          <option value="legacy">Eski / eksik kayıt</option>
-        </select>
-      </div>
+      <form
+        action="/admin/faturalar"
+        method="get"
+        key={JSON.stringify(search)}
+        className={filterStyles.filters}
+      >
+        <label className={filterStyles.field}>
+          Sipariş, müşteri veya fatura ara
+          <input
+            name="q"
+            maxLength={100}
+            defaultValue={search.q}
+            placeholder="Sipariş no, müşteri, firma veya fatura no"
+          />
+        </label>
+        <label className={filterStyles.field}>
+          Fatura durumu
+          <select name="status" defaultValue={search.status}>
+            <option value="all">Tüm faturalar</option>
+            <option value="pending">Kayıt bekleyen</option>
+            <option value="issued">Kesilmiş belge kaydı</option>
+            <option value="legacy">Eski / eksik kayıt</option>
+          </select>
+        </label>
+        <label className={filterStyles.field}>
+          Sipariş başlangıç tarihi
+          <input name="from" type="date" defaultValue={search.from} />
+        </label>
+        <label className={filterStyles.field}>
+          Sipariş bitiş tarihi
+          <input name="to" type="date" defaultValue={search.to} />
+        </label>
+        <button type="submit" className={filterStyles.reset}>
+          Ara / Filtrele
+        </button>
+        <Link href="/admin/faturalar" className={filterStyles.reset}>
+          Filtreleri temizle
+        </Link>
+      </form>
       <p className={css.muted}>
-        {filtered.length} kayıt gösteriliyor (son {orders.length} sipariş içinden).
+        Özetler tüm siparişleri kapsar.{' '}
+        {result
+          ? `${orders.length} / ${result.total} kayıt · Sayfa ${result.page} / ${Math.max(1, Math.ceil(result.total / result.pageSize))}`
+          : 'Fatura listesi yüklenemedi.'}
       </p>
       <div className={css.stack}>
-        {filtered.length === 0 && <p className={css.muted}>Bu filtrede sipariş bulunamadı.</p>}
-        {filtered.map((order) => {
+        {result && orders.length === 0 && (
+          <p className={css.muted}>Bu filtrede sipariş bulunamadı.</p>
+        )}
+        {orders.map((order) => {
           const canMark =
             order.invoice?.status === 'pending' &&
             order.status !== 'cancelled' &&
@@ -278,6 +263,7 @@ export function AdminInvoices({
                   <button
                     type="button"
                     className={css.toggle}
+                    disabled={busy || refreshing}
                     onClick={() => {
                       setExpanded(expanded === order.id ? null : order.id);
                       setError('');
@@ -347,11 +333,12 @@ export function AdminInvoices({
                         <button
                           className={css.toggle}
                           type="button"
+                          disabled={busy || refreshing}
                           onClick={() => setExpanded(null)}
                         >
                           Vazgeç
                         </button>
-                        <button className={css.btn} type="submit" disabled={busy}>
+                        <button className={css.btn} type="submit" disabled={busy || refreshing}>
                           {busy ? 'Kaydediliyor...' : 'Resmî belge kaydını oluştur'}
                         </button>
                       </div>
@@ -363,6 +350,20 @@ export function AdminInvoices({
           );
         })}
       </div>
+      {result && (result.hasPrevious || result.hasNext) && (
+        <nav className={filterStyles.filters} aria-label="Fatura sayfaları">
+          {result.hasPrevious && (
+            <Link className={filterStyles.reset} href={invoiceSearchHref(search, result.page - 1)}>
+              Önceki sayfa
+            </Link>
+          )}
+          {result.hasNext && (
+            <Link className={filterStyles.reset} href={invoiceSearchHref(search, result.page + 1)}>
+              Sonraki sayfa
+            </Link>
+          )}
+        </nav>
+      )}
     </div>
   );
 }

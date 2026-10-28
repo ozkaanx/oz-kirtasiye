@@ -60,3 +60,17 @@ Bu grubun doğrulaması: 47 uygulama testi ve temiz Supabase kurulumu üzerindek
 Sıradaki kapsam: fatura listesinde sipariş/müşteri/tarih araması ve sayfalama; ardından iade listesi. Yorumlar için yeni migration uygulama dağıtımından önce uygulanmalıdır.
 
 Yorum migration'ı Supabase'e 20261028091158 sürümüyle uygulandı; kaynak dosya adı canlı defterle eşleşir. Authenticated yönetici rolüyle canlı salt okunur sorgu 1 onaylı yorum ve ortalama 5 sonucunu verdi. Fonksiyon SECURITY INVOKER ve anonim execute kapalıdır. Canlı yorum durumları değiştirilmedi. Temiz kurulum SQL regresyonları ve 49 uygulama testi CI'da geçti; eski kayıt test fikstürü ayrıca 2000 tarihli bir yorumla güçlendirildi.
+
+## Beşinci grup: fatura listesi araması ve sayfalama
+
+- Son 200 sipariş sınırı kaldırıldı. Sipariş referansı, müşteri/telefon, alıcı/firma ve fatura numarası araması; fatura durumu ve sipariş tarihi aralığı sunucuya taşındı. Sayfa başına 25 kayıt, kararlı created_at/id sıralaması ve son sayfaya sıkıştırma kullanılır.
+- Tarihler İstanbul yerel gün sınırlarıyla uygulanır; bitiş günü dahildir. Arayüzde alanlar açıkça sipariş tarihi olarak adlandırılır. Filtre değişimi ilk sayfaya döner, sayfa bağlantıları tüm filtreleri korur.
+- Bekleyen/kaydedilen/eksik fatura özetleri tüm siparişlerden hesaplanır. Alıcı ve belge ayrıntıları yalnızca sayfadaki siparişler için JSON yanıtına eklenir.
+- admin_search_invoices SECURITY INVOKER ve boş search_path kullanır; mevcut RLS ve ayrıca yönetici kontrolü vardır, anonim execute kapalıdır. Resmî belge kaydı mevcut onay ve admin_record_issued_invoice RPC üzerinden sürer; fatura düzenleme işlemi eklenmez.
+- İşlem sırasında eşzamanlı gönderim ve form geçişi engellenir; başarılı kayıttan sonra sunucu listesi ve özetler yenilenir. Mevcut yeni/iptal sipariş ve mükerrer resmî belge kısıtları korunur.
+- 52 uygulama testi, TypeScript ve üretim derlemesi geçti. SQL testleri 205 sipariş, 2000 tarihli eski kayıt, durumlar, alıcı/firma/fatura numarası, İstanbul gün sınırı, sayfa tekilliği ve resmî belge kaydı sonrası sayımları kapsar. Resmî belge yazan testler yalnızca izole CI veritabanında ve rollback içinde çalışır.
+- Yerel sahte verilerle 1440 px masaüstü ve 390 px mobil görünüm, kayıt formu açma/kapama ve sayfa bağlantıları incelendi. Canlı fatura kaydı oluşturulmadı; geçici önizleme route'u kaldırıldı.
+
+Sıradaki kapsam: iade/değişim listesinde sunucu araması, durum filtreleri ve sayfalama.
+
+Fatura migration'ı Supabase'e 20261028092446 sürümüyle uygulandı; dosya adı canlı migration defteriyle eşleşir. Authenticated yönetici rolü altında salt okunur kontrolde 6 sipariş, 3 bekleyen ve 3 eksik/eski kayıt doğrulandı. SECURITY INVOKER ve anonim execute kapalı. CI'da 52 uygulama testi, üretim derlemesi, temiz veritabanı kurulumu, tüm SQL regresyonları ve eşzamanlı sipariş testleri geçti. Canlı resmî belge kayıtları oluşturulmadı/değiştirilmedi.
