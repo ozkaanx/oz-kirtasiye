@@ -70,6 +70,7 @@ export default async function AdminOverviewPage() {
       }
       recentOrders={recentOrders}
       lowStockProducts={lowStockProducts}
+      stockAlertsUnavailable={criticalStock === null || !!outResponse.error || !!lowResponse.error}
       loadError={error}
     />
   );
