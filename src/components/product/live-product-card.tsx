@@ -16,8 +16,7 @@ export function LiveProductCard({ product }: { product: LiveProduct }) {
             <Image
               src={product.imageUrl}
               alt=""
-              width={520}
-              height={650}
+              fill
               sizes="(max-width: 600px) 46vw, (max-width: 1000px) 30vw, 23vw"
             />
           ) : (

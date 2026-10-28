@@ -31,12 +31,10 @@ export function CampaignPrice({
               {formatPrice(activePromotion.discountedPrice)}
             </strong>
           </div>
-          {!compact && (
-            <span className={styles.saving}>
-              %{activePromotion.discountPercent} indirim ·{' '}
-              {formatPrice(activePromotion.discountAmount)} avantaj
-            </span>
-          )}
+          <span className={styles.saving}>
+            %{activePromotion.discountPercent} indirim ·{' '}
+            {formatPrice(activePromotion.discountAmount)} avantaj
+          </span>
           {!compact && (
             <span className={styles.note}>
               {activePromotion.campaignName} · Sepette tek ürün için geçerli
@@ -51,7 +49,7 @@ export function CampaignPrice({
           <strong className={styles.regular}>{formatPrice(price)}</strong>
         </>
       )}
-      {!compact && !activePromotion && campaignNotice && (
+      {!activePromotion && campaignNotice && (
         <div className={styles.basketCondition} role="note">
           <BadgePercent size={size === 'detail' ? 17 : 14} aria-hidden="true" />
           <span>

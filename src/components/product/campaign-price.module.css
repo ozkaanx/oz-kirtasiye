@@ -97,13 +97,25 @@
 }
 .price.compact .regular,
 .price.compact .discounted {
-  font-size: 30px;
+  font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.3px;
 }
 .price.compact .old {
-  order: 1;
+  order: 0;
   font-size: 12px;
+}
+.price.compact > .regular {
+  order: -1;
+}
+.compact .saving,
+.compact .basketCondition {
+  flex-basis: 100%;
+}
+.compact .basketCondition {
+  padding: 6px 8px;
+  margin-top: 2px;
+  font-size: 11px;
 }
 @media (max-width: 600px) {
   .price.compact .regular,
