@@ -696,7 +696,7 @@
   margin-bottom: 0;
   min-width: 0;
 }
-.orderSummary .orderHeading > div {
+.orderSummary .orderHeading > span {
   min-width: 0;
 }
 .orderSummary .orderHeading strong {
