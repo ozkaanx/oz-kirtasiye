@@ -54,8 +54,6 @@ export type DashboardLowStock = {
   threshold: number;
 };
 
-
-
 function formatDay(value: string) {
   const [, month, day] = value.split('-');
   return `${day}.${month}`;
