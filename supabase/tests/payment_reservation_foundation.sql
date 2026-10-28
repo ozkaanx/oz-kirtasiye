@@ -127,6 +127,9 @@ select pg_temp.expect_error($q$select public.manage_order_request(
 reset role;
 
 set local role service_role;
+select pg_temp.expect_error($q$select public.finish_payment_reservation(
+ 'OZP-PAYTEST-1',null)$q$,'22023',
+ 'missing/unverified provider outcome cannot be mistaken for success');
 select pg_temp.assert_true(public.finish_payment_reservation('OZP-PAYTEST-1','failed')='failed',
  'failed payment releases reservation');
 select pg_temp.assert_true(
