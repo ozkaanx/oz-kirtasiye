@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
+import { BadgePercent, Gift, Info } from 'lucide-react';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { AccountSubpage } from '@/components/account/account-subpage';
 import { LoyaltyCouponEntry } from '@/components/account/loyalty-coupon-entry';
 import { MyPrivateCoupons, type PrivateCoupon } from '@/components/account/my-private-coupons';
+import styles from '@/components/account/customer-benefits.module.css';
 
 export const metadata: Metadata = { title: 'Avantajlarım', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
@@ -13,29 +15,42 @@ export default async function CustomerBenefitsPage() {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) redirect('/giris?next=%2Fhesabim%2Favantajlar');
 
-  const { data: coupons, error: couponsError } = await supabase.rpc('my_private_coupons');
-  const { count, error: countError } = await supabase
-    .from('order_requests')
-    .select('id', { count: 'exact', head: true })
-    .eq('customer_user_id', user.id)
-    .in('status', ['delivered', 'completed']);
+  const [{ data: coupons, error: couponsError }, { count, error: countError }] = await Promise.all([
+    supabase.rpc('my_private_coupons'),
+    supabase.from('order_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('customer_user_id', user.id)
+      .in('status', ['delivered', 'completed']),
+  ]);
 
   return (
-    <main className="container-wide" style={{ paddingBlock: '48px 84px', maxWidth: 940 }}>
-      <nav style={{ marginBottom: 24, fontSize: 14 }}><Link href="/hesabim">← Hesabıma dön</Link></nav>
-      <span className="section-eyebrow">ÖZ KIRTASİYE · MÜŞTERİ AVANTAJLARI</span>
-      <h1 style={{ marginTop: 10 }}>Avantajlarım<span className="orange-dot">.</span></h1>
-      <p style={{ color: '#68727e', lineHeight: 1.7 }}>Tekrar alışverişini kolaylaştır, sana iletilen kuponları sepetinde kullan.</p>
-      <div style={{ background: '#fff7f3', border: '1px solid #ffdfce', borderRadius: 16, padding: 22, marginBlock: 24 }}>
-        <p style={{ margin: '0 0 4px', color: '#9d4728', fontSize: 13 }}>Hesabına bağlı teslim edilmiş / tamamlanmış siparişler</p>
-        <strong style={{ fontSize: 34 }}>{countError ? '—' : (count ?? 0)}</strong>
-        <p style={{ fontSize: 12, color: '#7a6360', marginBottom: 0 }}>Bu sayı bir puan veya otomatik indirim hakkı değildir. Misafir siparişleri sayılmaz.</p>
+    <AccountSubpage
+      active="benefits"
+      title="Avantajlarım"
+      description="Sana özel kuponları görüntüle, indirim kodlarını sepetine kaydet."
+      icon={<BadgePercent />}
+    >
+      <div className={styles.summary}>
+        <span className={styles.summaryIcon} aria-hidden="true"><Gift size={25} /></span>
+        <div className={styles.summaryBody}>
+          <span className={styles.summaryLabel}>Teslim edilmiş / tamamlanmış siparişlerim</span>
+          <strong className={styles.summaryNumber}>{countError ? '—' : (count ?? 0)}</strong>
+          <p>Bu sayı puan veya otomatik indirim hakkı değildir; misafir siparişleri dahil edilmez.</p>
+          {countError && <p role="alert" className={styles.warning}>Sipariş sayısı şu anda yüklenemedi.</p>}
+        </div>
       </div>
-      <MyPrivateCoupons coupons={(coupons ?? []) as PrivateCoupon[]} loadError={couponsError ? 'Kuponların yüklenemedi. Sayfayı yenileyip tekrar dene.' : null} />
-      <LoyaltyCouponEntry />
-      <p style={{ marginTop: 20, color: '#6d7681', fontSize: 13, lineHeight: 1.7 }}>
-        Kupon indirimi sepette ve sipariş talebi gönderilirken mevcut kurallar, tarih ve kullanım limitleri doğrultusunda yeniden kontrol edilir. Kuponun kaydedilmesi indirim garantisi veya ödeme tahsilatı anlamına gelmez.
+      <div className={styles.sections}>
+        <MyPrivateCoupons
+          coupons={(coupons ?? []) as PrivateCoupon[]}
+          loadError={couponsError ? 'Kuponların yüklenemedi. Sayfayı yenileyip tekrar dene.' : null}
+        />
+        <LoyaltyCouponEntry />
+      </div>
+      <p className={styles.disclaimer}>
+        <Info size={17} aria-hidden="true" />
+        Kupon koşulları, kullanım limiti ve indirim tutarı sipariş sırasında yeniden doğrulanır.
+        Kodun kaydedilmesi ödeme veya indirim garantisi değildir.
       </p>
-    </main>
+    </AccountSubpage>
   );
 }

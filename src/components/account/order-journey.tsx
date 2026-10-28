@@ -10,7 +10,8 @@ const phases = [
   { label: 'Teslim edildi', icon: CheckCircle2 },
 ] as const;
 const stage: Record<string, number> = {
-  new: 0, contacted: 0, processing: 1, shipped: 2, delivered: 3, completed: 3,
+  new: 0, contacted: 0, awaiting_payment: 0, paid: 0,
+  processing: 1, shipped: 2, delivered: 3, completed: 3,
 };
 function formatDate(value: string) {
   return new Date(value).toLocaleString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -23,8 +24,14 @@ export function OrderJourney({ order }: { order: CustomerOrder }) {
   const active = Math.min(stage[order.status] ?? 0, steps.length - 1);
   return (
     <section className={styles.box} aria-label={`Sipariş ${order.reference} durum takibi`}>
+      {order.status === 'awaiting_payment' && (
+        <p className={styles.paymentNote}>Ödeme bekleniyor. Stok rezervasyonu ödeme süresi boyunca geçerlidir.</p>
+      )}
+      {order.status === 'paid' && (
+        <p className={styles.paymentNoteSuccess}>Ödeme alındı. Siparişin hazırlanma süreci henüz başlamadı.</p>
+      )}
       {cancelled ? <p className={styles.cancelled}>Sipariş talebi iptal edildi. İşlem ayrıntıları için mağazayla iletişime geçebilirsiniz.</p> : (
-        <ol className={styles.steps}>
+        <ol className={`${styles.steps} ${isPickup ? styles.pickupSteps : ''}`}>
           {steps.map(({ label, icon: Icon }, index) => (
             <li key={label} className={index <= active ? styles.done : styles.waiting} aria-current={index === active ? 'step' : undefined}>
               <Icon size={17} aria-hidden="true" /><span>{label}</span>
@@ -42,8 +49,8 @@ export function OrderJourney({ order }: { order: CustomerOrder }) {
       </div>
       {(order.status === 'delivered' || order.status === 'completed') && (
         <div className={styles.actions}>
-          <Link href="/urunler"><Star size={15} /> Satın aldığın ürünleri değerlendir</Link>
-          <Link href="/urunler"><ShoppingBag size={15} /> Yeniden alışveriş yap</Link>
+          <Link href="/hesabim/iade"><Star size={15} aria-hidden="true" /> İade ve değişim talepleri</Link>
+          <Link href="/urunler"><ShoppingBag size={15} aria-hidden="true" /> Yeniden alışveriş yap</Link>
         </div>
       )}
       <Link className={styles.notifications} href="/hesabim/bildirimler">Sipariş bildirimlerini görüntüle</Link>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
   Bell,
@@ -12,6 +12,7 @@ import {
   LogOut,
   MapPin,
   Package,
+  RotateCcw,
   Pencil,
   Plus,
   ShoppingBag,
@@ -21,6 +22,7 @@ import {
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 import { useShop } from '@/context/shop-context';
 import { formatPrice } from '@/lib/format';
+import { orderStatusPresentation, paymentStatusPresentation, type AccountTab } from '@/lib/account-ui';
 import type { CustomerAddress, CustomerOrder, CustomerProfile } from '@/lib/customer';
 import { NotificationUnreadBadge } from '@/components/notifications/unread-badge';
 import styles from './customer-account.module.css';
@@ -40,6 +42,7 @@ const blankAddress: AddressFields = {
 };
 
 type Props = {
+  initialTab: AccountTab;
   userId: string;
   email: string;
   initialProfile: CustomerProfile;
@@ -48,17 +51,8 @@ type Props = {
   loadError?: string;
 };
 
-const statusLabels: Record<string, string> = {
-  new: 'Yeni talep',
-  contacted: 'Görüşüldü',
-  processing: 'Hazırlanıyor',
-  shipped: 'Kargoda',
-  delivered: 'Teslim edildi',
-  completed: 'Tamamlandı',
-  cancelled: 'İptal edildi',
-};
-
 export function CustomerAccount({
+  initialTab,
   userId,
   email,
   initialProfile,
@@ -68,9 +62,8 @@ export function CustomerAccount({
 }: Props) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
   const router = useRouter();
-  const { couponCode } = useShop();
-  const { addToCart } = useShop();
-  const [tab, setTab] = useState<'overview' | 'addresses' | 'orders'>('overview');
+  const { couponCode, addToCart } = useShop();
+  const [tab, setTab] = useState<AccountTab>(initialTab);
   const [profile, setProfile] = useState({
     full_name: initialProfile.full_name,
     phone: initialProfile.phone ?? '',
@@ -78,13 +71,27 @@ export function CustomerAccount({
   const [addresses, setAddresses] = useState<CustomerAddress[]>(initialAddresses);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addressForm, setAddressForm] = useState<AddressFields | null>(null);
-  const [error, setError] = useState(loadError ?? '');
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [busy, setBusy] = useState(false);
+  const addressTitleRef = useRef<HTMLInputElement>(null);
+  const addressFormOpen = addressForm !== null;
+
+  useEffect(() => {
+    if (addressFormOpen) addressTitleRef.current?.focus();
+  }, [addressFormOpen, editingId]);
 
   function message(errorText?: string, successText?: string) {
     setError(errorText ?? '');
     setSuccess(successText ?? '');
+  }
+
+  function changeTab(nextTab: AccountTab) {
+    if (busy || nextTab === tab) return;
+    setTab(nextTab);
+    message();
+    const nextUrl = nextTab === 'overview' ? '/hesabim' : `/hesabim?tab=${nextTab}`;
+    window.history.replaceState(null, '', nextUrl);
   }
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
@@ -240,13 +247,13 @@ export function CustomerAccount({
         <div>
           <span className="section-eyebrow">ÖZ KIRTASİYE / HESABIM</span>
           <h1>
-            Merhaba{profile.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}
+            Merhaba{profile.full_name.trim() ? `, ${profile.full_name.trim().split(/\s+/)[0]}` : ''}
             <span className="orange-dot">.</span>
           </h1>
           <p>Hesap bilgilerin, adreslerin ve sipariş taleplerin tek bir yerde.</p>
         </div>
         <button type="button" className={styles.logout} onClick={logout} disabled={busy}>
-          <LogOut size={16} /> Çıkış yap
+          <LogOut size={17} aria-hidden="true" /> {busy ? 'İşleniyor...' : 'Çıkış yap'}
         </button>
       </div>
       <div className={styles.shell}>
@@ -262,34 +269,37 @@ export function CustomerAccount({
               type="button"
               key={id}
               className={`${styles.tab} ${tab === id ? styles.active : ''}`}
-              onClick={() => {
-                setTab(id);
-                message();
-              }}
+              aria-pressed={tab === id}
+              aria-controls="account-content-panel"
+              disabled={busy}
+              onClick={() => changeTab(id)}
             >
-              <Icon size={18} />
-              {label}
+              <Icon size={18} aria-hidden="true" />
+              <span>{label}</span>
             </button>
           ))}
           <Link href="/hesabim/avantajlar" className={styles.tab}>
-            <BadgePercent size={18} />
-            Avantajlarım
-            {couponCode && <span style={{ marginLeft: 'auto', fontSize: 11, color: '#d9572f', fontWeight: 800 }}>Kod var</span>}
+            <BadgePercent size={18} aria-hidden="true" />
+            <span>Avantajlarım</span>
+            {couponCode && <span className={styles.menuHint}>Kod var</span>}
           </Link>
           <Link href="/hesabim/iade" className={styles.tab}>
-            <Package size={18} />
-            İade ve değişim
+            <RotateCcw size={18} aria-hidden="true" />
+            <span>İade ve değişim</span>
           </Link>
           <Link href="/hesabim/bildirimler" className={styles.tab}>
-            <Bell size={18} />
-            Bildirimler
+            <Bell size={18} aria-hidden="true" />
+            <span>Bildirimler</span>
             <NotificationUnreadBadge audience="customer" />
           </Link>
           <Link href="/urunler" className={styles.shopLink}>
             Alışverişe dön <ArrowRight size={16} />
           </Link>
         </nav>
-        <div className={styles.panel}>
+        <div className={styles.panel} id="account-content-panel" role="region" aria-label="Hesap içeriği">
+          {loadError && (
+            <p role="alert" className={styles.error}>{loadError}</p>
+          )}
           {error && (
             <p role="alert" className={styles.error}>
               {error}
@@ -302,17 +312,27 @@ export function CustomerAccount({
           )}
           {tab === 'overview' && (
             <>
-              <Link href="/hesabim/avantajlar" style={{ display: 'flex', alignItems: 'center', gap: 14, justifyContent: 'space-between', background: '#fff4ed', border: '1px solid #ffddc9', padding: '18px 20px', borderRadius: 14, color: '#303039', marginBottom: 25, textDecoration: 'none' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                  <BadgePercent size={28} color="#ed643f" style={{ flexShrink: 0 }} aria-hidden="true" />
-                  <span style={{ display: 'grid', gap: 4 }}>
-                    <strong style={{ fontSize: 16 }}>Avantajlarım ve kuponlarım</strong>
-                    <small style={{ color: '#745d53', lineHeight: 1.5 }}>
-                      {couponCode ? `Sepetinde ${couponCode} kupon kodu kayıtlı. İndirimi kontrol et.` : 'İndirim kuponlarını görüntüle, kodunu kaydet ve sepetinde kullan.'}
-                    </small>
-                  </span>
+              <div className={styles.quickGrid} role="group" aria-label="Hesap özeti">
+                <button type="button" disabled={busy} onClick={() => changeTab('orders')} className={styles.quickCard}>
+                  <span className={styles.quickIcon}><Package size={20} aria-hidden="true" /></span>
+                  <strong>{loadError ? '—' : initialOrders.length}</strong>
+                  <span>Son sipariş taleplerim</span>
+                  <ArrowRight size={17} className={styles.quickArrow} aria-hidden="true" />
+                </button>
+                <button type="button" disabled={busy} onClick={() => changeTab('addresses')} className={styles.quickCard}>
+                  <span className={styles.quickIcon}><MapPin size={20} aria-hidden="true" /></span>
+                  <strong>{loadError ? '—' : addresses.length}</strong>
+                  <span>Kayıtlı adreslerim</span>
+                  <ArrowRight size={17} className={styles.quickArrow} aria-hidden="true" />
+                </button>
+              </div>
+              <Link href="/hesabim/avantajlar" className={styles.benefitsBanner}>
+                <span className={styles.benefitsIcon}><BadgePercent size={25} aria-hidden="true" /></span>
+                <span className={styles.benefitsCopy}>
+                  <strong>Avantajlarım ve kuponlarım</strong>
+                  <small>{couponCode ? `Sepetinde ${couponCode} kupon kodu kayıtlı. İndirimi kontrol et.` : 'Kuponlarını görüntüle, kodunu sepetine kaydet ve kullan.'}</small>
                 </span>
-                <ArrowRight size={19} aria-hidden="true" style={{ flexShrink: 0 }} />
+                <ArrowRight size={19} aria-hidden="true" className={styles.benefitsArrow} />
               </Link>
               <div className={styles.sectionTop}>
                 <div>
@@ -321,14 +341,15 @@ export function CustomerAccount({
                 </div>
                 <UserRound size={25} />
               </div>
-              <form onSubmit={saveProfile} className={styles.form}>
+              <form onSubmit={saveProfile} className={`${styles.form} ${styles.profileForm}`}>
                 <label>
                   E-posta
-                  <input disabled value={email} type="email" />
+                  <input disabled value={email} type="email" autoComplete="email" />
                   <small>E-posta değişikliği bu ekrandan yapılmıyor.</small>
                 </label>
-                <label>
-                  Ad soyad
+                <div className={styles.formGrid}>
+                  <label>
+                    Ad soyad
                   <input
                     required
                     minLength={3}
@@ -349,8 +370,9 @@ export function CustomerAccount({
                     onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
                   />
                 </label>
+                </div>
                 <button type="submit" className="button button-primary" disabled={busy}>
-                  Bilgileri kaydet <Check size={17} />
+                  {busy ? 'Kaydediliyor...' : 'Bilgileri kaydet'} <Check size={17} aria-hidden="true" />
                 </button>
               </form>
               <div className={styles.hint}>
@@ -358,8 +380,7 @@ export function CustomerAccount({
                 <span>Adreslerini kaydedersen sipariş verirken tek tıkla seçebilirsin.</span>
                 <button
                   onClick={() => {
-                    setTab('addresses');
-                    message();
+                    changeTab('addresses');
                   }}
                 >
                   Adreslerime git
@@ -375,6 +396,9 @@ export function CustomerAccount({
                   <p>Ev, iş veya farklı teslimat adreslerini kaydet.</p>
                 </div>
                 <button
+                  type="button"
+                  disabled={busy}
+                  aria-expanded={!!addressForm}
                   className={styles.actionButton}
                   onClick={() => {
                     setEditingId(null);
@@ -390,14 +414,18 @@ export function CustomerAccount({
                 </button>
               </div>
               {addressForm && (
-                <form onSubmit={saveAddress} className={styles.form}>
+                <div className={styles.addressEditor}>
+                  <h3>{editingId ? 'Adresi düzenle' : 'Yeni adres ekle'}</h3>
+                  <p className={styles.editorHint}>Teslimat sırasında kullanacağın adres bilgilerini doldur.</p>
+                  <form onSubmit={saveAddress} className={styles.form}>
                   <div className={styles.formGrid}>
                     <label>
                       Adres başlığı
                       <input
                         required
                         maxLength={40}
-                        value={addressForm.label}
+                        ref={addressTitleRef}
+                         value={addressForm.label}
                         onChange={(e) =>
                           setAddressForm((p) => p && { ...p, label: e.target.value })
                         }
@@ -468,11 +496,12 @@ export function CustomerAccount({
                   </label>
                   <div className={styles.actionRow}>
                     <button type="submit" className="button button-primary" disabled={busy}>
-                      {editingId ? 'Adres güncelle' : 'Adresi kaydet'}
+                      {busy ? 'Kaydediliyor...' : editingId ? 'Adres güncelle' : 'Adresi kaydet'}
                     </button>
                     <button
                       type="button"
                       className="button button-outline"
+                      disabled={busy}
                       onClick={() => {
                         setAddressForm(null);
                         setEditingId(null);
@@ -481,10 +510,11 @@ export function CustomerAccount({
                       Vazgeç
                     </button>
                   </div>
-                </form>
+                  </form>
+                </div>
               )}
               <div className={styles.addressList}>
-                {addresses.length === 0 && (
+                {addresses.length === 0 && !loadError && (
                   <div className={styles.empty}>
                     <MapPin size={28} />
                     <h3>Henüz kayıtlı adresin yok</h3>
@@ -543,7 +573,7 @@ export function CustomerAccount({
                 </div>
                 <Package size={25} />
               </div>
-              {initialOrders.length === 0 && (
+              {initialOrders.length === 0 && !loadError && (
                 <div className={styles.empty}>
                   <Package size={28} />
                   <h3>Henüz siparişin yok</h3>
@@ -570,13 +600,13 @@ export function CustomerAccount({
                           })}
                         </small>
                       </div>
-                      <span className={styles.status}>
-                        {statusLabels[order.status] ?? order.status}
+                      <span className={styles.status} data-tone={orderStatusPresentation(order.status).tone}>
+                        {orderStatusPresentation(order.status).label}
                       </span>
                     </div>
                     <OrderJourney order={order} />
                     {order.order_request_items.some(item => item.product_id) && (
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '10px 0' }}>
+                      <div className={styles.repeatActions}>
                         <button type="button" className="button button-outline" onClick={() => repeatOrder(order)}>
                           <ShoppingBag size={16} /> Yeniden sepete ekle
                         </button>
@@ -594,7 +624,7 @@ export function CustomerAccount({
                       ))}
                     </div>
                     {Number(order.discount_amount) > 0 && (
-                      <p style={{ fontSize: 12, color: '#217447', marginTop: 10 }}>
+                      <p className={styles.orderDiscount}>
                         {order.coupon_code
                           ? `Kupon (${order.coupon_code})`
                           : `Kampanya (${order.automatic_campaign_name})`}
@@ -602,15 +632,15 @@ export function CustomerAccount({
                       </p>
                     )}
                     <div className={styles.orderFooter}>
-                      <small>
-                        {order.delivery_method === 'pickup' ? 'Mağazadan teslim' : 'Kargo'} ·{' '}
-                        {order.payment_status === 'not_collected'
-                          ? 'Ödeme alınmadı'
-                          : 'Ödeme durumunu mağazadan doğrulayın'}
+                      <small className={styles.paymentDescription}>
+                        {order.delivery_method === 'pickup' ? 'Mağazadan teslim' : 'Kargo'}
+                        <span className={styles.paymentStatus} data-tone={paymentStatusPresentation(order.payment_status).tone}>
+                          {paymentStatusPresentation(order.payment_status).label}
+                        </span>
                       </small>
                       <strong>{formatPrice(Number(order.total))}</strong>
                     </div>
-                    <p style={{ fontSize: 12, color: '#68727e', marginTop: 9 }}>
+                    <p className={styles.invoiceNote}>
                       {order.order_invoice_register?.status === 'issued'
                         ? `Fatura kaydı: ${order.order_invoice_register.invoice_number ?? '—'} (${order.order_invoice_register.document_type === 'e_fatura' ? 'e-Fatura' : 'e-Arşiv'})`
                         : order.order_invoice_register?.status === 'pending'

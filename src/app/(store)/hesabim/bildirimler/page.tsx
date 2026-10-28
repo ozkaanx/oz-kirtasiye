@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Bell } from 'lucide-react';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { AccountSubpage } from '@/components/account/account-subpage';
 import { NotificationCenter } from '@/components/notifications/notification-center';
 import type { StoreNotification } from '@/lib/notifications';
 import styles from '@/components/notifications/notification-center.module.css';
@@ -14,10 +15,7 @@ export const metadata: Metadata = {
 
 export default async function CustomerNotificationsPage() {
   const supabase = await createServerSupabase();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect('/giris?next=%2Fhesabim%2Fbildirimler');
 
   const { data, error } = await supabase
@@ -28,23 +26,19 @@ export default async function CustomerNotificationsPage() {
     .limit(100);
 
   return (
-    <main className={`container-wide ${styles.customerPage}`}>
-      <div className={styles.customerHeader}>
-        <Link href="/hesabim" className={styles.backLink}>
-          ← Hesabıma dön
-        </Link>
-        <h1>
-          Bildirimlerim<span className="orange-dot">.</span>
-        </h1>
-        <p>Sipariş ve iade/değişim taleplerindeki gelişmeler.</p>
-      </div>
+    <AccountSubpage
+      active="notifications"
+      title="Bildirimlerim"
+      description="Siparişlerin, iadelerin ve mağazayla ilgili gelişmelerin tek bir yerde."
+      icon={<Bell />}
+    >
       <div className={styles.customerCard}>
         <NotificationCenter
           audience="customer"
           initialNotifications={(data ?? []) as StoreNotification[]}
-          loadError={error?.message ?? null}
+          loadError={error ? 'Bildirimlerin yüklenemedi. Sayfayı yenileyip tekrar dene.' : null}
         />
       </div>
-    </main>
+    </AccountSubpage>
   );
 }

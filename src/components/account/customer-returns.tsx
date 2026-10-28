@@ -1,9 +1,9 @@
 'use client';
 
 import { useMemo, useState, type FormEvent } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ClipboardCheck, PackageCheck, RotateCcw } from 'lucide-react';
+import { ClipboardCheck, PackageCheck, RotateCcw } from 'lucide-react';
+import { AccountSubpage } from './account-subpage';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 import {
   RETURN_KIND,
@@ -87,22 +87,12 @@ export function CustomerReturns({ orders, requests, history, loadError }: Props)
   }
 
   return (
-    <main className={`container-wide ${styles.page}`}>
-      <Link href="/hesabim" className={styles.back}>
-        <ArrowLeft size={16} /> Hesabıma dön
-      </Link>
-      <div className={styles.heading}>
-        <div>
-          <span className="section-eyebrow">ÖZ KIRTASİYE / HESABIM</span>
-          <h1>
-            İade ve değişim<span className="orange-dot">.</span>
-          </h1>
-          <p>
-            Teslim aldığın ürünler için talep oluşturabilir, değerlendirme sürecini izleyebilirsin.
-          </p>
-        </div>
-        <RotateCcw size={30} aria-hidden="true" />
-      </div>
+    <AccountSubpage
+      active="returns"
+      title="İade ve değişim"
+      description="Teslim aldığın ürünler için talep oluşturabilir, değerlendirme sürecini izleyebilirsin."
+      icon={<RotateCcw />}
+    >
       {loadError && (
         <p role="alert" className={styles.error}>
           Bilgiler yüklenemedi: {loadError}
@@ -234,7 +224,7 @@ export function CustomerReturns({ orders, requests, history, loadError }: Props)
           <h2 id="my-returns">
             <PackageCheck size={20} /> Taleplerim
           </h2>
-          {requests.length === 0 && (
+          {requests.length === 0 && !loadError && (
             <p className={styles.empty}>Henüz iade veya değişim talebin yok.</p>
           )}
           <div className={styles.list}>
@@ -284,6 +274,6 @@ export function CustomerReturns({ orders, requests, history, loadError }: Props)
           </div>
         </section>
       </div>
-    </main>
+    </AccountSubpage>
   );
 }
