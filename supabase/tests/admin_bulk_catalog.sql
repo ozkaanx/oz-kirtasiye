@@ -94,6 +94,6 @@ select pg_temp.expect_error($q$
 $q$,'22023','unknown privileged fields are forbidden');
 
 set local role anon;
-select pg_temp.assert_true((select count(*)=0 from public.product_costs),
- 'guest cannot read any purchase costs');
+select pg_temp.expect_error('select count(*) from public.product_costs','42501',
+ 'guest cannot read the protected purchase-cost table');
 rollback;
