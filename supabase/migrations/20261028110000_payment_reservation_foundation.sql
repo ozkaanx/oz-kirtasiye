@@ -242,7 +242,8 @@ declare
   v_order_id uuid;
   v_payment_id uuid;
 begin
-  if p_merchant_oid is null or p_merchant_oid !~ '^[A-Za-z0-9_-]{8,64}
+  if p_merchant_oid is null or p_merchant_oid !~ '^[A-Za-z0-9_-]{8,64}$'
+    or p_outcome is null or p_outcome not in ('succeeded','failed')
     or (p_provider_reference is not null
       and pg_catalog.char_length(p_provider_reference) not between 1 and 128) then
     raise exception 'Geçersiz ödeme bildirimi.' using errcode='22023';
