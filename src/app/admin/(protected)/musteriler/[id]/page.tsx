@@ -4,6 +4,14 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, TicketPercent, UserRound, ShoppingBag, Repeat2 } from 'lucide-react';
 import { createServerSupabase } from '@/lib/supabase/server';
 
+import {
+  customerPage,
+  customerOrdersHref,
+  isCustomerId,
+  type CustomerOrdersResult,
+} from '@/lib/admin-customer-catalog';
+import { operationTrace } from '@/lib/operation-trace';
+import filterStyles from '@/components/admin/admin-list-filters.module.css';
 import { formatPrice } from '@/lib/format';
 import styles from '@/components/admin/admin-customers.module.css';
 
@@ -12,7 +20,6 @@ export const metadata: Metadata = {
   title: 'Müşteri Detayı',
   robots: { index: false, follow: false },
 };
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const fmt = (v: string) =>
   new Date(v).toLocaleDateString('tr-TR', {
     timeZone: 'Europe/Istanbul',
@@ -30,27 +37,33 @@ const statuses: Record<string, string> = {
   cancelled: 'İptal edildi',
 };
 
-export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CustomerDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { id } = await params;
-  if (!UUID.test(id)) notFound();
-  const db = await createServerSupabase();
-  const [{ data: orders, error }, { count, error: countError }] = await Promise.all([
-    db
-      .from('order_requests')
-      .select('id,reference,customer_name,phone,status,total,created_at,delivery_method')
-      .eq('customer_user_id', id)
-      .order('created_at', { ascending: false })
-      .limit(100),
-    db
-      .from('order_requests')
-      .select('id', { count: 'exact', head: true })
-      .eq('customer_user_id', id),
-  ]);
-  if (!error && !countError && !count) notFound();
-  const rows = orders ?? [];
-  const latest = rows[0];
-  const active = rows.filter((o) => o.status !== 'cancelled');
-  const total = active.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+  if (!isCustomerId(id)) notFound();
+  const page = customerPage(await searchParams);
+  const trace = operationTrace('admin_customer_detail');
+  let result: CustomerOrdersResult | null = null;
+  let loadError: string | null = null;
+  try {
+    const db = await createServerSupabase();
+    const { data, error } = await db.rpc('admin_customer_orders', { p_customer: id, p_page: page });
+    if (error || !data || !Array.isArray(data.rows)) {
+      trace.error(error ? 'database_error' : 'empty_result', error?.code);
+      loadError = 'Müşteri verileri yüklenemedi. Tekrar deneyin. Takip kodu: ' + trace.requestId;
+    } else result = data as CustomerOrdersResult;
+  } catch {
+    trace.error('unexpected');
+    loadError = 'Müşteri servisine ulaşılamadı. Takip kodu: ' + trace.requestId;
+  }
+  if (result && result.total === 0) notFound();
+  const rows = result?.rows ?? [];
+  const latest = result?.latest;
   return (
     <div className="admin-body">
       <div className={styles.profileToolbar}>
@@ -75,26 +88,26 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         </div>
         <UserRound size={30} />
       </header>
-      {(error || countError) && (
+      {loadError && (
         <p role="alert" className="admin-form-error">
-          Müşteri verileri yüklenemedi: {error?.message ?? countError?.message}
+          {loadError}
         </p>
       )}
       <div className={styles.profileGrid}>
         <div className={styles.profileCard}>
           <ShoppingBag size={21} />
           <span>Toplam sipariş talebi</span>
-          <strong>{count ?? 0}</strong>
+          <strong>{result?.total ?? '—'}</strong>
         </div>
         <div className={styles.profileCard}>
           <Repeat2 size={21} />
-          <span>İptal edilmemiş talepler (gösterilen)</span>
-          <strong>{active.length}</strong>
+          <span>İptal edilmemiş talepler (tümü)</span>
+          <strong>{result?.active ?? '—'}</strong>
         </div>
         <div className={styles.profileCard}>
           <TicketPercent size={21} />
-          <span>Talep tutarı (gösterilen)</span>
-          <strong>{formatPrice(total)}</strong>
+          <span>İptal edilmemiş talep tutarı (tümü)</span>
+          <strong>{result ? formatPrice(result.amount) : '—'}</strong>
         </div>
       </div>
       <section className={styles.historyPanel}>
@@ -121,10 +134,11 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       <section className={styles.historyPanel} style={{ marginTop: 20 }}>
         <h2>Sipariş geçmişi</h2>
         <p className={styles.notice}>
-          Siparişler en yeniden eskiye sıralıdır. En son 100 kayıt gösterilir. Tutarlar tahsil
-          edilen gelir değil, sipariş talebi değeridir.
+          Siparişler en yeniden eskiye, sayfa başına 25 kayıt olarak gösterilir. Özetler müşterinin
+          tüm siparişlerinden hesaplanır. Tutarlar tahsil edilen gelir değil, sipariş talebi
+          değeridir.
         </p>
-        {rows.length === 0 && !error && <p>Henüz sipariş bulunamadı.</p>}
+        {result && rows.length === 0 && <p>Henüz sipariş bulunamadı.</p>}
         {rows.map((order) => (
           <div key={order.id} className={styles.historyRow}>
             <div>
@@ -139,10 +153,25 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             <strong>{formatPrice(Number(order.total) || 0)}</strong>
           </div>
         ))}
-        {(count ?? 0) > 100 && (
+        {result && (
           <p className={styles.notice}>
-            Bu müşterinin daha eski siparişleri için sonraki aşamada sayfalama eklenebilir.
+            {rows.length} / {result.total} sipariş · Sayfa {result.page} /{' '}
+            {Math.max(1, Math.ceil(result.total / result.pageSize))}
           </p>
+        )}
+        {result && (result.hasPrevious || result.hasNext) && (
+          <nav className={filterStyles.filters} aria-label="Müşteri sipariş sayfaları">
+            {result.hasPrevious && (
+              <Link className={filterStyles.reset} href={customerOrdersHref(id, result.page - 1)}>
+                Önceki sayfa
+              </Link>
+            )}
+            {result.hasNext && (
+              <Link className={filterStyles.reset} href={customerOrdersHref(id, result.page + 1)}>
+                Sonraki sayfa
+              </Link>
+            )}
+          </nav>
         )}
       </section>
     </div>

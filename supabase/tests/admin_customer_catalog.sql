@@ -1,0 +1,50 @@
+begin;
+create function pg_temp.assert_true(ok boolean,label text) returns void language plpgsql as $$begin if ok is distinct from true then raise exception 'FAIL: %',label;end if;raise notice 'PASS: %',label;end;$$;
+create function pg_temp.expect_error(statement text,code text,label text) returns void language plpgsql as $$begin begin execute statement;exception when others then if sqlstate=code then raise notice 'PASS: %',label;return;end if;raise;end;raise exception 'FAIL: %',label;end;$$;
+insert into auth.users(id,email) values ('c1000000-0000-0000-0000-000000000001','detail-admin@example.invalid'),('c1000000-0000-0000-0000-000000000002','detail-customer@example.invalid'),('c1000000-0000-0000-0000-000000000003','detail-other@example.invalid');
+insert into public.store_admins(user_id,role) values('c1000000-0000-0000-0000-000000000001','owner');
+insert into public.order_requests(id,reference,customer_name,phone,city,district,address,subtotal,total,status,customer_user_id,created_at)
+select ('c4000000-0000-0000-0000-'||lpad(n::text,12,'0'))::uuid,'CUSTFIXTURE-'||n,case when n=125 then 'Latest Customer' else 'Previous Buyer' end,case when n=125 then '05550000125' else '05550000001' end,'İstanbul','Bağcılar','Customer detail fixture',100,100,case when n%5=0 then 'cancelled' else 'new' end,'c1000000-0000-0000-0000-000000000002',case when n=1 then '2000-01-01T00:00:00Z'::timestamptz else '2026-01-01T12:00:00.123456Z'::timestamptz end from generate_series(1,125)n;
+insert into public.order_requests(reference,customer_name,phone,city,district,address,subtotal,total,customer_user_id) values('OTHER-CUSTOMER-FIXTURE','Another Customer','05550000003','İstanbul','Bağcılar','Customer detail fixture',999,999,'c1000000-0000-0000-0000-000000000003');
+insert into public.categories(id,name,slug,parent_id,is_active) values('c2000000-0000-0000-0000-000000000001','Count parent','count-parent',null,true),('c2000000-0000-0000-0000-000000000002','Count child','count-child','c2000000-0000-0000-0000-000000000001',true),('c2000000-0000-0000-0000-000000000003','Count empty','count-empty',null,false);
+insert into public.products(id,name,slug,price,stock_quantity,is_active,has_variants,category_id)
+select ('c3000000-0000-0000-0000-'||lpad(n::text,12,'0'))::uuid,'Count fixture '||n,'count-fixture-'||n,10,1,n%2=0,n=1,case when n<=2005 then 'c2000000-0000-0000-0000-000000000002'::uuid when n<=2007 then 'c2000000-0000-0000-0000-000000000001'::uuid else null end from generate_series(1,2008)n;
+insert into public.product_variants(product_id,color,price,stock_quantity) values('c3000000-0000-0000-0000-000000000001','Blue',10,1),('c3000000-0000-0000-0000-000000000001','Red',10,1);
+select pg_temp.assert_true(not has_function_privilege('anon','public.admin_customer_orders(uuid,integer)','execute'),'anonymous cannot read customer detail RPC');
+select pg_temp.assert_true(not has_function_privilege('anon','public.admin_category_catalog()','execute'),'anonymous cannot read admin category counts');
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"c1000000-0000-0000-0000-000000000002"}',true);
+select pg_temp.expect_error($q$select public.admin_customer_orders('c1000000-0000-0000-0000-000000000002')$q$,'42501','customer cannot call admin history even for self');
+select pg_temp.expect_error($q$select public.admin_category_catalog()$q$,'42501','customer cannot call admin catalog');
+select set_config('request.jwt.claims','{"sub":"c1000000-0000-0000-0000-000000000001"}',true);
+select pg_temp.assert_true(not (select prosecdef from pg_proc where oid='public.admin_customer_orders(uuid,integer)'::regprocedure),'customer detail uses invoker RLS');
+select pg_temp.assert_true(not (select prosecdef from pg_proc where oid='public.admin_category_catalog()'::regprocedure),'category counts use invoker RLS');
+select pg_temp.assert_true((public.admin_customer_orders('c1000000-0000-0000-0000-000000000002')->>'total')::int=125,'customer history counts all orders beyond first 100 and excludes other customers');
+select pg_temp.assert_true((public.admin_customer_orders('c1000000-0000-0000-0000-000000000002')->>'active')::int=100,'all-history active count excludes cancelled orders');
+select pg_temp.assert_true((public.admin_customer_orders('c1000000-0000-0000-0000-000000000002')->>'amount')::numeric=10000,'all-history amount excludes cancelled and other-customer orders');
+select pg_temp.assert_true(jsonb_array_length(public.admin_customer_orders('c1000000-0000-0000-0000-000000000002')->'rows')=25,'customer history bounded to 25 rows');
+select pg_temp.assert_true(public.admin_customer_orders('c1000000-0000-0000-0000-000000000002',2)->'latest'->>'customer_name'='Latest Customer','contact name remains latest on older history page');
+select pg_temp.assert_true(public.admin_customer_orders('c1000000-0000-0000-0000-000000000002',5)->'latest'->>'phone'='05550000125','phone remains latest on final page');
+select pg_temp.assert_true((public.admin_customer_orders('c1000000-0000-0000-0000-000000000002',1000000)->>'page')::int=5,'out-of-range customer page clamps');
+select pg_temp.assert_true((public.admin_customer_orders('c1000000-0000-0000-0000-000000000099')->>'total')::int=0,'customer without matched orders returns exact zero');
+select pg_temp.assert_true(public.admin_customer_orders('c1000000-0000-0000-0000-000000000099')->'latest'='null'::jsonb,'empty history has no invented contact details');
+select pg_temp.expect_error($q$select public.admin_customer_orders(null)$q$,'22023','missing customer rejected');
+select pg_temp.expect_error($q$select public.admin_customer_orders('c1000000-0000-0000-0000-000000000002',0)$q$,'22023','invalid customer page rejected');
+do $$declare r jsonb;seen uuid[]:='{}';n integer;begin
+ for n in 1..5 loop
+  r:=public.admin_customer_orders('c1000000-0000-0000-0000-000000000002',n);
+  select seen||coalesce(array_agg((e->>'id')::uuid),'{}') into seen from jsonb_array_elements(r->'rows')e;
+ end loop;
+ perform pg_temp.assert_true(cardinality(seen)=125 and (select count(distinct x) from unnest(seen)x)=125,'customer pages never repeat or skip equal-time orders');
+ perform pg_temp.assert_true(r->'rows'->24->>'reference'='CUSTFIXTURE-1','oldest order from year 2000 is reachable');
+ perform pg_temp.assert_true((r->>'amount')::numeric=10000 and (r->>'active')::int=100,'totals remain global on final page');
+ perform pg_temp.assert_true((r->>'hasNext')::boolean=false and (r->>'hasPrevious')::boolean=true,'customer last page navigation is correct');
+end;$$;
+select pg_temp.assert_true((public.admin_category_catalog()->'productCounts'->>'c2000000-0000-0000-0000-000000000002')::int=2005,'category count exceeds old 2000 limit and includes inactive products');
+select pg_temp.assert_true((public.admin_category_catalog()->'productCounts'->>'c2000000-0000-0000-0000-000000000001')::int=2,'parent direct count does not double-count descendants');
+select pg_temp.assert_true((public.admin_category_catalog()->'productCounts'->>'c2000000-0000-0000-0000-000000000003')::int=0,'empty category has explicit zero');
+select pg_temp.assert_true(exists(select 1 from jsonb_array_elements(public.admin_category_catalog()->'categories')c where c->>'id'='c2000000-0000-0000-0000-000000000003' and (c->>'is_active')::boolean=false),'admin catalog includes inactive categories');
+update public.products set category_id='c2000000-0000-0000-0000-000000000001' where id='c3000000-0000-0000-0000-000000000001';
+select pg_temp.assert_true((public.admin_category_catalog()->'productCounts'->>'c2000000-0000-0000-0000-000000000002')::int=2004,'moving variant product decreases old category by one');
+select pg_temp.assert_true((public.admin_category_catalog()->'productCounts'->>'c2000000-0000-0000-0000-000000000001')::int=3,'moving variant product increases target category by one regardless of variants');
+rollback;
