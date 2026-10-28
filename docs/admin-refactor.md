@@ -35,3 +35,16 @@ Canlı bir admin hesabıyla ürün/stok/sipariş yazma işlemi yapılmadı. Bu i
 - Yerel sahte verilerle arama, ürün formunun doğru verilerle açılması, taslağın yeniden açılışta temizlenmesi, filtrenin korunması, geçersiz slug ve aşırı stok azaltmanın isteğe çıkmadan engellenmesi kontrol edildi. Form 390 px mobil genişlikte de incelendi. Canlı veriye yazılmadı; geçici önizleme route dosyası kaldırıldı.
 
 Sıradaki grup: liste arama/filtre/sıralama ve sayfalamanın sunucuya taşınması. Büyük varyant ekranının kendi form/liste alt bileşenlerine ayrılması ayrıca sürdürülebilir. Görsel yükleme sonradan hata verirse kısmi kayıt/retry davranışı ayrı bir iş akışı çalışması gerektirir; mevcut kayıt ve yükleme sırası bu grupta korunmuştur.
+
+## Üçüncü grup: tüm katalogda sunucu araması ve sayfalama
+
+- Ürün listesi URL üzerinden GET filtreleriyle çalışır. Arama, kategori ağacı, yayın durumu, stok ve sıralama admin_search_products RPC içinde uygulanır. Sayfada en fazla 25 kayıt bulunur; arama ilk 1000 kayıtla sınırlı değildir.
+- Varyantlı ürünlerde stok aktif varyantların toplamıdır; başlangıç fiyatı stokta bulunan aktif seçeneklerin en düşüğüdür. Stokta aktif seçenek yoksa tüm aktif seçeneklerin en düşük fiyatı, aktif seçenek yoksa ana ürün fiyatı kullanılır. Filtre ve sıralama aynı hesapları kullanır.
+- Tam katalog özetleri filtrelerden bağımsızdır. Filtreli toplam ve sayfa bilgileri ayrı gösterilir. Fazla büyük veya silmelerden sonra boş kalan sayfa numarası gerçek son sayfaya sıkıştırılır; eşit sıralama değerlerinde UUID sırası bağlayıcıdır. Ayrı istekler arasında katalog değişirse numaralı sayfaların içeriği de değişebilir.
+- Stok geçmişindeki ürün adları ürün listesinin mevcut sayfasından değil ilişki sorgusundan yüklenir. Geçmiş bu grupta son 30 hareketle sınırlıdır.
+- RPC security invoker ve boş search_path kullanır, mevcut RLS altında çalışır; ayrıca store_admins kontrolü yapar. Anonim execute yetkisi yoktur. Türkçe arama normalize edilir; yüzde, alt çizgi ve ters eğik çizgi literal karakter kabul edilir. Ada göre sıralama Türkçe ICU kolasyonu kullanır.
+- İki uygulama testi URL parametre normalizasyonu ve filtreleri koruyan sayfa bağlantılarını kapsar. 1005 ürünlü SQL testi 1000 sonrası arama, alt kategori, yetki sınırı, varyant hesabı, eşit isimlerde sayfa tekilliği ve uç sayfaları sınar.
+
+Dağıtım sırası: admin_product_search_pagination migration önce uygulanmalı, ardından yeni uygulama sürümü yayınlanmalıdır. Bu migration ürün veya stok verilerini değiştirmez.
+
+Bu grubun doğrulaması: 47 uygulama testi ve temiz Supabase kurulumu üzerindeki veritabanı regresyonları CI'da geçti. Migration Supabase'e 20261028090127 sürümüyle uygulandı; dosya adı canlı migration defteriyle eşleştirildi. Canlı katalogda authenticated yönetici rolü altında salt okunur sorgu, 4 ürün ve toplam 48 stok sonucunu doğruladı. Fonksiyon security invoker, anonim execute yetkisi kapalıdır. Ürün/stok verisi değiştirilmedi.

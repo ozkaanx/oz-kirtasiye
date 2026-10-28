@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 
-type Operation = 'order_submission' | 'coupon_quote' | 'admin_order_search' | 'admin_order_action';
+type Operation =
+  | 'order_submission'
+  | 'coupon_quote'
+  | 'admin_order_search'
+  | 'admin_product_search'
+  | 'admin_order_action';
 type Event = 'unavailable' | 'database_error' | 'empty_result' | 'unexpected';
 
 /** Allowlisted fields only: never bodies, URLs, customer IDs, error messages or stacks. */

@@ -18,6 +18,7 @@ export type Product = {
   imageUrl: string | null;
 };
 export type StockEntry = {
+  product_name?: string;
   id: string;
   product_id: string;
   change_quantity: number;
