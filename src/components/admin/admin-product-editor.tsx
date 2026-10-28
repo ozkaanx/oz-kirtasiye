@@ -130,7 +130,9 @@ export function AdminProductEditor({
       }
       // Cost information lives in a separate, admin-only RLS table.
       // Empty on edit explicitly clears a previously saved cost.
-      if (cost !== null) {
+      if (current !== 'new' && current.has_variants) {
+        // Variant costs require variant-level inventory; leave this base cost untouched.
+      } else if (cost !== null) {
         const { error: costError } = await supabase.from('product_costs').upsert(
           { product_id: productId, cost_price: cost },
           { onConflict: 'product_id' },
@@ -250,7 +252,11 @@ export function AdminProductEditor({
               onChange={(e) => setForm((s) => ({ ...s, price: e.target.value }))}
             />
           </label>
-          <label className="admin-field">
+          {editing !== 'new' && editing.has_variants ? (
+            <p className="admin-category-help">
+              Varyantlı ürünlerde alış maliyeti ve kâr hesabı bu aşamada yapılmaz.
+            </p>
+          ) : <label className="admin-field">
             Alış maliyeti (₺, yöneticiye özel)
             <input
               type="number"
@@ -272,7 +278,7 @@ export function AdminProductEditor({
                 </small>
               ) : null;
             })()}
-          </label>
+          </label>}
           <label className="admin-field">
             Eski fiyat (isteğe bağlı)
             <input
