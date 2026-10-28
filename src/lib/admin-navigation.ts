@@ -20,6 +20,7 @@ export const ADMIN_MENU_GROUPS = [
     items: [
       { href: '/admin/urunler', label: 'Ürün ve stok', icon: 'boxes' },
       { href: '/admin/kategoriler', label: 'Kategoriler', icon: 'categories' },
+      { href: '/admin/yorumlar', label: 'Ürün yorumları', icon: 'reviews' },
     ],
   },
   {
