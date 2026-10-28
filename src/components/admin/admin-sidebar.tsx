@@ -15,7 +15,6 @@ import {
   LayoutDashboard,
   Megaphone,
   Menu,
-  Package,
   ReceiptText,
   RotateCcw,
   Settings2,
@@ -55,26 +54,32 @@ const iconByKey = {
 export function AdminSidebar() {
   const pathname = usePathname();
   const activeGroup = getActiveAdminGroup(pathname);
-  const [expandedGroup, setExpandedGroup] = useState<AdminMenuGroupId | null>(activeGroup);
-  const [open, setOpen] = useState(false);
+  // Route-scoped state keeps browser back/forward navigation in sync without
+  // setting state synchronously inside an effect.
+  const [groupState, setGroupState] = useState<{
+    pathname: string;
+    group: AdminMenuGroupId | null;
+  }>({ pathname, group: activeGroup });
+  const expandedGroup = groupState.pathname === pathname ? groupState.group : activeGroup;
+
+  const [drawerState, setDrawerState] = useState({ pathname, open: false });
+  const open = drawerState.pathname === pathname && drawerState.open;
   const toggleRef = useRef<HTMLButtonElement>(null);
 
-  // A new route (including detail screens) automatically reveals its category.
-  useEffect(() => {
-    setExpandedGroup(getActiveAdminGroup(pathname));
-    setOpen(false);
-  }, [pathname]);
+  function closeDrawer() {
+    setDrawerState({ pathname, open: false });
+  }
 
   useEffect(() => {
     if (!open) return;
     function closeOnEscape(event: KeyboardEvent) {
       if (event.key !== 'Escape') return;
-      setOpen(false);
+      setDrawerState({ pathname, open: false });
       toggleRef.current?.focus();
     }
     document.addEventListener('keydown', closeOnEscape);
     return () => document.removeEventListener('keydown', closeOnEscape);
-  }, [open]);
+  }, [open, pathname]);
 
   return (
     <>
@@ -84,7 +89,7 @@ export function AdminSidebar() {
         className="admin-mobile-menu-toggle"
         aria-controls="admin-side-navigation"
         aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => setDrawerState({ pathname, open: !open })}
       >
         <Menu size={19} aria-hidden="true" />
         <span>Menü</span>
@@ -95,7 +100,7 @@ export function AdminSidebar() {
           type="button"
           className="admin-sidebar-backdrop"
           aria-label="Yönetim menüsünü kapat"
-          onClick={() => setOpen(false)}
+          onClick={closeDrawer}
         />
       )}
 
@@ -127,7 +132,10 @@ export function AdminSidebar() {
                     data-selected={highlighted}
                     aria-expanded={expanded}
                     aria-controls={panelId}
-                    onClick={() => setExpandedGroup((current) => current === group.id ? null : group.id)}
+                    onClick={() => setGroupState({
+                      pathname,
+                      group: expandedGroup === group.id ? null : group.id,
+                    })}
                   >
                     <GroupIcon size={18} aria-hidden="true" className={styles.groupIcon} />
                     <span>{group.label}</span>
