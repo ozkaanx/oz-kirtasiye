@@ -82,6 +82,7 @@
 }
 .content {
   min-width: 0;
+  container-type: inline-size;
 }
 .navLink {
   display: inline-flex;
