@@ -183,3 +183,9 @@
 .timeline summary:focus-visible{outline:3px solid #ff956f;outline-offset:3px}
 .returnCard{overflow-wrap:anywhere}
 @media(max-width:520px){.card{padding:16px}.returnCard{padding:13px}.returnHead{align-items:flex-start}}
+
+/* The returns form now sits inside the right-hand dashboard panel on desktop. */
+@container (max-width: 760px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .card { padding: 18px; }
+}
