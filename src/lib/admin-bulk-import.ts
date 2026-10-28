@@ -167,4 +167,4 @@ export function normalizeImportTable(rows: string[][]): ImportRow[] {
 
 export const IMPORT_TEMPLATE_CSV =
   '\uFEFFsku;name;category_slug;price;cost_price;stock_quantity;low_stock_threshold;is_active;description\r\n' +
-  'DEFTER-A5-01;A5 Çizgili Defter;defter-ve-ajanda;39,90;22,50;12;5;hayır;Örnek ürün - kendi kategori kodunu girin\r\n';
+  'DEFTER-A5-01;A5 Çizgili Defter;;39,90;22,50;12;5;hayır;Örnek ürün - varsa kategori kodunu girin\r\n';
