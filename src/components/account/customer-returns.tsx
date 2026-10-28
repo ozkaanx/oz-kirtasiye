@@ -224,7 +224,7 @@ export function CustomerReturns({ orders, requests, history, loadError }: Props)
           <h2 id="my-returns">
             <PackageCheck size={20} /> Taleplerim
           </h2>
-          {requests.length === 0 && (
+          {requests.length === 0 && !loadError && (
             <p className={styles.empty}>Henüz iade veya değişim talebin yok.</p>
           )}
           <div className={styles.list}>
