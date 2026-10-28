@@ -28,6 +28,9 @@ api_url = "http://127.0.0.1"
 enabled = true
 port = 54324
 
+[edge_runtime]
+enabled = false
+
 [storage]
 enabled = true
 file_size_limit = "50MiB"
