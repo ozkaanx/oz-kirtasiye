@@ -37,7 +37,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   }
   const initialFilters = parseCatalogFilters(params);
   const categories = await getCachedLiveCategories();
-  const paged = await getPagedCatalog(initialFilters, parseCatalogPage(params.get('page')), categories);
+  const paged = await getPagedCatalog(initialFilters, parseCatalogPage(params.get('page')));
   return (
     <CatalogView
       key={`${serializeCatalogFilters(initialFilters)}:${paged.currentPage}`}
