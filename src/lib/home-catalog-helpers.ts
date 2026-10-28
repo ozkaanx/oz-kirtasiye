@@ -1,5 +1,5 @@
 import type { StoreCategory } from './category-utils';
-import { projectCatalogPage, type CatalogPageMatch } from './catalog-page-helpers';
+import { projectCatalogPage, type CatalogPageMatch } from './catalog-page-helpers.ts';
 import type { FilteredLiveProduct } from './catalog-filters';
 import type { LiveProduct } from './real-catalog';
 
