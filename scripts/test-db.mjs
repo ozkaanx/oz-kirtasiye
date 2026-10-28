@@ -28,3 +28,9 @@ const concurrency = spawnSync(process.execPath, ['supabase/tests/order-concurren
 });
 if (concurrency.error) throw concurrency.error;
 if (concurrency.status !== 0) process.exit(concurrency.status ?? 1);
+
+const paymentConcurrency = spawnSync(process.execPath, ['supabase/tests/payment-concurrency.mjs'], {
+  stdio: 'inherit',
+});
+if (paymentConcurrency.error) throw paymentConcurrency.error;
+if (paymentConcurrency.status !== 0) process.exit(paymentConcurrency.status ?? 1);
