@@ -60,8 +60,8 @@ export function isAdminRouteActive(pathname: string, href: string): boolean {
 }
 
 /** Open the group containing the current route after direct navigation/refresh. */
-export function getActiveAdminGroup(pathname: string): AdminMenuGroupId {
+export function getActiveAdminGroup(pathname: string): AdminMenuGroupId | null {
   return ADMIN_MENU_GROUPS.find((group) =>
     group.items.some((item) => isAdminRouteActive(pathname, item.href)),
-  )?.id ?? 'general';
+  )?.id ?? null;
 }
