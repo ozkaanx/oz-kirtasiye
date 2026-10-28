@@ -165,10 +165,7 @@ export function CustomerReturns({
                     >
                       <option value="">Ürün seç</option>
                       {order.order_request_items.map((i) => {
-                        const claimed = requests
-                          .filter((r) => r.order_item_id === i.id && r.status !== 'rejected')
-                          .reduce((sum, r) => sum + r.quantity, 0);
-                        const available = i.quantity - claimed;
+                        const available = Math.max(0, i.quantity - i.claimed_quantity);
                         return (
                           <option value={i.id} key={i.id} disabled={available <= 0}>
                             {i.product_name}

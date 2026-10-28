@@ -58,7 +58,7 @@ export type ReturnOrder = {
     product_name: string;
     variant_label: string | null;
     quantity: number;
-    claimed_quantity?: number;
+    claimed_quantity: number;
   }>;
 };
 

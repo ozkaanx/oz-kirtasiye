@@ -14,6 +14,7 @@ import styles from './admin-coupons.module.css';
 type Scope = 'order' | 'category' | 'product';
 type DiscountType = 'percent' | 'fixed';
 export type AutoCampaign = {
+  target_name?: string;
   id: string;
   name: string;
   scope: Scope;
@@ -41,12 +42,10 @@ const showDate = (value: string | null) =>
 export function AdminAutoCampaigns({
   campaigns,
   categories,
-  products,
   loadError,
 }: {
   campaigns: AutoCampaign[];
   categories: Target[];
-  products: Target[];
   loadError: string | null;
 }) {
   const router = useRouter();
@@ -65,7 +64,7 @@ export function AdminAutoCampaigns({
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [search, setSearch] = useState('');
-  const options = scope === 'category' ? categories : products;
+  const options = categories;
   const visible = useMemo(
     () =>
       campaigns.filter((c) =>
@@ -76,9 +75,7 @@ export function AdminAutoCampaigns({
   const targetName = (c: AutoCampaign) =>
     c.scope === 'order'
       ? 'Tüm sepet'
-      : ((c.scope === 'category'
-          ? categories.find((t) => t.id === c.category_id)?.name
-          : products.find((t) => t.id === c.product_id)?.name) ?? 'Bilinmiyor');
+      : (c.target_name ?? categories.find((t) => t.id === c.category_id)?.name ?? 'Bilinmiyor');
 
   async function create(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();

@@ -39,6 +39,14 @@ do $$declare payload jsonb:='{"name":"Audit pen","slug":"audit-pen","sku":" audi
  perform pg_temp.assert_true(not exists(select 1 from public.product_costs where product_id=rid),'clear cost is part of atomic save');
 end $$;
 reset role;
+insert into public.products(name,slug,sku,price,is_active)
+select case when n=2101 then 'ZZZ audit last target' else 'Audit selector product '||n end,
+ 'audit-selector-'||n,'AUDIT-SELECTOR-'||n,10,true from generate_series(1,2101)n;
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"da100000-0000-0000-0000-000000000001"}',true);
+select pg_temp.assert_true((public.admin_search_products('ZZZ audit last target',null,'active','all','name',1)->>'total')::int=1,
+ 'campaign server search reaches product beyond old 2000-option catalog cap');
+reset role;
 insert into public.order_requests(id,reference,customer_name,phone,city,district,address,subtotal,total,status,customer_user_id,created_at)
 select ('da400000-0000-0000-0000-'||lpad(n::text,12,'0'))::uuid,'AUDIT-ORDER-'||n,'Test Buyer','05550000000','İstanbul','Merkez','Test fixture address',100,100,'completed','da100000-0000-0000-0000-000000000002','2026-01-01'::timestamptz
 from generate_series(1,65)n;
@@ -55,6 +63,8 @@ select set_config('request.jwt.claims','{"sub":"da100000-0000-0000-0000-00000000
 do $$declare r jsonb;seen uuid[]:='{}';n integer;begin
  r:=public.customer_return_page();
  perform pg_temp.assert_true((r->'ordersMeta'->>'total')::int=65 and (r->'requestsMeta'->>'total')::int=65,'customer sees own complete counts only');
+ perform pg_temp.assert_true((select count(*)=65 from public.order_requests where customer_user_id=(select auth.uid())),
+ 'account exact count includes every order and excludes another customer');
  perform pg_temp.assert_true((r->'orders'->0->'order_request_items'->0->>'claimed_quantity')::int=65,'claimed quantity includes requests on every page');
  perform pg_temp.assert_true(jsonb_array_length(r->'history')>=505,'history is complete beyond old 500 global cap');
  for n in 1..4 loop
