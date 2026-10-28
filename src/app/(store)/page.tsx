@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { HomeStorefront } from '@/components/home/home-storefront';
-import { getCachedLiveCategories, getCachedLiveProducts } from '@/lib/cached-catalog';
+import { getCachedLiveCategories } from '@/lib/cached-catalog';
+import { getHomeCatalog } from '@/lib/home-catalog';
 import { absoluteStoreUrl, isSeoPublic, safeJsonLd, STORE_DESCRIPTION } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
@@ -10,9 +11,8 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [liveProducts, categories] = await Promise.all([
-    getCachedLiveProducts(), getCachedLiveCategories(),
-  ]);
+  const categories = await getCachedLiveCategories();
+  const { featuredByCategory, newestProducts } = await getHomeCatalog(categories);
   const website = absoluteStoreUrl('/');
   const storeSchema = website && isSeoPublic() ? {
     '@context': 'https://schema.org', '@type': 'Store',
@@ -26,7 +26,7 @@ export default async function HomePage() {
   return (
     <>
       {storeSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(storeSchema) }} />}
-      <HomeStorefront liveProducts={liveProducts} categories={categories} />
+      <HomeStorefront featuredByCategory={featuredByCategory} newestProducts={newestProducts} categories={categories} />
     </>
   );
 }
