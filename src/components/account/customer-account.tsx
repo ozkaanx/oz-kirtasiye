@@ -306,17 +306,27 @@ export function CustomerAccount({
           )}
           {tab === 'overview' && (
             <>
-              <Link href="/hesabim/avantajlar" style={{ display: 'flex', alignItems: 'center', gap: 14, justifyContent: 'space-between', background: '#fff4ed', border: '1px solid #ffddc9', padding: '18px 20px', borderRadius: 14, color: '#303039', marginBottom: 25, textDecoration: 'none' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                  <BadgePercent size={28} color="#ed643f" style={{ flexShrink: 0 }} aria-hidden="true" />
-                  <span style={{ display: 'grid', gap: 4 }}>
-                    <strong style={{ fontSize: 16 }}>Avantajlarım ve kuponlarım</strong>
-                    <small style={{ color: '#745d53', lineHeight: 1.5 }}>
-                      {couponCode ? `Sepetinde ${couponCode} kupon kodu kayıtlı. İndirimi kontrol et.` : 'İndirim kuponlarını görüntüle, kodunu kaydet ve sepetinde kullan.'}
-                    </small>
-                  </span>
+              <div className={styles.quickGrid} aria-label="Hesap özeti">
+                <button type="button" onClick={() => changeTab('orders')} className={styles.quickCard}>
+                  <span className={styles.quickIcon}><Package size={20} aria-hidden="true" /></span>
+                  <strong>{initialOrders.length}</strong>
+                  <span>Son sipariş taleplerim</span>
+                  <ArrowRight size={17} className={styles.quickArrow} aria-hidden="true" />
+                </button>
+                <button type="button" onClick={() => changeTab('addresses')} className={styles.quickCard}>
+                  <span className={styles.quickIcon}><MapPin size={20} aria-hidden="true" /></span>
+                  <strong>{addresses.length}</strong>
+                  <span>Kayıtlı adreslerim</span>
+                  <ArrowRight size={17} className={styles.quickArrow} aria-hidden="true" />
+                </button>
+              </div>
+              <Link href="/hesabim/avantajlar" className={styles.benefitsBanner}>
+                <span className={styles.benefitsIcon}><BadgePercent size={25} aria-hidden="true" /></span>
+                <span className={styles.benefitsCopy}>
+                  <strong>Avantajlarım ve kuponlarım</strong>
+                  <small>{couponCode ? `Sepetinde ${couponCode} kupon kodu kayıtlı. İndirimi kontrol et.` : 'Kuponlarını görüntüle, kodunu sepetine kaydet ve kullan.'}</small>
                 </span>
-                <ArrowRight size={19} aria-hidden="true" style={{ flexShrink: 0 }} />
+                <ArrowRight size={19} aria-hidden="true" className={styles.benefitsArrow} />
               </Link>
               <div className={styles.sectionTop}>
                 <div>
@@ -325,14 +335,15 @@ export function CustomerAccount({
                 </div>
                 <UserRound size={25} />
               </div>
-              <form onSubmit={saveProfile} className={styles.form}>
+              <form onSubmit={saveProfile} className={`${styles.form} ${styles.profileForm}`}>
                 <label>
                   E-posta
                   <input disabled value={email} type="email" />
                   <small>E-posta değişikliği bu ekrandan yapılmıyor.</small>
                 </label>
-                <label>
-                  Ad soyad
+                <div className={styles.formGrid}>
+                  <label>
+                    Ad soyad
                   <input
                     required
                     minLength={3}
@@ -353,8 +364,9 @@ export function CustomerAccount({
                     onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
                   />
                 </label>
+                </div>
                 <button type="submit" className="button button-primary" disabled={busy}>
-                  Bilgileri kaydet <Check size={17} />
+                  {busy ? 'Kaydediliyor...' : 'Bilgileri kaydet'} <Check size={17} aria-hidden="true" />
                 </button>
               </form>
               <div className={styles.hint}>
@@ -378,6 +390,9 @@ export function CustomerAccount({
                   <p>Ev, iş veya farklı teslimat adreslerini kaydet.</p>
                 </div>
                 <button
+                  type="button"
+                  disabled={busy}
+                  aria-expanded={!!addressForm}
                   className={styles.actionButton}
                   onClick={() => {
                     setEditingId(null);
@@ -393,7 +408,10 @@ export function CustomerAccount({
                 </button>
               </div>
               {addressForm && (
-                <form onSubmit={saveAddress} className={styles.form}>
+                <div className={styles.addressEditor}>
+                  <h3>{editingId ? 'Adresi düzenle' : 'Yeni adres ekle'}</h3>
+                  <p className={styles.editorHint}>Teslimat sırasında kullanacağın adres bilgilerini doldur.</p>
+                  <form onSubmit={saveAddress} className={styles.form}>
                   <div className={styles.formGrid}>
                     <label>
                       Adres başlığı
@@ -471,11 +489,12 @@ export function CustomerAccount({
                   </label>
                   <div className={styles.actionRow}>
                     <button type="submit" className="button button-primary" disabled={busy}>
-                      {editingId ? 'Adres güncelle' : 'Adresi kaydet'}
+                      {busy ? 'Kaydediliyor...' : editingId ? 'Adres güncelle' : 'Adresi kaydet'}
                     </button>
                     <button
                       type="button"
                       className="button button-outline"
+                      disabled={busy}
                       onClick={() => {
                         setAddressForm(null);
                         setEditingId(null);
@@ -484,7 +503,8 @@ export function CustomerAccount({
                       Vazgeç
                     </button>
                   </div>
-                </form>
+                  </form>
+                </div>
               )}
               <div className={styles.addressList}>
                 {addresses.length === 0 && (
@@ -573,13 +593,13 @@ export function CustomerAccount({
                           })}
                         </small>
                       </div>
-                      <span className={styles.status}>
-                        {statusLabels[order.status] ?? order.status}
+                      <span className={styles.status} data-tone={orderStatusPresentation(order.status).tone}>
+                        {orderStatusPresentation(order.status).label}
                       </span>
                     </div>
                     <OrderJourney order={order} />
                     {order.order_request_items.some(item => item.product_id) && (
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '10px 0' }}>
+                      <div className={styles.repeatActions}>
                         <button type="button" className="button button-outline" onClick={() => repeatOrder(order)}>
                           <ShoppingBag size={16} /> Yeniden sepete ekle
                         </button>
@@ -597,7 +617,7 @@ export function CustomerAccount({
                       ))}
                     </div>
                     {Number(order.discount_amount) > 0 && (
-                      <p style={{ fontSize: 12, color: '#217447', marginTop: 10 }}>
+                      <p className={styles.orderDiscount}>
                         {order.coupon_code
                           ? `Kupon (${order.coupon_code})`
                           : `Kampanya (${order.automatic_campaign_name})`}
@@ -605,15 +625,15 @@ export function CustomerAccount({
                       </p>
                     )}
                     <div className={styles.orderFooter}>
-                      <small>
-                        {order.delivery_method === 'pickup' ? 'Mağazadan teslim' : 'Kargo'} ·{' '}
-                        {order.payment_status === 'not_collected'
-                          ? 'Ödeme alınmadı'
-                          : 'Ödeme durumunu mağazadan doğrulayın'}
+                      <small className={styles.paymentDescription}>
+                        {order.delivery_method === 'pickup' ? 'Mağazadan teslim' : 'Kargo'}
+                        <span className={styles.paymentStatus} data-tone={paymentStatusPresentation(order.payment_status).tone}>
+                          {paymentStatusPresentation(order.payment_status).label}
+                        </span>
                       </small>
                       <strong>{formatPrice(Number(order.total))}</strong>
                     </div>
-                    <p style={{ fontSize: 12, color: '#68727e', marginTop: 9 }}>
+                    <p className={styles.invoiceNote}>
                       {order.order_invoice_register?.status === 'issued'
                         ? `Fatura kaydı: ${order.order_invoice_register.invoice_number ?? '—'} (${order.order_invoice_register.document_type === 'e_fatura' ? 'e-Fatura' : 'e-Arşiv'})`
                         : order.order_invoice_register?.status === 'pending'
