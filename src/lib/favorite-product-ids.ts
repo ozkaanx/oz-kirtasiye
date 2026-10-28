@@ -1,5 +1,5 @@
 /** Favorites live in browser storage; the API only accepts bounded product IDs. */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const MAX_FAVORITE_IDS = 100;
 
 export function parseFavoriteIds(value: unknown): string[] | null {
