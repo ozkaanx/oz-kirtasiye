@@ -219,7 +219,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         cartError,
         favorites,
         favoritesReady: loaded,
-        couponCode:
+        couponCode,
         setCouponCode,
         cartFeedback,
         dismissCartFeedback,
