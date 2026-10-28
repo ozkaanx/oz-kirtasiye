@@ -1,11 +1,11 @@
 'use client';
 
 import { useMemo, useState, type FormEvent } from 'react';
-import Link from 'next/link';
+
 import { useClock } from '@/lib/use-clock';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, BadgePercent, LogOut, PlusCircle, ShieldCheck } from 'lucide-react';
-import { AdminSidebar } from '@/components/admin/admin-sidebar';
+import { BadgePercent, PlusCircle, ShieldCheck } from 'lucide-react';
+
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 import { normalizeCouponCode } from '@/lib/coupon';
 import { formatPrice } from '@/lib/format';
@@ -142,262 +142,238 @@ export function AdminCoupons({
     }
   }
 
-  async function logout() {
-    await createBrowserSupabase().auth.signOut();
-    router.replace('/admin/giris');
-    router.refresh();
-  }
-
   return (
-    <div className="admin-shell">
-      <AdminSidebar />
-      <main className="admin-main">
-        <header className="admin-top">
-          <Link href="/">
-            <ArrowLeft size={16} /> Mağazaya dön
-          </Link>
-          <button type="button" className="admin-logout" onClick={() => void logout()}>
-            <LogOut size={16} /> Çıkış yap
-          </button>
-        </header>
-        <div className="admin-body">
-          <div className="admin-page-heading">
-            <div>
-              <span className="section-eyebrow">ÖZ KIRTASİYE · KAMPANYALAR</span>
-              <h1>
-                İndirim kuponları<span className="orange-dot">.</span>
-              </h1>
-              <p>Kupon oluştur, kullanım limitlerini belirle ve gerektiğinde tek tuşla durdur.</p>
-            </div>
-          </div>
-          <div className={styles.notice}>
-            <ShieldCheck size={19} />
-            <span>
-              <strong>Tahsilat yapılmaz.</strong> Buradaki kullanım adedi ödeme alınmamış ancak
-              iptal edilmemiş sipariş taleplerini içerir. İptal edilen talepler kullanım hakkını
-              geri bırakır.
-            </span>
-          </div>
-          {loadError && (
-            <p className={styles.error} role="alert">
-              Kuponlar yüklenemedi: {loadError}
-            </p>
-          )}
-          {error && (
-            <p className={styles.error} role="alert">
-              {error}
-            </p>
-          )}
-          {success && (
-            <p className={styles.success} role="status">
-              {success}
-            </p>
-          )}
-          <div className={styles.layout}>
-            <section className={styles.panel}>
-              <h2>
-                <PlusCircle size={19} /> Yeni kupon
-              </h2>
-              <form onSubmit={(event) => void create(event)} className={styles.form}>
-                <label>
-                  Kupon kodu
-                  <input
-                    required
-                    minLength={4}
-                    maxLength={32}
-                    placeholder="OZKIRTASIYE10"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  />
-                </label>
-                <label>
-                  Açıklama
-                  <input
-                    required
-                    minLength={3}
-                    maxLength={100}
-                    placeholder="Yeni müşteri indirimi"
-                    value={label}
-                    onChange={(e) => setLabel(e.target.value)}
-                  />
-                </label>
-                <div className={styles.two}>
-                  <label>
-                    İndirim türü
-                    <select value={type} onChange={(e) => setType(e.target.value as typeof type)}>
-                      <option value="percent">Yüzde (%)</option>
-                      <option value="fixed">Sabit tutar (TL)</option>
-                    </select>
-                  </label>
-                  <label>
-                    Değer
-                    <input
-                      required
-                      min="0.01"
-                      max={type === 'percent' ? 100 : 999999.99}
-                      step="0.01"
-                      type="number"
-                      value={value}
-                      onChange={(e) => setValue(e.target.value)}
-                    />
-                  </label>
-                </div>
-                <div className={styles.two}>
-                  <label>
-                    Min. ürün tutarı (TL)
-                    <input
-                      required
-                      min="0"
-                      step="0.01"
-                      type="number"
-                      value={minimum}
-                      onChange={(e) => setMinimum(e.target.value)}
-                    />
-                  </label>
-                  <label>
-                    Maks. indirim (TL){type === 'fixed' && <small>Sabit TL için kullanılmaz</small>}
-                    <input
-                      disabled={type === 'fixed'}
-                      placeholder="Sınırsız"
-                      min="0.01"
-                      step="0.01"
-                      type="number"
-                      value={cap}
-                      onChange={(e) => setCap(e.target.value)}
-                    />
-                  </label>
-                </div>
-                <div className={styles.two}>
-                  <label>
-                    Toplam kullanım sınırı
-                    <input
-                      type="number"
-                      min="1"
-                      max="100000"
-                      placeholder="Sınırsız"
-                      value={maxUses}
-                      onChange={(e) => setMaxUses(e.target.value)}
-                    />
-                  </label>
-                  <label>
-                    Müşteri başına kullanım
-                    <input
-                      required
-                      type="number"
-                      min="1"
-                      max="20"
-                      value={personLimit}
-                      onChange={(e) => setPersonLimit(e.target.value)}
-                    />
-                  </label>
-                </div>
-                <div className={styles.two}>
-                  <label>
-                    Başlangıç (boşsa hemen)
-                    <input
-                      type="datetime-local"
-                      value={start}
-                      onChange={(e) => setStart(e.target.value)}
-                    />
-                  </label>
-                  <label>
-                    Bitiş (boşsa süresiz)
-                    <input
-                      type="datetime-local"
-                      value={end}
-                      onChange={(e) => setEnd(e.target.value)}
-                    />
-                  </label>
-                </div>
-                <button disabled={busy} type="submit" className={styles.primary}>
-                  {busy ? 'Kaydediliyor...' : 'Kupon oluştur'}
-                </button>
-              </form>
-            </section>
-            <section className={styles.panel}>
-              <div className={styles.heading}>
-                <h2>
-                  <BadgePercent size={19} /> Kupon listesi
-                </h2>
-                <strong>{coupons.length} kupon</strong>
-              </div>
-              <input
-                className={styles.search}
-                aria-label="Kupon ara"
-                placeholder="Kod veya açıklama ara"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <div className={styles.stack}>
-                {!filtered.length && <p className={styles.empty}>Henüz kupon bulunamadı.</p>}
-                {filtered.map((c) => {
-                  const expired = !!c.expires_at && new Date(c.expires_at).getTime() <= now;
-                  const upcoming = new Date(c.starts_at).getTime() > now;
-                  const usedUp = c.max_uses !== null && c.used_count >= c.max_uses;
-                  return (
-                    <article key={c.id} className={styles.card}>
-                      <div className={styles.cardTop}>
-                        <strong>{c.code}</strong>
-                        <span
-                          data-active={c.is_active && !expired && !usedUp && !upcoming}
-                          className={styles.tag}
-                        >
-                          {!c.is_active
-                            ? 'Durduruldu'
-                            : expired
-                              ? 'Süresi doldu'
-                              : usedUp
-                                ? 'Limit doldu'
-                                : upcoming
-                                  ? 'Başlayacak'
-                                  : 'Aktif'}
-                        </span>
-                      </div>
-                      <p>{c.label}</p>
-                      <div className={styles.grid}>
-                        <span>
-                          İndirim
-                          <strong>
-                            {c.discount_type === 'percent'
-                              ? `%${c.discount_value}`
-                              : formatPrice(c.discount_value)}
-                          </strong>
-                        </span>
-                        <span>
-                          Minimum sepet<strong>{formatPrice(c.min_subtotal)}</strong>
-                        </span>
-                        <span>
-                          Kullanım
-                          <strong>
-                            {c.used_count} / {c.max_uses ?? '∞'}
-                          </strong>
-                        </span>
-                        <span>
-                          Kişi limiti<strong>{c.max_uses_per_customer}</strong>
-                        </span>
-                        <span>
-                          Başlangıç<strong>{fmtDate(c.starts_at)}</strong>
-                        </span>
-                        <span>
-                          Bitiş<strong>{fmtDate(c.expires_at)}</strong>
-                        </span>
-                      </div>
-                      <button
-                        className={styles.toggle}
-                        disabled={busy}
-                        onClick={() => void toggle(c)}
-                        type="button"
-                      >
-                        {c.is_active ? 'Kuponu durdur' : 'Yeniden etkinleştir'}
-                      </button>
-                    </article>
-                  );
-                })}
-              </div>
-            </section>
-          </div>
+    <div className="admin-body">
+      <div className="admin-page-heading">
+        <div>
+          <span className="section-eyebrow">ÖZ KIRTASİYE · KAMPANYALAR</span>
+          <h1>
+            İndirim kuponları<span className="orange-dot">.</span>
+          </h1>
+          <p>Kupon oluştur, kullanım limitlerini belirle ve gerektiğinde tek tuşla durdur.</p>
         </div>
-      </main>
+      </div>
+      <div className={styles.notice}>
+        <ShieldCheck size={19} />
+        <span>
+          <strong>Tahsilat yapılmaz.</strong> Buradaki kullanım adedi ödeme alınmamış ancak iptal
+          edilmemiş sipariş taleplerini içerir. İptal edilen talepler kullanım hakkını geri bırakır.
+        </span>
+      </div>
+      {loadError && (
+        <p className={styles.error} role="alert">
+          Kuponlar yüklenemedi: {loadError}
+        </p>
+      )}
+      {error && (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      )}
+      {success && (
+        <p className={styles.success} role="status">
+          {success}
+        </p>
+      )}
+      <div className={styles.layout}>
+        <section className={styles.panel}>
+          <h2>
+            <PlusCircle size={19} /> Yeni kupon
+          </h2>
+          <form onSubmit={(event) => void create(event)} className={styles.form}>
+            <label>
+              Kupon kodu
+              <input
+                required
+                minLength={4}
+                maxLength={32}
+                placeholder="OZKIRTASIYE10"
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+              />
+            </label>
+            <label>
+              Açıklama
+              <input
+                required
+                minLength={3}
+                maxLength={100}
+                placeholder="Yeni müşteri indirimi"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+              />
+            </label>
+            <div className={styles.two}>
+              <label>
+                İndirim türü
+                <select value={type} onChange={(e) => setType(e.target.value as typeof type)}>
+                  <option value="percent">Yüzde (%)</option>
+                  <option value="fixed">Sabit tutar (TL)</option>
+                </select>
+              </label>
+              <label>
+                Değer
+                <input
+                  required
+                  min="0.01"
+                  max={type === 'percent' ? 100 : 999999.99}
+                  step="0.01"
+                  type="number"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                />
+              </label>
+            </div>
+            <div className={styles.two}>
+              <label>
+                Min. ürün tutarı (TL)
+                <input
+                  required
+                  min="0"
+                  step="0.01"
+                  type="number"
+                  value={minimum}
+                  onChange={(e) => setMinimum(e.target.value)}
+                />
+              </label>
+              <label>
+                Maks. indirim (TL){type === 'fixed' && <small>Sabit TL için kullanılmaz</small>}
+                <input
+                  disabled={type === 'fixed'}
+                  placeholder="Sınırsız"
+                  min="0.01"
+                  step="0.01"
+                  type="number"
+                  value={cap}
+                  onChange={(e) => setCap(e.target.value)}
+                />
+              </label>
+            </div>
+            <div className={styles.two}>
+              <label>
+                Toplam kullanım sınırı
+                <input
+                  type="number"
+                  min="1"
+                  max="100000"
+                  placeholder="Sınırsız"
+                  value={maxUses}
+                  onChange={(e) => setMaxUses(e.target.value)}
+                />
+              </label>
+              <label>
+                Müşteri başına kullanım
+                <input
+                  required
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={personLimit}
+                  onChange={(e) => setPersonLimit(e.target.value)}
+                />
+              </label>
+            </div>
+            <div className={styles.two}>
+              <label>
+                Başlangıç (boşsa hemen)
+                <input
+                  type="datetime-local"
+                  value={start}
+                  onChange={(e) => setStart(e.target.value)}
+                />
+              </label>
+              <label>
+                Bitiş (boşsa süresiz)
+                <input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
+              </label>
+            </div>
+            <button disabled={busy} type="submit" className={styles.primary}>
+              {busy ? 'Kaydediliyor...' : 'Kupon oluştur'}
+            </button>
+          </form>
+        </section>
+        <section className={styles.panel}>
+          <div className={styles.heading}>
+            <h2>
+              <BadgePercent size={19} /> Kupon listesi
+            </h2>
+            <strong>{coupons.length} kupon</strong>
+          </div>
+          <input
+            className={styles.search}
+            aria-label="Kupon ara"
+            placeholder="Kod veya açıklama ara"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <div className={styles.stack}>
+            {!filtered.length && <p className={styles.empty}>Henüz kupon bulunamadı.</p>}
+            {filtered.map((c) => {
+              const expired = !!c.expires_at && new Date(c.expires_at).getTime() <= now;
+              const upcoming = new Date(c.starts_at).getTime() > now;
+              const usedUp = c.max_uses !== null && c.used_count >= c.max_uses;
+              return (
+                <article key={c.id} className={styles.card}>
+                  <div className={styles.cardTop}>
+                    <strong>{c.code}</strong>
+                    <span
+                      data-active={c.is_active && !expired && !usedUp && !upcoming}
+                      className={styles.tag}
+                    >
+                      {!c.is_active
+                        ? 'Durduruldu'
+                        : expired
+                          ? 'Süresi doldu'
+                          : usedUp
+                            ? 'Limit doldu'
+                            : upcoming
+                              ? 'Başlayacak'
+                              : 'Aktif'}
+                    </span>
+                  </div>
+                  <p>{c.label}</p>
+                  <div className={styles.grid}>
+                    <span>
+                      İndirim
+                      <strong>
+                        {c.discount_type === 'percent'
+                          ? `%${c.discount_value}`
+                          : formatPrice(c.discount_value)}
+                      </strong>
+                    </span>
+                    <span>
+                      Minimum sepet<strong>{formatPrice(c.min_subtotal)}</strong>
+                    </span>
+                    <span>
+                      Kullanım
+                      <strong>
+                        {c.used_count} / {c.max_uses ?? '∞'}
+                      </strong>
+                    </span>
+                    <span>
+                      Kişi limiti<strong>{c.max_uses_per_customer}</strong>
+                    </span>
+                    <span>
+                      Başlangıç<strong>{fmtDate(c.starts_at)}</strong>
+                    </span>
+                    <span>
+                      Bitiş<strong>{fmtDate(c.expires_at)}</strong>
+                    </span>
+                  </div>
+                  <button
+                    className={styles.toggle}
+                    disabled={busy}
+                    onClick={() => void toggle(c)}
+                    type="button"
+                  >
+                    {c.is_active ? 'Kuponu durdur' : 'Yeniden etkinleştir'}
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

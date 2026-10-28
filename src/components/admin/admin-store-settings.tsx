@@ -3,9 +3,9 @@
 import { type FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, LogOut, Save, ShieldCheck } from 'lucide-react';
+import { Save, ShieldCheck } from 'lucide-react';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
-import { AdminSidebar } from '@/components/admin/admin-sidebar';
+
 import { storeDetailsMissing, type StoreSettings } from '@/lib/store-profile';
 
 type EditableKey = Exclude<
@@ -99,12 +99,6 @@ export function AdminStoreSettings({ initialSettings }: { initialSettings: Store
     }
   }
 
-  async function logout() {
-    await createBrowserSupabase().auth.signOut();
-    router.replace('/admin/giris');
-    router.refresh();
-  }
-
   function input(label: string, name: EditableKey, required = false, placeholder?: string) {
     return (
       <label className="admin-field" key={name}>
@@ -136,116 +130,93 @@ export function AdminStoreSettings({ initialSettings }: { initialSettings: Store
   }
 
   return (
-    <div className="admin-shell">
-      <AdminSidebar />
-      <div className="admin-main">
-        <div className="admin-top">
-          <Link href="/">
-            <ArrowLeft size={16} /> Mağazaya dön
-          </Link>
-          <button className="admin-logout" onClick={() => void logout()}>
-            <LogOut size={16} /> Çıkış yap
-          </button>
-        </div>
-        <div className="admin-body">
-          <div className="admin-page-heading">
-            <div>
-              <span className="section-eyebrow">ÖZ KIRTASİYE · İŞLETME BİLGİLERİ</span>
-              <h1>
-                Mağaza ayarları<span className="orange-dot">.</span>
-              </h1>
-              <p>Bu alanlardaki bilgiler yasal ve iletişim sayfalarına yansır.</p>
-            </div>
-          </div>
-          <div className="settings-checklist" role="status">
-            <ShieldCheck size={20} />
-            <div>
-              <strong>Canlı yayına hazırlık</strong>
-              <p>
-                {missing.length
-                  ? `Tamamlanacak alanlar: ${missing.join(', ')}.`
-                  : 'İletişim ve operasyon alanları dolduruldu. Yasal metinler ayrıca hukukî onay gerektirir.'}
-              </p>
-            </div>
-          </div>
-          {error && (
-            <div role="alert" className="admin-form-error">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div role="status" className="admin-form-success">
-              {success}
-            </div>
-          )}
-          <form className="settings-form" onSubmit={(event) => void save(event)}>
-            <section className="admin-content-box settings-section">
-              <div className="settings-section-title">
-                <h2>Resmî işletme bilgileri</h2>
-                <p>Vergi levhasındaki bilgileri esas al. Resmî unvanı marka adıyla karıştırma.</p>
-              </div>
-              <div className="settings-grid">
-                {input('Mağaza adı', 'brand_name', true)}
-                {input('Ticari unvan', 'legal_name', true)}
-                {input('Vergi dairesi', 'tax_office')}
-                {input('Vergi numarası', 'tax_number')}
-                {input('MERSİS numarası', 'mersis_number')}
-                {input('İşletme adresi', 'registered_address', true)}
-              </div>
-            </section>
-            <section className="admin-content-box settings-section">
-              <div className="settings-section-title">
-                <h2>İletişim</h2>
-                <p>Gireceğin telefon ve e-posta müşteri sayfalarında yayınlanacak.</p>
-              </div>
-              <div className="settings-grid">
-                {input('Destek telefonu', 'support_phone', false, '0 5XX XXX XX XX')}
-                {input('Destek e-postası', 'support_email', false, 'destek@alanadi.com')}
-                {input('WhatsApp numarası (isteğe bağlı)', 'whatsapp_phone')}
-                {input(
-                  'Çalışma saatleri',
-                  'business_hours',
-                  false,
-                  'Pazartesi–Cumartesi 09.00–19.00',
-                )}
-              </div>
-            </section>
-            <section className="admin-content-box settings-section">
-              <div className="settings-section-title">
-                <h2>Kargo ve iade</h2>
-                <p>Henüz belirlenmeyen ücret ve teslimat sürelerini tahmini olarak yazma.</p>
-              </div>
-              <div className="settings-grid">
-                {input(
-                  'Ürün iade adresi',
-                  'return_address',
-                  false,
-                  'İade kabul edilecek açık adres',
-                )}
-                {textarea(
-                  'Kargo/teslimat açıklaması',
-                  'shipping_information',
-                  'Anlaşmalı taşıyıcı, ücret hesaplama yöntemi ve teslimat zamanı',
-                )}
-                {textarea(
-                  'İade işlem talimatları',
-                  'return_instructions',
-                  'İade başvurusu ve gönderim için doğrulanmış uygulama',
-                )}
-              </div>
-            </section>
-            <div className="settings-form-actions">
-              <button type="submit" disabled={saving} className="button button-primary">
-                <Save size={17} />
-                {saving ? 'Kaydediliyor...' : 'Ayarları kaydet'}
-              </button>
-              <Link href="/iletisim" className="button button-outline">
-                İletişim sayfasını gör
-              </Link>
-            </div>
-          </form>
+    <div className="admin-body">
+      <div className="admin-page-heading">
+        <div>
+          <span className="section-eyebrow">ÖZ KIRTASİYE · İŞLETME BİLGİLERİ</span>
+          <h1>
+            Mağaza ayarları<span className="orange-dot">.</span>
+          </h1>
+          <p>Bu alanlardaki bilgiler yasal ve iletişim sayfalarına yansır.</p>
         </div>
       </div>
+      <div className="settings-checklist" role="status">
+        <ShieldCheck size={20} />
+        <div>
+          <strong>Canlı yayına hazırlık</strong>
+          <p>
+            {missing.length
+              ? `Tamamlanacak alanlar: ${missing.join(', ')}.`
+              : 'İletişim ve operasyon alanları dolduruldu. Yasal metinler ayrıca hukukî onay gerektirir.'}
+          </p>
+        </div>
+      </div>
+      {error && (
+        <div role="alert" className="admin-form-error">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div role="status" className="admin-form-success">
+          {success}
+        </div>
+      )}
+      <form className="settings-form" onSubmit={(event) => void save(event)}>
+        <section className="admin-content-box settings-section">
+          <div className="settings-section-title">
+            <h2>Resmî işletme bilgileri</h2>
+            <p>Vergi levhasındaki bilgileri esas al. Resmî unvanı marka adıyla karıştırma.</p>
+          </div>
+          <div className="settings-grid">
+            {input('Mağaza adı', 'brand_name', true)}
+            {input('Ticari unvan', 'legal_name', true)}
+            {input('Vergi dairesi', 'tax_office')}
+            {input('Vergi numarası', 'tax_number')}
+            {input('MERSİS numarası', 'mersis_number')}
+            {input('İşletme adresi', 'registered_address', true)}
+          </div>
+        </section>
+        <section className="admin-content-box settings-section">
+          <div className="settings-section-title">
+            <h2>İletişim</h2>
+            <p>Gireceğin telefon ve e-posta müşteri sayfalarında yayınlanacak.</p>
+          </div>
+          <div className="settings-grid">
+            {input('Destek telefonu', 'support_phone', false, '0 5XX XXX XX XX')}
+            {input('Destek e-postası', 'support_email', false, 'destek@alanadi.com')}
+            {input('WhatsApp numarası (isteğe bağlı)', 'whatsapp_phone')}
+            {input('Çalışma saatleri', 'business_hours', false, 'Pazartesi–Cumartesi 09.00–19.00')}
+          </div>
+        </section>
+        <section className="admin-content-box settings-section">
+          <div className="settings-section-title">
+            <h2>Kargo ve iade</h2>
+            <p>Henüz belirlenmeyen ücret ve teslimat sürelerini tahmini olarak yazma.</p>
+          </div>
+          <div className="settings-grid">
+            {input('Ürün iade adresi', 'return_address', false, 'İade kabul edilecek açık adres')}
+            {textarea(
+              'Kargo/teslimat açıklaması',
+              'shipping_information',
+              'Anlaşmalı taşıyıcı, ücret hesaplama yöntemi ve teslimat zamanı',
+            )}
+            {textarea(
+              'İade işlem talimatları',
+              'return_instructions',
+              'İade başvurusu ve gönderim için doğrulanmış uygulama',
+            )}
+          </div>
+        </section>
+        <div className="settings-form-actions">
+          <button type="submit" disabled={saving} className="button button-primary">
+            <Save size={17} />
+            {saving ? 'Kaydediliyor...' : 'Ayarları kaydet'}
+          </button>
+          <Link href="/iletisim" className="button button-outline">
+            İletişim sayfasını gör
+          </Link>
+        </div>
+      </form>
     </div>
   );
 }

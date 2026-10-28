@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { hasSupabaseConfig } from '@/lib/supabase/config';
+import { AdminShell } from '@/components/admin/admin-shell';
 
 export default async function AdminProtectedLayout({ children }: { children: React.ReactNode }) {
   if (!hasSupabaseConfig()) redirect('/admin/giris');
@@ -16,5 +17,5 @@ export default async function AdminProtectedLayout({ children }: { children: Rea
     .eq('user_id', user.id)
     .maybeSingle();
   if (!admin) redirect('/admin/giris?yetki=yok');
-  return children;
+  return <AdminShell>{children}</AdminShell>;
 }

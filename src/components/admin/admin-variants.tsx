@@ -1,11 +1,11 @@
 'use client';
 
 import { type FormEvent, useState } from 'react';
-import Link from 'next/link';
+
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, ImagePlus, Package, Plus, Save, Trash2, X } from 'lucide-react';
+import { Check, ImagePlus, Package, Plus, Save, Trash2, X } from 'lucide-react';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
-import { AdminSidebar } from './admin-sidebar';
+
 import { formatPrice } from '@/lib/format';
 import styles from './admin-variants.module.css';
 
@@ -254,140 +254,132 @@ export function AdminVariants({
     }
   }
   return (
-    <div className="admin-shell">
-      <AdminSidebar />
-      <div className="admin-main">
-        <div className="admin-top">
-          <Link href="/admin/urunler">
-            <ArrowLeft size={16} /> Ürünlere dön
-          </Link>
+    <>
+      <div className="admin-body">
+        <header className="admin-page-heading">
+          <div>
+            <span className="section-eyebrow">ÖZ KIRTASİYE · ÜRÜN SEÇENEKLERİ</span>
+            <h1>
+              Varyant yönetimi<span className="orange-dot">.</span>
+            </h1>
+            <p>{product.name} · Her renk/ölçü için ayrı fiyat ve stok.</p>
+          </div>
+          <button type="button" className="button button-primary" onClick={openCreate}>
+            <Plus size={17} /> Varyant ekle
+          </button>
+        </header>
+        {loadError && (
+          <p className="admin-form-error" role="alert">
+            {loadError}
+          </p>
+        )}
+        {success && (
+          <p className="admin-form-success" role="status">
+            {success}
+          </p>
+        )}
+        {!editing && !selected && error && (
+          <p className="admin-form-error" role="alert">
+            {error}
+          </p>
+        )}
+        {!product.has_variants && (
+          <p className={styles.hint}>
+            İlk varyantı eklediğinde bu ürün otomatik olarak varyantlı ürüne dönüşür. Mevcut tekli
+            ürün stoğu korunur ancak müşteriye gösterilmez. Renk/ölçü stoklarını ayrıca gir.
+          </p>
+        )}
+        <div className={styles.stats}>
+          <div>
+            <small>Toplam seçenek</small>
+            <strong>{variants.length}</strong>
+          </div>
+          <div>
+            <small>Aktif stok toplamı</small>
+            <strong>{totalStock}</strong>
+          </div>
+          <div>
+            <small>Az stoklu seçenek</small>
+            <strong>{lowStock}</strong>
+          </div>
         </div>
-        <div className="admin-body">
-          <header className="admin-page-heading">
-            <div>
-              <span className="section-eyebrow">ÖZ KIRTASİYE · ÜRÜN SEÇENEKLERİ</span>
-              <h1>
-                Varyant yönetimi<span className="orange-dot">.</span>
-              </h1>
-              <p>{product.name} · Her renk/ölçü için ayrı fiyat ve stok.</p>
-            </div>
-            <button type="button" className="button button-primary" onClick={openCreate}>
-              <Plus size={17} /> Varyant ekle
-            </button>
-          </header>
-          {loadError && (
-            <p className="admin-form-error" role="alert">
-              {loadError}
-            </p>
-          )}
-          {success && (
-            <p className="admin-form-success" role="status">
-              {success}
-            </p>
-          )}
-          {!editing && !selected && error && (
-            <p className="admin-form-error" role="alert">
-              {error}
-            </p>
-          )}
-          {!product.has_variants && (
-            <p className={styles.hint}>
-              İlk varyantı eklediğinde bu ürün otomatik olarak varyantlı ürüne dönüşür. Mevcut tekli
-              ürün stoğu korunur ancak müşteriye gösterilmez. Renk/ölçü stoklarını ayrıca gir.
-            </p>
-          )}
-          <div className={styles.stats}>
-            <div>
-              <small>Toplam seçenek</small>
-              <strong>{variants.length}</strong>
-            </div>
-            <div>
-              <small>Aktif stok toplamı</small>
-              <strong>{totalStock}</strong>
-            </div>
-            <div>
-              <small>Az stoklu seçenek</small>
-              <strong>{lowStock}</strong>
-            </div>
-          </div>
-          <div className={styles.panel}>
-            <h2>Renk ve ölçü seçenekleri</h2>
-            {!variants.length ? (
-              <p>Henüz varyant eklenmemiş.</p>
-            ) : (
-              <div className={styles.tableWrap}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th>Seçenek</th>
-                      <th>Fiyat</th>
-                      <th>Stok</th>
-                      <th>Yayın</th>
-                      <th>İşlem</th>
+        <div className={styles.panel}>
+          <h2>Renk ve ölçü seçenekleri</h2>
+          {!variants.length ? (
+            <p>Henüz varyant eklenmemiş.</p>
+          ) : (
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Seçenek</th>
+                    <th>Fiyat</th>
+                    <th>Stok</th>
+                    <th>Yayın</th>
+                    <th>İşlem</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {variants.map((v) => (
+                    <tr key={v.id}>
+                      <td>
+                        <div className={styles.variantName}>
+                          {v.imageUrl ? <img src={v.imageUrl} alt="" /> : <Package size={22} />}
+                          <div>
+                            <strong>{[v.color, v.size].filter(Boolean).join(' / ')}</strong>
+                            <small>{v.sku ?? 'SKU yok'}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>{formatPrice(v.price)}</td>
+                      <td>{v.stock_quantity} adet</td>
+                      <td>{v.is_active ? 'Aktif' : 'Pasif'}</td>
+                      <td>
+                        <div className={styles.actions}>
+                          <button type="button" onClick={() => openEdit(v)}>
+                            Düzenle
+                          </button>
+                          <button type="button" onClick={() => openStock(v)}>
+                            Stok
+                          </button>
+                          {v.is_active && (
+                            <button type="button" onClick={() => void disable(v)}>
+                              <Trash2 size={15} /> Pasifleştir
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {variants.map((v) => (
-                      <tr key={v.id}>
-                        <td>
-                          <div className={styles.variantName}>
-                            {v.imageUrl ? <img src={v.imageUrl} alt="" /> : <Package size={22} />}
-                            <div>
-                              <strong>{[v.color, v.size].filter(Boolean).join(' / ')}</strong>
-                              <small>{v.sku ?? 'SKU yok'}</small>
-                            </div>
-                          </div>
-                        </td>
-                        <td>{formatPrice(v.price)}</td>
-                        <td>{v.stock_quantity} adet</td>
-                        <td>{v.is_active ? 'Aktif' : 'Pasif'}</td>
-                        <td>
-                          <div className={styles.actions}>
-                            <button type="button" onClick={() => openEdit(v)}>
-                              Düzenle
-                            </button>
-                            <button type="button" onClick={() => openStock(v)}>
-                              Stok
-                            </button>
-                            {v.is_active && (
-                              <button type="button" onClick={() => void disable(v)}>
-                                <Trash2 size={15} /> Pasifleştir
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+        <div className={styles.panel}>
+          <h2>Son varyant stok hareketleri</h2>
+          {!movements.length ? (
+            <p>Henüz kayıt yok.</p>
+          ) : (
+            movements.map((m) => (
+              <div key={m.id} className={styles.movement}>
+                <span>
+                  {variants.find((v) => v.id === m.variant_id)?.color}{' '}
+                  {variants.find((v) => v.id === m.variant_id)?.size}
+                </span>
+                <strong>
+                  {m.change_quantity > 0 ? '+' : ''}
+                  {m.change_quantity}
+                </strong>
+                <small>
+                  {m.note ?? 'Stok değişikliği'} · {new Date(m.created_at).toLocaleString('tr-TR')}
+                </small>
               </div>
-            )}
-          </div>
-          <div className={styles.panel}>
-            <h2>Son varyant stok hareketleri</h2>
-            {!movements.length ? (
-              <p>Henüz kayıt yok.</p>
-            ) : (
-              movements.map((m) => (
-                <div key={m.id} className={styles.movement}>
-                  <span>
-                    {variants.find((v) => v.id === m.variant_id)?.color}{' '}
-                    {variants.find((v) => v.id === m.variant_id)?.size}
-                  </span>
-                  <strong>
-                    {m.change_quantity > 0 ? '+' : ''}
-                    {m.change_quantity}
-                  </strong>
-                  <small>
-                    {m.note ?? 'Stok değişikliği'} ·{' '}
-                    {new Date(m.created_at).toLocaleString('tr-TR')}
-                  </small>
-                </div>
-              ))
-            )}
-          </div>
+            ))
+          )}
         </div>
       </div>
+
       {editing && (
         <div className="admin-modal-backdrop">
           <div
@@ -569,6 +561,6 @@ export function AdminVariants({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
