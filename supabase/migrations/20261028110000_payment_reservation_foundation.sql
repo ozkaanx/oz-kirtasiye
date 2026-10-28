@@ -79,12 +79,8 @@ begin
       raise exception 'Ödeme durumunu bu işlemle değiştiremezsiniz.' using errcode='42501';
     end if;
     if old.payment_status in ('pending','paid','requires_review')
-      and (old.status is distinct from new.status
-        or old.total is distinct from new.total
-        or old.subtotal is distinct from new.subtotal
-        or old.discount_amount is distinct from new.discount_amount
-        or old.shipping_fee is distinct from new.shipping_fee
-        or old.coupon_code is distinct from new.coupon_code) then
+      and pg_catalog.to_jsonb(new) - 'updated_at'
+        is distinct from pg_catalog.to_jsonb(old) - 'updated_at' then
       raise exception 'Ödeme siparişi yalnızca yetkili ödeme akışından güncellenebilir.'
         using errcode='42501';
     end if;
