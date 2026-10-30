@@ -13,11 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { LiveProductCard } from '@/components/product/live-product-card';
-import {
-  categoryArtwork,
-  categoryColor,
-  type StoreCategory,
-} from '@/lib/category-utils';
+import { categoryArtwork, categoryColor, type StoreCategory } from '@/lib/category-utils';
 import type { LiveProduct } from '@/lib/real-catalog';
 
 const campaignCards = [
@@ -52,6 +48,8 @@ type Props = {
 
 export function HomeStorefront({ featuredByCategory, newestProducts, categories }: Props) {
   const [activeCategory, setActiveCategory] = useState('all');
+  const featuredIds = new Set((featuredByCategory.all ?? []).map((product) => product.id));
+  const distinctNewProducts = newestProducts.filter((product) => !featuredIds.has(product.id));
   const topCategories = categories.filter((category) => !category.parent_id).slice(0, 6);
   const featuredProducts = featuredByCategory[activeCategory] ?? [];
 
@@ -166,19 +164,35 @@ export function HomeStorefront({ featuredByCategory, newestProducts, categories 
       </section>
 
       <section className="container-wide campaigns-grid" aria-label="Keşif alanları">
-        {campaignCards.map((item) => (
-          <Link href="/urunler" key={item.eyebrow} className={`campaign-card ${item.tone}`}>
-            <div>
-              <span className="campaign-eyebrow">{item.eyebrow}</span>
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
-              <span className="campaign-cta">
-                Keşfet <ArrowRight size={16} />
-              </span>
-            </div>
-            <Image src={item.image} width={210} height={210} alt="" />
-          </Link>
-        ))}
+        {campaignCards.map((item) => {
+          const keywords =
+            item.eyebrow === 'OYUN ZAMANI'
+              ? ['oyuncak', 'oyun']
+              : item.eyebrow === 'İLHAM AL'
+                ? ['hobi', 'sanat', 'boya']
+                : ['okul', 'kalem'];
+          const category = categories.find((category) =>
+            keywords.some((keyword) => category.slug.includes(keyword)),
+          );
+          if (!category) return null;
+          return (
+            <Link
+              href={`/urunler?category=${encodeURIComponent(category.slug)}`}
+              key={item.eyebrow}
+              className={`campaign-card ${item.tone}`}
+            >
+              <div>
+                <span className="campaign-eyebrow">{item.eyebrow}</span>
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+                <span className="campaign-cta">
+                  Keşfet <ArrowRight size={16} />
+                </span>
+              </div>
+              <Image src={item.image} width={210} height={210} alt="" />
+            </Link>
+          );
+        })}
       </section>
 
       <section className="container-wide products-section" id="urunler">
@@ -254,7 +268,7 @@ export function HomeStorefront({ featuredByCategory, newestProducts, categories 
         </div>
       </section>
 
-      {newestProducts.length > 0 && (
+      {distinctNewProducts.length > 0 && (
         <section className="container-wide products-section second-product-section">
           <div className="section-heading">
             <div>
@@ -269,7 +283,7 @@ export function HomeStorefront({ featuredByCategory, newestProducts, categories 
             </Link>
           </div>
           <div className="products-grid">
-            {newestProducts.map((product) => (
+            {distinctNewProducts.map((product) => (
               <LiveProductCard key={product.id} product={product} />
             ))}
           </div>

@@ -284,6 +284,23 @@ export function StoreProductDetail({
         </button>
         {shareMessage && <p role="status">{shareMessage}</p>}
       </div>
+      <div className={styles.mobileBuy} aria-label="Hızlı satın alma">
+        <strong>
+          {formatProductPrice(
+            selected?.promotion?.discountedPrice ?? product.promotion?.discountedPrice ?? price,
+          )}
+        </strong>
+        <button
+          className={styles.add}
+          type="button"
+          disabled={stock <= 0}
+          onClick={() =>
+            addToCart(product.id, amount, product.has_variants ? selected?.id : undefined)
+          }
+        >
+          {stock > 0 ? 'Sepete ekle' : 'Stokta yok'}
+        </button>
+      </div>
     </section>
   );
 }

@@ -5,5 +5,15 @@ import { getStoreSettings } from '@/lib/store-settings';
 export const metadata: Metadata = { title: 'Sepetim', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
 export default async function Page() {
-  return <><CartPage settings={await getStoreSettings()} /><div className="container-wide"><CartRecommendations /></div></>;
+  return (
+    <>
+      <CartPage
+        settings={await getStoreSettings()}
+        requestsEnabled={process.env.ORDER_REQUESTS_ENABLED === 'true'}
+      />
+      <div className="container-wide">
+        <CartRecommendations />
+      </div>
+    </>
+  );
 }

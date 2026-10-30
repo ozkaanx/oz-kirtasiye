@@ -20,7 +20,13 @@ import { CouponBox } from '@/components/coupons/coupon-box';
 import { FreeShippingProgress } from '@/components/cart/free-shipping-progress';
 import { useCartPricing } from '@/components/coupons/use-cart-pricing';
 
-export function CartPage({ settings }: { settings: DeliverySettings }) {
+export function CartPage({
+  settings,
+  requestsEnabled = false,
+}: {
+  settings: DeliverySettings;
+  requestsEnabled?: boolean;
+}) {
   const {
     cart,
     products,
@@ -81,12 +87,7 @@ export function CartPage({ settings }: { settings: DeliverySettings }) {
                   <div className="basket-image !d-flex !items-center !justify-center">
                     {product?.imageUrl ? (
                       // <img src={product.imageUrl} alt={product.name} />
-                     <Image
-                       src={product.imageUrl}
-                       alt={product.name}
-                       width={55}
-                       height={55}
-                     />
+                      <Image src={product.imageUrl} alt={product.name} width={55} height={55} />
                     ) : (
                       <Package size={55} color="#a9afb9" />
                     )}
@@ -95,7 +96,13 @@ export function CartPage({ settings }: { settings: DeliverySettings }) {
                     {product ? (
                       <Link href={`/magaza/urun/${product.slug}`}>{product.name}</Link>
                     ) : (
-                      <strong>Ürün yayından kaldırılmış</strong>
+                      <strong>
+                        {cartLoading
+                          ? 'Ürün bilgileri yükleniyor…'
+                          : cartError
+                            ? 'Ürün bilgileri doğrulanamadı'
+                            : 'Ürün yayından kaldırılmış'}
+                      </strong>
                     )}
                     {product && (
                       <small>
@@ -171,7 +178,10 @@ export function CartPage({ settings }: { settings: DeliverySettings }) {
               shippingAvailable={shipping.available}
               shippingFee={pricing.shippingFee}
             />
-            <CouponBox {...promo} />
+            <details className="basket-coupon">
+              <summary>İndirim kuponun var mı?</summary>
+              <CouponBox {...promo} />
+            </details>
             {promo.quote && pricing.discountAmount > 0 && (
               <div>
                 <span>
@@ -207,15 +217,23 @@ export function CartPage({ settings }: { settings: DeliverySettings }) {
               <LockKeyhole size={17} /> Ödeme işlemi bu aşamada yapılmaz. Sipariş talebiniz mağazaya
               iletilir.
             </p>
+            {!requestsEnabled && (
+              <p role="status">
+                Sipariş alımı henüz açık değil. Sepetini hazırlayabilirsin; sipariş formu
+                açıldığında devam edebilirsin.
+              </p>
+            )}
             <Link
               href="/siparis"
-              className={`button button-primary${!cartIsValid || !anyDelivery || couponBlocked ? 'checkout-disabled' : ''}`}
-              aria-disabled={!cartIsValid || !anyDelivery || couponBlocked}
+              className={`button button-primary${!requestsEnabled || !cartIsValid || !anyDelivery || couponBlocked ? 'checkout-disabled' : ''}`}
+              aria-disabled={!requestsEnabled || !cartIsValid || !anyDelivery || couponBlocked}
               onClick={(event) => {
-                if (!cartIsValid || !anyDelivery || couponBlocked) event.preventDefault();
+                if (!requestsEnabled || !cartIsValid || !anyDelivery || couponBlocked)
+                  event.preventDefault();
               }}
             >
-              Talep formuna geç <ArrowRight size={17} />
+              {requestsEnabled ? 'Talep formuna geç' : 'Sipariş alımı yakında'}{' '}
+              <ArrowRight size={17} />
             </Link>
             <Link href="/urunler" className="basket-back">
               <ArrowLeft size={16} /> Alışverişe devam et
