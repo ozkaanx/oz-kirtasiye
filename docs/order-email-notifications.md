@@ -22,7 +22,7 @@ Outbox ve ayar tablolarına tarayıcıların erişimi yoktur. Claim/ack RPC'leri
 3. `order-email-worker` Edge Function'ı JWT doğrulaması açık şekilde dağıtın. Projenin `SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` değerleri Edge ortamında otomatik sağlanır.
 4. Supabase Vault'ta **order_email_service_role** adında gizli kayıt oluşturun. Değer proje API Keys → Legacy API Keys bölümündeki **service_role** JWT anahtarıdır. Publishable/anon anahtarı veya `sb_secret_...` bu JWT gateway akışıyla aynı değildir. Anahtarı yalnızca Vault ekranına girin, paylaşmayın.
 5. `supabase/operations/enable-order-emails.sql` script'ini uygulayın. Bu işlem Vault anahtarını varlık kontrolünden geçirir, 5 dakikada bir çalışan işi kurar ve yalnızca bundan sonraki olayların kuyruklanmasını açar. Cron/platform kotalarını izleyin. `pg_net` anahtarı istek kuyruğunda geçici olarak tutar; bu şemaya tarayıcı rolleri için erişim verilmemeli.
-6. İşletmenin izin verdiği doğrulanmış test hesabıyla test ortamında sipariş ve kargo geçişini deneyin. Resend kabulünü, posta kutusunu, aynı olayın tekrarında ikinci gönderim olmadığını ve başarısız durum sayacını doğrulayın. Canlı müşteri siparişi oluşturmayın veya mevcut siparişin durumunu test için değiştirmeyin.
+6. İşletmenin izin verdiği doğrulanmış test hesabıyla iki `is_test=true`, `order_id=null` kuyruk kaydı kullanılarak TEST başlıklı örnek gönderimler yapılabilir. Bunlar gerçek sipariş/stok değişikliği gerektirmez ve genel gönderim kapalıyken de işlenir. Alıcının onayı olmadan örnek mesaj eklemeyin. Sipariş ve kargo geçişlerinin gerçek entegrasyonunu ayrıca izole veritabanı testleri doğrular. Resend kabulünü ve posta kutusunu kontrol edin.
 
 ## İzleme ve durdurma
 

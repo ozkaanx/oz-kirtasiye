@@ -45,4 +45,12 @@ set local role service_role;
 select pg_temp.assert_true((select count(*)=0 from public.claim_order_emails()),'old ambiguous attempts never replay after idempotency retention');
 reset role;
 select pg_temp.assert_true((select count(*)=1 from private.order_email_outbox where last_error='retry_window_expired'),'expired retry requires review');
+-- Explicitly tagged smoke-test messages do not require fake business orders.
+update private.order_email_settings set enabled=false;
+insert into private.order_email_outbox(is_test,user_id,event_type,message)
+ values(true,'da000000-0000-0000-0000-000000000001','order_created',
+ '{"to":["email-test@example.invalid"],"subject":"TEST","text":"TEST"}');
+set local role service_role;
+select pg_temp.assert_true((select count(*)=1 from public.claim_order_emails()),'tagged smoke test can be verified while business delivery is off');
+reset role;
 rollback;

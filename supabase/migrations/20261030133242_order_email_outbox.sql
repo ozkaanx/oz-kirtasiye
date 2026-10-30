@@ -9,7 +9,8 @@ revoke all on private.order_email_settings from public,anon,authenticated;
 
 create table private.order_email_outbox (
  id uuid primary key default gen_random_uuid(),
- order_id uuid not null references public.order_requests(id) on delete cascade,
+ order_id uuid references public.order_requests(id) on delete cascade,
+ is_test boolean not null default false,
  user_id uuid not null references auth.users(id) on delete cascade,
  event_type text not null check(event_type in ('order_created','order_shipped')),
  message jsonb not null,
@@ -18,7 +19,8 @@ create table private.order_email_outbox (
  available_at timestamptz not null default now(),
  first_attempt_at timestamptz, lease_until timestamptz, lease_token uuid,
  provider_id text, last_error text, created_at timestamptz not null default now(), sent_at timestamptz,
- unique(order_id,event_type)
+ unique(order_id,event_type),
+ check(order_id is not null or is_test)
 );
 create index order_email_due_idx on private.order_email_outbox(available_at,created_at)
  where state in ('pending','processing');
@@ -67,11 +69,12 @@ create trigger enqueue_order_email after insert or update of status,payment_stat
 
 create function public.claim_order_emails() returns table(id uuid,lease_token uuid,message jsonb)
 language plpgsql security definer set search_path='' as $$
+declare v_enabled boolean;
 begin
- if not exists(select 1 from private.order_email_settings where enabled) then return; end if;
+ select enabled into v_enabled from private.order_email_settings where id;
  -- Retain the deduplication ledger, but discard old terminal message content.
- update private.order_email_outbox set message='{}'::jsonb
- where state in ('sent','failed','cancelled') and created_at<now()-interval '30 days' and message<>'{}'::jsonb;
+ update private.order_email_outbox q set message='{}'::jsonb
+ where q.state in ('sent','failed','cancelled') and q.created_at<now()-interval '30 days' and q.message<>'{}'::jsonb;
  -- Resend only retains idempotency keys for 24h. Ambiguous old sends need review, never blind replay.
  update private.order_email_outbox set state='failed',last_error='retry_window_expired'
  where state in ('pending','processing') and coalesce(first_attempt_at,created_at) < now()-interval '23 hours'
@@ -85,7 +88,7 @@ begin
  return query
  with due as (
    select q.id from private.order_email_outbox q
-   where q.state in ('pending','processing') and q.available_at<=now()
+   where q.state in ('pending','processing') and q.available_at<=now() and (q.is_test or v_enabled)
     and (q.lease_until is null or q.lease_until<now())
    order by q.created_at,q.id for update skip locked limit 5
  )
