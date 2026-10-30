@@ -13,7 +13,7 @@ test('navigation has clear, complete, non-repeating categories', () => {
     ['Genel', 'Katalog', 'Satış ve operasyon', 'Pazarlama'],
   );
   const menuHrefs = ADMIN_MENU_GROUPS.flatMap((group) => group.items.map((item) => item.href));
-  assert.equal(menuHrefs.length, 14);
+  assert.equal(menuHrefs.length, 15);
   assert.equal(new Set(menuHrefs).size, menuHrefs.length);
   assert.ok(menuHrefs.every((href) => href.startsWith('/admin/')));
   assert.ok(ADMIN_MENU_GROUPS.every((group) => group.items.length > 0));
