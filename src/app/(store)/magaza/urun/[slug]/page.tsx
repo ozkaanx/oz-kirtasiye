@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { StoreProductDetail } from '@/components/product/store-product-detail';
@@ -55,42 +56,8 @@ export default async function Page({
   const { variant } = await searchParams;
   const product = await getCachedLiveProductBySlug(slug);
   if (!product) notFound();
-  const [relatedProducts, settings, categories] = await Promise.all([
-    getProductRecommendations([product.id], 4),
-    getStoreSettings(),
-    getCachedLiveCategories(),
-  ]);
+  const [settings, categories] = await Promise.all([getStoreSettings(), getCachedLiveCategories()]);
   const category = categories.find((item) => item.id === product.category_id);
-  const reviewDb = await createServerSupabase();
-  const { data: reviewRows } = await reviewDb
-    .from('product_reviews')
-    .select('id,rating,body,created_at')
-    .eq('product_id', product.id)
-    .eq('status', 'approved')
-    .order('created_at', { ascending: false })
-    .limit(50);
-  let access: 'guest' | 'eligible' | 'ineligible' | 'unavailable' = 'unavailable';
-  try {
-    const { data: auth, error: authError } = await reviewDb.auth.getUser();
-    if (!auth.user && (!authError || authError.name === 'AuthSessionMissingError'))
-      access = 'guest';
-    else if (auth.user && !authError) {
-      const ownership = await reviewDb
-        .from('order_requests')
-        .select('id,order_request_items!inner(product_id)')
-        .eq('customer_user_id', auth.user.id)
-        .in('status', ['delivered', 'completed'])
-        .eq('order_request_items.product_id', product.id)
-        .limit(1);
-      if (!ownership.error) access = ownership.data?.length ? 'eligible' : 'ineligible';
-    }
-  } catch {
-    /* Keep the form closed when ownership cannot be verified. */
-  }
-  const reviews = reviewRows ?? [];
-  const reviewAverage = reviews.length
-    ? reviews.reduce((sum, item) => sum + item.rating, 0) / reviews.length
-    : 0;
   const jsonLd = isSeoPublic()
     ? [productJsonLd(product), breadcrumbJsonLd(product.name, product.slug)].filter(
         (entry): entry is Record<string, unknown> => entry !== null,
@@ -122,14 +89,62 @@ export default async function Page({
         settings={settings}
         initialVariantId={typeof variant === 'string' ? variant : undefined}
       />
-      <ProductReviews
-        access={access}
-        productSlug={product.slug}
-        productId={product.id}
-        reviews={reviews}
-        average={reviewAverage}
-      />
-      <RecommendationSection title="Benzer ürünler" products={relatedProducts} />
+      <Suspense fallback={<p role="status">Değerlendirmeler yükleniyor…</p>}>
+        <ProductFeedback product={product} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <RelatedProducts productId={product.id} />
+      </Suspense>
     </div>
   );
+}
+
+async function ProductFeedback({
+  product,
+}: {
+  product: NonNullable<Awaited<ReturnType<typeof getCachedLiveProductBySlug>>>;
+}) {
+  const reviewDb = await createServerSupabase();
+  const { data: reviewRows } = await reviewDb
+    .from('product_reviews')
+    .select('id,rating,body,created_at')
+    .eq('product_id', product.id)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+    .limit(50);
+  let access: 'guest' | 'eligible' | 'ineligible' | 'unavailable' = 'unavailable';
+  try {
+    const { data: auth, error: authError } = await reviewDb.auth.getUser();
+    if (!auth.user && (!authError || authError.name === 'AuthSessionMissingError'))
+      access = 'guest';
+    else if (auth.user && !authError) {
+      const ownership = await reviewDb
+        .from('order_requests')
+        .select('id,order_request_items!inner(product_id)')
+        .eq('customer_user_id', auth.user.id)
+        .in('status', ['delivered', 'completed'])
+        .eq('order_request_items.product_id', product.id)
+        .limit(1);
+      if (!ownership.error) access = ownership.data?.length ? 'eligible' : 'ineligible';
+    }
+  } catch {
+    /* Keep the form closed when ownership cannot be verified. */
+  }
+  const reviews = reviewRows ?? [];
+  const reviewAverage = reviews.length
+    ? reviews.reduce((sum, item) => sum + item.rating, 0) / reviews.length
+    : 0;
+  return (
+    <ProductReviews
+      access={access}
+      productSlug={product.slug}
+      productId={product.id}
+      reviews={reviews}
+      average={reviewAverage}
+    />
+  );
+}
+async function RelatedProducts({ productId }: { productId: string }) {
+  const products = await getProductRecommendations([productId], 4);
+  return <RecommendationSection title="Benzer ürünler" products={products} />;
 }
