@@ -11,6 +11,7 @@ export const ADMIN_MENU_GROUPS = [
       { href: '/admin/genel-bakis', label: 'Genel bakış', icon: 'chart' },
       { href: '/admin/raporlar', label: 'Raporlar', icon: 'reports' },
       { href: '/admin/bildirimler', label: 'Bildirimler', icon: 'bell' },
+      { href: '/admin/e-posta', label: 'E-posta gönderimleri', icon: 'bell' },
     ],
   },
   {
@@ -62,7 +63,9 @@ export function isAdminRouteActive(pathname: string, href: string): boolean {
 
 /** Open the group containing the current route after direct navigation/refresh. */
 export function getActiveAdminGroup(pathname: string): AdminMenuGroupId | null {
-  return ADMIN_MENU_GROUPS.find((group) =>
-    group.items.some((item) => isAdminRouteActive(pathname, item.href)),
-  )?.id ?? null;
+  return (
+    ADMIN_MENU_GROUPS.find((group) =>
+      group.items.some((item) => isAdminRouteActive(pathname, item.href)),
+    )?.id ?? null
+  );
 }
