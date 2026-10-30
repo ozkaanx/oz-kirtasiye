@@ -38,7 +38,7 @@ export function LiveProductCard({ product }: { product: LiveProduct }) {
       <div className={styles.purchase}>
         {product.has_variants && product.stock_quantity > 0 ? (
           <Link className="button button-primary" href={`/magaza/urun/${product.slug}`}>
-            Sepete ekle<span className={styles.srOnly}> — seçenekleri seç</span>
+            Seçenekleri seç
           </Link>
         ) : (
           <LivePurchaseButton productId={product.id} stock={product.stock_quantity} />

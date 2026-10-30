@@ -4774,3 +4774,21 @@ a:focus-visible {
   gap: 16px;
   margin: 24px 0;
 }
+
+/* Storefront shopping hierarchy */
+.catalog-title-row {
+  margin: 20px 0;
+}
+@media (max-width: 800px) {
+  .basket-summary {
+    padding: 18px;
+  }
+  .basket-summary .delivery-cart-footnote {
+    font-size: 12px;
+  }
+  .basket-summary > .button {
+    position: sticky;
+    bottom: 12px;
+    z-index: 2;
+  }
+}

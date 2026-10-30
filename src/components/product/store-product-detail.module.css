@@ -267,6 +267,34 @@
     max-height: none;
   }
 }
+.mobileBuy {
+  display: none;
+}
+@media (max-width: 800px) {
+  .layout {
+    padding-bottom: 88px;
+  }
+  .mobileBuy {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 30;
+    gap: 16px;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    border-top: 1px solid #e6e6e6;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 16px #00000008;
+  }
+  .mobileBuy .add {
+    flex: 1;
+    max-width: 240px;
+    min-height: 46px;
+  }
+}
 @media (max-width: 360px) {
   .buy {
     grid-template-columns: 100px minmax(0, 1fr);
