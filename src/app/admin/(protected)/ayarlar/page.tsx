@@ -9,6 +9,6 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function StoreSettingsPage() {
-  const settings = await getStoreSettings();
+  const settings = await getStoreSettings({ required: true });
   return <AdminStoreSettings initialSettings={settings} />;
 }
