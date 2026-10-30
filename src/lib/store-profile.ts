@@ -47,11 +47,12 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
 
 export function storeDetailsMissing(settings: StoreSettings): string[] {
   const missing: string[] = [];
-  if (!settings.support_phone) missing.push('Destek telefonu');
-  if (!settings.support_email) missing.push('Destek e-postası');
-  if (!settings.tax_office) missing.push('Vergi dairesi');
-  if (!settings.return_address) missing.push('İade adresi');
-  if (!settings.shipping_information) missing.push('Kargo/teslimat koşulları');
+  if (!settings.support_phone?.trim()) missing.push('Destek telefonu');
+  if (!settings.support_email?.trim()) missing.push('Destek e-postası');
+  if (!settings.tax_office?.trim()) missing.push('Vergi dairesi');
+  if (!settings.return_address?.trim()) missing.push('İade adresi');
+  if (!settings.shipping_information?.trim()) missing.push('Kargo/teslimat koşulları');
+  if (!settings.return_instructions?.trim()) missing.push('İade işlem talimatları');
   return missing;
 }
 

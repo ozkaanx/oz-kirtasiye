@@ -45,12 +45,12 @@ export function AdminStoreSettings({ initialSettings }: { initialSettings: Store
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const current: StoreSettings = {
-    id: 1,
+    ...initialSettings,
     ...Object.fromEntries(fields.map((key) => [key, form[key].trim() || null])),
     brand_name: form.brand_name.trim(),
     legal_name: form.legal_name.trim(),
     registered_address: form.registered_address.trim(),
-  } as StoreSettings;
+  };
   const missing = storeDetailsMissing(current);
 
   const update = (name: EditableKey, value: string) => {
@@ -92,8 +92,8 @@ export function AdminStoreSettings({ initialSettings }: { initialSettings: Store
       if (!data) throw new Error('İşletme bilgileri kaydedilemedi.');
       setSuccess('İşletme bilgileri kaydedildi. Yasal ve iletişim sayfaları güncellendi.');
       router.refresh();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Kayıt başarısız.');
+    } catch {
+      setError('Bilgiler kaydedilemedi. Bağlantını kontrol edip tekrar dene.');
     } finally {
       setSaving(false);
     }

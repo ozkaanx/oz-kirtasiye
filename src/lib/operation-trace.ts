@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 type Operation =
+  | 'store_settings'
   | 'order_submission'
   | 'coupon_quote'
   | 'admin_order_search'
