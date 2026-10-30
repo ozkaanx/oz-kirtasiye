@@ -71,7 +71,7 @@ create function public.claim_order_emails() returns table(id uuid,lease_token uu
 language plpgsql security definer set search_path='' as $$
 declare v_enabled boolean;
 begin
- select enabled into v_enabled from private.order_email_settings where id;
+ select s.enabled into v_enabled from private.order_email_settings s where s.id;
  -- Retain the deduplication ledger, but discard old terminal message content.
  update private.order_email_outbox q set message='{}'::jsonb
  where q.state in ('sent','failed','cancelled') and q.created_at<now()-interval '30 days' and q.message<>'{}'::jsonb;
