@@ -13,7 +13,7 @@ Sipariş işlemiyle aynı transaction içinde özel outbox kaydı oluşturulur. 
 
 Her istekte sabit `Idempotency-Key` kullanılır. Ağ hatası, 408, 429 ve 5xx hataları artan beklemeyle en fazla 6 kez denenir. Kalıcı 4xx hataları inceleme için ayrılır. Resend anahtarları yalnızca 24 saat tuttuğu için 23 saati aşmış belirsiz gönderimler otomatik tekrar gönderilmez. “Sent” yalnızca sağlayıcının kabulüdür; gelen kutusu teslimi değildir. Teslim/bounce takibi Resend panelindedir; webhook bu sürümde yoktur.
 
-Outbox ve ayar tablolarına tarayıcıların erişimi yoktur. Claim/ack RPC'leri yalnızca service_role içindir. İşçi gateway JWT doğrulamasına ek olarak service_role credential'ını kontrol eder; gövdesinden alıcı/metin kabul etmez. Log/yanıtlarda alıcılar ve anahtarlar bulunmaz. Sonuçlanan kayıtların içerikleri 30 gün sonra temizlenir, tekilleştirme kaydı korunur.
+Outbox ve ayar tablolarına tarayıcıların erişimi yoktur. Claim/ack RPC'leri yalnızca service_role içindir. İşçi gateway JWT imza/süre doğrulamasına ek olarak üst düzey role=service_role ve proje ref alanını kontrol eder; gövdesinden alıcı/metin kabul etmez. Bu nedenle `verify_jwt=true` zorunludur; kapatılırsa payload kontrolü tek başına imza doğrulamaz. Log/yanıtlarda alıcılar ve anahtarlar bulunmaz. Sonuçlanan kayıtların içerikleri 30 gün sonra temizlenir, tekilleştirme kaydı korunur.
 
 ## Canlıya alma
 

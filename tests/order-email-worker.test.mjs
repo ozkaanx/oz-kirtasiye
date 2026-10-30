@@ -10,7 +10,9 @@ const config = {
 const request = () =>
   new Request('https://worker.invalid', {
     method: 'POST',
-    headers: { Authorization: 'Bearer server-secret' },
+    headers: {
+      Authorization: `Bearer header.${Buffer.from(JSON.stringify({ role: 'service_role', ref: 'db' })).toString('base64url')}.signature`,
+    },
   });
 const job = {
   id: 'job-id',
@@ -40,6 +42,20 @@ test('worker denies public/session credentials and never claims when unconfigure
     503,
   );
   assert.equal(calls, 0);
+  for (const claims of [
+    { role: 'authenticated', ref: 'db' },
+    { role: 'service_role', ref: 'other' },
+  ]) {
+    const response = await worker(
+      new Request('https://worker.invalid', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer header.${Buffer.from(JSON.stringify(claims)).toString('base64url')}.signature`,
+        },
+      }),
+    );
+    assert.equal(response.status, 401);
+  }
 });
 
 test('worker sends frozen payload with stable idempotency and records accepted provider ID', async () => {

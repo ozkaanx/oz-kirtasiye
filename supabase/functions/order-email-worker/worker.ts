@@ -7,11 +7,22 @@ export function createEmailWorker(config: Config, deps: Dependencies) {
     const json = (body: unknown, status = 200) =>
       Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
     if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
-    // The gateway checks JWT validity; the worker additionally requires the service credential.
-    if (
-      !config.serviceKey ||
-      request.headers.get('authorization') !== `Bearer ${config.serviceKey}`
-    ) {
+    // MUST deploy with verify_jwt=true: gateway verifies signature/expiry before this role check.
+    // Valid project service JWTs may differ from the runtime's injected service credential.
+    let serviceCaller = false;
+    try {
+      const token = request.headers.get('authorization')?.match(/^Bearer (\S+)$/i)?.[1];
+      const parts = token?.split('.');
+      if (parts?.length === 3 && config.serviceUrl) {
+        const claims = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        serviceCaller =
+          claims.role === 'service_role' &&
+          claims.ref === new URL(config.serviceUrl).hostname.split('.')[0];
+      }
+    } catch {
+      /* malformed credentials fail closed */
+    }
+    if (!config.serviceKey || !serviceCaller) {
       return json({ error: 'unauthorized' }, 401);
     }
     if (!config.serviceUrl || !config.resendKey) return json({ error: 'not_configured' }, 503);
