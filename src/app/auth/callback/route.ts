@@ -1,25 +1,18 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { completeCustomerAuthCallback } from '@/lib/customer-auth';
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
-  const next = url.searchParams.get('next') || '/hesabim';
-  // Redirect to fixed same-origin routes; don't permit open redirects.
-  const destination = next === '/sifre-yenile' ? '/sifre-yenile' : '/hesabim';
-  const code = url.searchParams.get('code');
-  const tokenHash = url.searchParams.get('token_hash');
-  const type = url.searchParams.get('type');
-  const supabase = await createServerSupabase();
-  let success = false;
-
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    success = !error;
-  } else if (tokenHash && (type === 'signup' || type === 'recovery' || type === 'email')) {
-    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
-    success = !error;
+  let destination = '/giris?error=dogrulama';
+  try {
+    const supabase = await createServerSupabase();
+    destination = await completeCustomerAuthCallback(url.searchParams, supabase.auth);
+  } catch {
+    // Keep setup/network failures out of public callback responses.
   }
-  return NextResponse.redirect(
-    new URL(success ? destination : '/giris?error=dogrulama', url.origin),
-  );
+  const response = NextResponse.redirect(new URL(destination, url.origin));
+  response.headers.set('Cache-Control', 'no-store');
+  response.headers.set('Referrer-Policy', 'no-referrer');
+  return response;
 }

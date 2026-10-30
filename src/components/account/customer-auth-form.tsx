@@ -5,20 +5,13 @@ import { useRouter } from 'next/navigation';
 import { type FormEvent, useMemo, useState } from 'react';
 import { ArrowRight, Mail, ShieldCheck, UserRound } from 'lucide-react';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
+import { customerAuthError, safeCustomerNext, type CustomerAuthMode } from '@/lib/customer-auth';
 import styles from './customer-account.module.css';
 
-type Mode = 'login' | 'register' | 'forgot' | 'reset';
+type Mode = CustomerAuthMode;
 type Props = { mode: Mode; nextPath?: string; errorCode?: string };
 
-function safeNext(path?: string): string {
-  return path &&
-    path.startsWith('/') &&
-    !path.startsWith('//') &&
-    !path.includes('\\') &&
-    !path.includes('\n')
-    ? path
-    : '/hesabim';
-}
+class DisplayAuthError extends Error {}
 
 export function CustomerAuthForm({ mode, nextPath, errorCode }: Props) {
   const supabase = useMemo(() => createBrowserSupabase(), []);
@@ -52,17 +45,14 @@ export function CustomerAuthForm({ mode, nextPath, errorCode }: Props) {
           email: email.trim(),
           password,
         });
-        if (authError)
-          throw new Error(
-            'E-posta veya şifre hatalı. Hesabın doğrulama bekliyorsa e-postanı kontrol et.',
-          );
-        router.replace(safeNext(nextPath));
+        if (authError) throw new DisplayAuthError(customerAuthError(authError, mode));
+        router.replace(safeCustomerNext(nextPath));
         router.refresh();
       } else if (mode === 'register') {
         if (name.trim().length < 3 || name.trim().length > 100)
-          throw new Error('Ad soyad 3–100 karakter olmalı.');
-        if (password.length < 8) throw new Error('Şifren en az 8 karakter olmalı.');
-        if (password !== confirmPassword) throw new Error('Şifreler uyuşmuyor.');
+          throw new DisplayAuthError('Ad soyad 3–100 karakter olmalı.');
+        if (password.length < 8) throw new DisplayAuthError('Şifren en az 8 karakter olmalı.');
+        if (password !== confirmPassword) throw new DisplayAuthError('Şifreler uyuşmuyor.');
         const { data, error: authError } = await supabase.auth.signUp({
           email: email.trim(),
           password,
@@ -71,37 +61,41 @@ export function CustomerAuthForm({ mode, nextPath, errorCode }: Props) {
             emailRedirectTo: `${window.location.origin}/auth/callback?next=/hesabim`,
           },
         });
-        if (authError) throw new Error(authError.message);
+        if (authError) throw new DisplayAuthError(customerAuthError(authError, mode));
         if (data.session) {
           router.replace('/hesabim');
           router.refresh();
         } else {
           setSuccess(
-            'Üyelik isteğin alındı. Supabase Auth e-posta doğrulaması açıksa gelen bağlantıyla hesabını doğrulaman gerekiyor.',
+            'Üyelik isteğin alındı. E-postandaki doğrulama bağlantısıyla hesabını etkinleştirebilirsin. Gelen kutunu ve spam klasörünü kontrol et.',
           );
         }
       } else if (mode === 'forgot') {
         const { error: authError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
           redirectTo: `${window.location.origin}/auth/callback?next=/sifre-yenile`,
         });
-        if (authError) throw new Error(authError.message);
+        if (authError) throw new DisplayAuthError(customerAuthError(authError, mode));
         setSuccess(
-          'Hesap kayıtlıysa şifre sıfırlama bağlantısı gönderilir. Bu özellik Supabase Auth e-posta gönderiminin açık olmasına bağlıdır.',
+          'Bu e-posta adresiyle kayıtlı bir hesap varsa şifre sıfırlama bağlantısı gönderildi. Gelen kutunu ve spam klasörünü kontrol et.',
         );
       } else {
-        if (password.length < 8) throw new Error('Yeni şifren en az 8 karakter olmalı.');
-        if (password !== confirmPassword) throw new Error('Şifreler uyuşmuyor.');
+        if (password.length < 8) throw new DisplayAuthError('Yeni şifren en az 8 karakter olmalı.');
+        if (password !== confirmPassword) throw new DisplayAuthError('Şifreler uyuşmuyor.');
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (userError || !userData.user)
-          throw new Error('Sıfırlama bağlantısını e-postandan açmalısın.');
+          throw new DisplayAuthError('Sıfırlama bağlantısını e-postandan açmalısın.');
         const { error: authError } = await supabase.auth.updateUser({ password });
-        if (authError) throw new Error(authError.message);
+        if (authError) throw new DisplayAuthError(customerAuthError(authError, mode));
         setSuccess('Şifren yenilendi. Hesabına yönlendiriliyorsun.');
         router.replace('/hesabim');
         router.refresh();
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'İşlem gerçekleştirilemedi.');
+      setError(
+        cause instanceof DisplayAuthError
+          ? cause.message
+          : 'Bağlantı kurulamadı. Biraz sonra tekrar dene.',
+      );
     } finally {
       setPending(false);
     }
@@ -225,8 +219,8 @@ export function CustomerAuthForm({ mode, nextPath, errorCode }: Props) {
           <Link href="/urunler">Üye olmadan alışveriş yap</Link>
         </div>
         <p className={styles.safeNote}>
-          <ShieldCheck size={15} /> Güvenli oturum: Supabase Auth. <Mail size={15} /> Doğrulama ve
-          şifre sıfırlama bağlantıları için Auth e-postası gerekebilir.
+          <ShieldCheck size={15} /> Hesabını güvende tut: şifreni kimseyle paylaşma.
+          <Mail size={15} /> Hesap bağlantıları e-posta adresine gönderilir.
         </p>
       </div>
     </section>
